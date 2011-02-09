@@ -1,0 +1,16 @@
+#! /bin/sh
+
+TMPFILE=`mktemp /tmp/prove_quietly.XXXXXXXXXX` || exit 1
+
+# assume caller did 'cd' here
+if prove --norc -r -v t/ >> $TMPFILE 2>&1; then
+    :
+#    echo OK
+else
+    echo Tests failed
+    cat $TMPFILE
+fi
+
+rm -f $TMPFILE
+
+#   http://github.com/apenwarr/cron2rss would be better

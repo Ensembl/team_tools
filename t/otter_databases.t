@@ -66,7 +66,7 @@ sub main {
 	my $dbh = want_connect($hostport, $user, $pass);
 
       SKIP: {
-	    skip "no connection" unless $dbh;
+	    skip "no connection" unless $dbh; # we have already one FAIL
 
 	    foreach my $check (@morechecks) {
 		my ($code, @args) = @$check;
