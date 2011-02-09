@@ -1,0 +1,22 @@
+The plan as I imagine it...
+
+
+Files on master branch
+======================
+
+ bin/	 	things we all want on our $PATH, by some consensus?  Not sure about this.
+
+ t/		tests that can safely be run with no setup or side-effects[1]
+
+
+Files on branches named $dev/$foo
+=================================
+
+If the branch used the filenames pattern above it could merge to
+master easily, but naming the branch after a developer suggests the
+content is not ready for sharing.
+
+
+
+[1] t/otter_databases.t may write a row when things go very wrong, but
+will then see this and fail until it is deleted again.
