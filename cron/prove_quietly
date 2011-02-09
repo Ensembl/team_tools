@@ -2,6 +2,10 @@
 
 TMPFILE=`mktemp /tmp/prove_quietly.XXXXXXXXXX` || exit 1
 
+# ensure PATH element, because cron's environment is stripped 
+PATH=/software/bin:$PATH
+
+
 # assume caller did 'cd' here
 if prove --norc -r -v t/ >> $TMPFILE 2>&1; then
     :
