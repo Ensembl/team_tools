@@ -29,7 +29,7 @@ mkdir -p -v $SAVEREPO/meta
 TIME0=$( date +%s )
 
 # List dev files
-find $DATADIR -type f -print0 | xargs -r0 ls -l > $SAVEREPO/meta/ls.-l
+find $DATADIR -type f -print0 | LANG=en_GB.UTF-8 xargs -r0 ls -l > $SAVEREPO/meta/ls.-l
 
 # Copy dev files to commit-staging
 (
