@@ -1,0 +1,60 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+=head1 NAME
+
+diffdevlive-diff - reformat one file diff from diffdevlive
+
+=head1 SYNOPSIS
+
+ diffdevlive $FOO/bar.txt | diffdevlive-diff > bar.diff
+
+=head1 DESCRIPTION
+
+This is a helper filter to replace the diffdevlive output header with
+something more like what patch(1) expects.
+
+The result has not been tested to work with patch, but should at least
+contain enough information for a human to see what happened.
+
+=cut
+
+
+sub main {
+    foreach my $fn (@ARGV) {
+	open my $fh, "-|",
+	  "/nfs/WWW/bin/diffdevlive", $fn
+	    or die "$0: Failed to pipe from diffdevlive: $!";
+
+	# Read & collect output
+	my $hdr_re = qr{^(Webadmin server contacted|(Cwd|Opts|Fn|Cmd): )};
+	my $in_hdr = 1;
+	my @diff;
+	while (<$fh>) {
+	    next if ($in_hdr && $_ =~ $hdr_re); # still in header, ignore
+	    $in_hdr = 0;
+	    push @diff, $_;
+	}
+
+	# Shave trailing newline
+	pop @diff if (@diff && $diff[-1] eq "\n");
+
+	# Check exit & print
+	if (close $fh) {
+	    # print some kind of header, then leave the user to sort
+	    # out the mess later.
+	    #
+	    # More humane would be to convert to context or unified
+	    # diff before printing.
+	    print "--- $fn\n+++ $fn\n";
+	    print @diff;
+	} else {
+	    # something went wrong
+	    die "$0: problem during diffdevlive. !=$! ?=$?\n";
+	}
+    }
+}
+
+main();
