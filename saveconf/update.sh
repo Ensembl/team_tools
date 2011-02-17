@@ -3,7 +3,10 @@
 set -e
 
 # Run with something like
-#   cd ~/gitwk-anacode/server-config-trail && ~/gitwk-anacode/saveconf/update.sh
+#   cd ~/gitwk-anacode/server-config-trail && ~/gitwk-anacode/team_tools/saveconf/update.sh && git push -q intcvs1
+#
+#
+# This is called every 15 minutes from cron on mca@deskpro17119 as of 2011-02-17
 
 
 SAVEREPO=$PWD
