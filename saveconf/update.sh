@@ -24,7 +24,12 @@ DATADIR=/nfs/WWWdev/SANGER_docs/data/otter
 
 export GIT_DIR=$SAVEREPO/.git
 
-mkdir -p -v $SAVEREPO/meta
+
+# dotlockfile is in Debian package liblockfile1
+trap "dotlockfile -u -p $GIT_DIR.lock" ERR
+dotlockfile -l -p $GIT_DIR.lock
+
+mkdir -p $SAVEREPO/meta
 
 TIME0=$( date +%s )
 
@@ -42,8 +47,24 @@ find $DATADIR -type f -print0 | LANG=en_GB.UTF-8 xargs -r0 ls -l > $SAVEREPO/met
 /nfs/WWW/bin/diffdevlive $DATADIR > $SAVEREPO/meta/ddl.asc
 $SAVECONFDIR/diffdevlive-fn -0 < $SAVEREPO/meta/ddl.asc | xargs -r0 $SAVECONFDIR/diffdevlive-diff > $SAVEREPO/meta/details.diff
 
-git add -A $SAVEREPO/meta
+# Build version-to-version differences,
+# for the files which should be the same
+mkdir -p $SAVEREPO/derived
+for leaf in species.dat users.txt; do
+    {
+	diff -Nsu $DATADIR/{52,53}/$leaf || true
+	diff -Nsu $DATADIR/{53,54}/$leaf || true
+    } > $SAVEREPO/derived/$leaf.v2v.diff
+done
+
+
 TIME1=$( date +%s )
+
+git add -A $SAVEREPO/{meta,derived}
+
+dotlockfile -c -p $GIT_DIR.lock
 
 git commit -m "updated by $0, fetch took $[ $TIME1 - $TIME0 ] sec" | \
     (grep -Ev '^# On branch master|^nothing to commit'; true)
+
+dotlockfile -u -p $GIT_DIR.lock
