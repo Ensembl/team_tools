@@ -67,4 +67,7 @@ dotlockfile -c -p $GIT_DIR.lock
 git commit -m "updated by $0, fetch took $[ $TIME1 - $TIME0 ] sec" | \
     (grep -Ev '^# On branch master|^nothing to commit'; true)
 
+# Update working copy, else we see "Changed but not updated" next time
+git checkout .
+
 dotlockfile -u -p $GIT_DIR.lock
