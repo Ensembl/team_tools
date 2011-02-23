@@ -3,16 +3,19 @@
 set -e
 
 # Run with something like
-#   cd ~/gitwk-anacode/server-config-trail && ~/gitwk-anacode/team_tools/saveconf/update.sh && git push -q intcvs1
+#   cd ~/gitwk--bg/server-config-trail.saveconf && ~/gitwk-anacode/team_tools/saveconf/update.sh
 #
 #
 # This is called every 15 minutes from cron on mca@deskpro17119 as of 2011-02-17
 
 
 SAVEREPO=$PWD
-if [ -d "$SAVEREPO/.git" ] && [ $( basename $SAVEREPO ) == "server-config-trail" ]; then
+if [ -d "$SAVEREPO/.git" ] && [ $( basename $SAVEREPO ) == "server-config-trail.saveconf" ]; then
     :
     # Happy with PWD being our SAVEREPO
+    #
+    # (It's not just a random clone I have kicking around, but a copy
+    # for the purpose of being updated by cron)
 else
     echo "$0: Are we in the right directory?  SAVEREPO=$SAVEREPO" >&2
     echo "Expected this to have .../server-config-trail/.git" >&2
@@ -28,6 +31,10 @@ export GIT_DIR=$SAVEREPO/.git
 # dotlockfile is in Debian package liblockfile1
 trap "dotlockfile -u -p $GIT_DIR.lock" ERR
 dotlockfile -l -p $GIT_DIR.lock
+
+# Get up-to-date; make noise only if we fetch something
+git fetch origin
+git merge -q --ff-only origin/master
 
 mkdir -p $SAVEREPO/meta
 
@@ -67,7 +74,9 @@ dotlockfile -c -p $GIT_DIR.lock
 git commit -m "updated by $0, fetch took $[ $TIME1 - $TIME0 ] sec" | \
     (grep -Ev '^# On branch master|^nothing to commit'; true)
 
+git push -q origin
+
 # Update working copy, else we see "Changed but not updated" next time
-git checkout .
+git reset --hard HEAD
 
 dotlockfile -u -p $GIT_DIR.lock
