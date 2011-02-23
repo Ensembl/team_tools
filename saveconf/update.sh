@@ -77,6 +77,6 @@ git commit -m "updated by $0, fetch took $[ $TIME1 - $TIME0 ] sec" | \
 git push -q origin
 
 # Update working copy, else we see "Changed but not updated" next time
-git reset --hard HEAD
+git reset -q --hard HEAD
 
 dotlockfile -u -p $GIT_DIR.lock
