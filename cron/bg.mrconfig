@@ -1,0 +1,31 @@
+# mca uses this .mrconfig for "background" tasks.
+#
+# See also the path env/.mrconfig in this repo (initially on branch mca/incomplete)
+#
+#
+# The plan is to have some quiet and stable tasks running "in the
+# background", by cron or installation in my login environment.  These
+# should be less affected by most development works...
+#
+# Initial checkout,
+#   mkdir ~/gitwk--bg; cd ~/gitwk--bg
+#   curl -o .mrconfig 'http://git.internal.sanger.ac.uk/cgi-bin/gitweb.cgi?p=anacode/team_tools.git;a=blob_plain;f=cron/bg.mrconfig;hb=master'
+#   mr -c .mrconfig co
+#   diff -u  .mrconfig team_tools/env/mrconfig
+#   ln -snvf .mrconfig team_tools/env/mrconfig
+#
+# Then plumb it into crontab and login scripts...  unspecified/in-progress
+
+
+# qfetch : intended to run periodically, to notify me of commits to come in
+
+
+[team_tools]
+checkout = git clone 'intcvs1:/repos/git/anacode/team_tools.git' 'team_tools'
+qfetch = git fetch --dry-run
+
+
+[server-config-trail.saveconf]
+# For use by team_tools/saveconf/ on cronjob
+checkout = git clone 'intcvs1:/repos/git/anacode/server-config-trail.git' 'server-config-trail.saveconf'
+qfetch = git fetch --dry-run
