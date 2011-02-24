@@ -7,6 +7,9 @@ set -e
 #
 #
 # This is called every 15 minutes from cron on mca@deskpro17119 as of 2011-02-17
+#
+# Note that the dotlockfile invocation assumes we run from only one
+# host, so uses the -p flag
 
 
 SAVEREPO=$PWD
@@ -29,8 +32,14 @@ export GIT_DIR=$SAVEREPO/.git
 
 
 # dotlockfile is in Debian package liblockfile1
-trap "dotlockfile -u -p $GIT_DIR.lock" ERR
-dotlockfile -l -p $GIT_DIR.lock
+LOCKFN=$GIT_DIR/saveconf.lock
+if dotlockfile -l -p $LOCKFN; then
+    trap "dotlockfile -u -p $LOCKFN" ERR
+else
+    echo dotlockfile failed: exit code $? >&2
+    head -v $LOCKFN >&2
+    exit 1
+fi
 
 # Get up-to-date; make noise only if we fetch something
 git fetch origin
@@ -69,14 +78,15 @@ TIME1=$( date +%s )
 
 git add -A $SAVEREPO/{meta,derived}
 
-dotlockfile -c -p $GIT_DIR.lock
+dotlockfile -c -p $LOCKFN
 
 git commit -m "updated by $0, fetch took $[ $TIME1 - $TIME0 ] sec" | \
     (grep -Ev '^# On branch master|^nothing to commit'; true)
 
 git push -q origin
 
-# Update working copy, else we see "Changed but not updated" next time
+# Force working copy to match HEAD, else we see "Changed but not updated" next time
 git reset -q --hard HEAD
+git clean -fdx
 
-dotlockfile -u -p $GIT_DIR.lock
+dotlockfile -u -p $LOCKFN
