@@ -36,7 +36,7 @@ It uses whatever is available...  maybe.
 =back
 
 This module currently expects "user:pass" lines in F<.dbpass> in the
-directory above F<t/>
+directory above F<t/>.  The file must not be publicly readable.
 
 =head1 EXPORTABLE FUNCTIONS
 
@@ -92,6 +92,7 @@ sub _readfile {
 
     my @out;
     if (open my $fh, "<", $passfn) {
+	_checkpriv($passfn);
 	foreach my $ln (<$fh>) {
 	    chomp $ln;
 	    next if $ln =~ /^#|^\s*$/; # ignore traditional comments
@@ -105,6 +106,17 @@ sub _readfile {
 	warn "Cannot read $passfn: $!, I have no passwords";
     }
     return @out;
+}
+
+# Die if $fn has public access, to avoid accidents.  Otherwise, ignore
+# any group permissions or ACLs - assume that they are deliberate.
+sub _checkpriv {
+    my ($fn) = @_;
+    my @s = stat($fn);
+    if ($s[2] & 07) {
+	die sprintf("%s: is mode 0%03o but must not be public",
+		    $fn, $s[2] & 07777);
+    }
 }
 
 1;
