@@ -1,0 +1,180 @@
+#! /bin/sh
+
+# Written using Git 1.7.2.3, may work with older but needs "git
+# checkout --orphan"
+#
+# Recommend running like
+#    TMPDIR=/dev/shm ./git-importing/cvs2git-ensembl-foo otter
+
+
+fetchrepo() {
+    mkdir -p $REPOCVS/CVSROOT/Emptydir
+    scp -rp cvs.sanger.ac.uk:/cvsroot/ensembl/$PROJ $REPOCVS/
+
+# Provide enough CVSROOT to operate.
+#
+# Don't copy history, taglog or commitlog (too big)
+# Don't include the ,v files because they won't have our tags, and we
+# aren't going to import them
+    scp -rp cvs.sanger.ac.uk:/cvsroot/ensembl/CVSROOT/{modules,loginfo,commitinfo,cvswrappers,config,taginfo,verifymsg,editinfo,rcsinfo,notify,checkoutlist,cvsignore} $REPOCVS/CVSROOT/
+
+# Fix up the config file to let us do checkouts
+    mkdir $C2G_TMP/locks
+    perl -i~ -pe 'BEGIN { $ct = shift } s{^LockDir=.*}{#$&\nLockDir=$ct/locks}' $C2G_TMP $REPOCVS/CVSROOT/config
+}
+
+unpack_hwime() { # here's one I made earlier
+    fn=$1
+    cd $C2G_TMP
+    [ -e $fn ] || return 1
+    tar xfz $fn
+    return 0
+}
+
+do_import() {
+    mkdir $REPOGIT
+    cd $REPOGIT
+    cvs2git  --username cvs2git --keep-cvsignore --cvs-revnums \
+	--blobfile out.blob --dumpfile out.dump \
+	-q \
+	$REPOCVS
+    git init
+    cat out.* | git fast-import
+
+    # Tidy up and make a neat checkout
+    rm -v out.blob out.dump
+}
+
+prepend_initialempty() {
+
+    # Find first CVS commit
+    COMMIT1=$( git log --format=tformat:%H master | tail -n1 )
+
+    # Make the IEC
+    git checkout --orphan _iec
+    git rm -q --cached -r .
+    git commit --allow-empty -m "$( echo -e "initial empty commit.\n\nthis was made just after the cvs2git import process" )"
+    COMMIT0=$( git show-ref -s _iec )
+
+    # Graft
+    echo $COMMIT1 $COMMIT0 > .git/info/grafts
+    git filter-branch -- --all
+    rm .git/info/grafts
+
+    # Tidy up
+    git reset --hard HEAD
+    git clean -fdqx
+    git checkout master
+    git branch -D _iec
+}
+
+
+diffok=0
+diffbad=0
+
+checktag() {
+    mkdir -p $C2G_TMP/checkrevs/
+    CHKNAME="$C2G_TMP/checkrevs/"$( echo "$*.diff" | tr ' ' , )
+    CVSREV=$1
+    GITREV=${2:-$CVSREV}
+
+    # Make a fresh CVS checkout
+    CVSCO=$C2G_TMP/cvsco
+    GITCO=$C2G_TMP/git
+    rm -rf $CVSCO
+    mkdir $CVSCO
+    cd $CVSCO
+    cvs -q -d $REPOCVS co -d $CVSCO -r $CVSREV . > /dev/null
+
+    # Put the git working copy where we want it.
+    #
+    # Avoid making a clone, because then we have to deal with branches
+    # having the origin/ prefix when tags do not.
+    cd $GITCO
+    if ! git show-ref _diff_to_cvs > /dev/null; then
+	git branch _diff_to_cvs
+    fi
+    git checkout -q _diff_to_cvs
+    git reset --hard $GITREV
+
+    # Compare; return the exit code rather than barfing, because we
+    # want to check some more after
+    if diff -xCVS -x.git -ru $CVSCO $GITCO > $CHKNAME; then
+	diffok=$[ $diffok + 1 ]
+    else
+	diffbad=$[ $diffbad + 1 ]
+    fi
+}
+
+
+# We assume this for error catching
+set -e
+
+# Verbosity is optional
+#set -x
+
+GIDIR=$(
+    cd $( dirname $0 )
+    echo $PWD
+)
+export PATH=$GIDIR:$PATH
+
+PROJ=ensembl-${1:-foo}
+echo Running for PROJ=$PROJ
+
+C2G_TMP=`mktemp -d -t cvs2git-$PROJ.XXXXXX`
+trap 'echo -e "\nLeaving you to clean up: C2G_TMP=$C2G_TMP\n  rm -rf $C2G_TMP"' EXIT
+
+REPOCVS=$C2G_TMP/repo
+
+REPOGIT=$C2G_TMP/git
+
+unpack_hwime /tmp/ensembl-otter.repo.tgz || fetchrepo
+unpack_hwime /tmp/ensembl-otter.git.tgz  || do_import
+### squirrel away some shortcut tarballs?  nb. keep or make the original CVSROOT/config LockDir
+# (cd $C2G_TMP && tar cfz /tmp/ensembl-otter.repo.tgz repo locks)
+# (cd $C2G_TMP && tar cfz /tmp/ensembl-otter.git.tgz git)
+
+echo -e "\nTo view\n  (cd $REPOGIT && gitk --all &)\n\n"
+
+cd $REPOGIT
+refs_tag=$( git tag -l | perl -pe 's/^/    /')
+refs_branch=$( git branch --no-color | perl -ne 's/^[ *]+//; next if m{^master$}; s{^}{    }; print' )
+
+cat > $C2G_TMP/checkrevs.txt <<LST
+Will compare CVS vs. Git contents for
+
+  HEAD vs. master
+
+  tags:
+$refs_tag
+
+  branches:
+$refs_branch
+
+
+LST
+cat $C2G_TMP/checkrevs.txt
+
+# Prepend to history an empty commit, because they can be useful later
+# Note that we already have refnames.  Commitids will all change.
+cd $REPOGIT
+prepend_initialempty
+
+cd $C2G_TMP
+checktag HEAD master
+for tag in $refs_tag $refs_branch; do
+    checktag $tag
+done
+
+# Reset the repo to a plain master
+cd $REPOGIT
+git gc
+git checkout -q master
+git reset --hard HEAD
+git clean -fdqx
+git branch -D _diff_to_cvs
+
+# Show diffing summary
+echo -e "\n\nDiffed some tags and/or branches.\n  Found $diffok with no diff.\n  Found $diffbad with differences between CVS and Git,\n    see $C2G_TMP/checkrevs/\n\n"
+find $C2G_TMP/checkrevs/ -type f -size +0 -ls
