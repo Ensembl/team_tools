@@ -1,7 +1,7 @@
 #! /bin/sh
 
 # Third-level wrapper: do the import again, push to central repo.
-# Makes local assumptions: rederr, otter, intcvs1
+# Makes local assumptions: rederr, otter, intcvs1, ssh-agent
 
 set -e
 
@@ -21,10 +21,20 @@ fi
 
 # Make a sub-tmp directory
 export TMPDIR=$( TMPDIR=/dev/shm mktemp -d -t otter.XXXXXX )
-
-# Do import
 IMPLOG=$TMPDIR/import.$$.log
-if ionice -n7 nice ~/bin/rederr $GIDIR/cvs2git-ensembl-foo otter > $IMPLOG; then
+
+
+do_import() {
+    # Assume there is just one ssh-agent running; don't pester the X11 user
+    export SSH_AGENT_PID=$( pidof ssh-agent )
+    export SSH_AUTH_SOCK=$( echo /tmp/keyring-*/ssh )
+    DISPLAY=
+
+    ionice -n7 nice ~/bin/rederr \
+	$GIDIR/cvs2git-ensembl-foo otter > $IMPLOG
+}
+
+if do_import; then
     :
     # success
 else
@@ -33,17 +43,20 @@ else
     exit 8
 fi
 
-#set -x
 cd $TMPDIR/cvs2git-ensembl-otter.*/git
 
 git remote add origin intcvs1:/repos/git/anacode/ensembl-otter-TRIAL-RUN.git
 git checkout -q cvs/main
-git branch -D master
+git branch -D master > /dev/null 
 git push -q origin --tags
 git push -q origin --all
 
 git remote add nocvs intcvs1:/repos/git/anacode/ensembl-otter-TRIAL-RUN-no-cvs-branches.git
 git push -q nocvs cvs/main:cvs_MAIN
+
+# Warn about unexpected diffs
+rm -f $TMPDIR/cvs2git-ensembl-otter.*/checkrevs/sog.diff
+find $TMPDIR/cvs2git-ensembl-otter.*/checkrevs/ -type f -size +0 -ls
 
 cd /
 rm -rf $TMPDIR
