@@ -3,10 +3,11 @@
 set -e
 
 # Run with something like
-#   $TT_S/saveconf/update-project-software.sh [ -R /software/noarch ] <target git repo> <target git branch> <tracked globspec>+
+#   $TT_S/saveconf/track-bigdir [ -R /software/noarch ] <target git repo> <target git branch> <tracked globspec>+
 #
 #
-# This would be called ... from cron on mca@deskpro17119 ...?
+# To be called from cron on mca@deskpro17119 via update-project-software
+# (and previously via update-from-snapshots.sh)
 
 VERBOSE=
 if [ -n "$VERBOSE" ]; then
