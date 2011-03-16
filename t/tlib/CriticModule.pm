@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use base 'Exporter';
-our @EXPORT = qw(critic_module_ok);
+our @EXPORT = qw(critic_module_ok); ## no critic (ProhibitAutomaticExportation)
 
 use File::Spec;
 
@@ -14,7 +14,7 @@ sub import {
     my ($self, %args) = @_;
     Test::Perl::Critic->import(%args);
     $self->export_to_level( 1, $self, qw(critic_module_ok) );
-    1;
+    return 1;
 }
 
 sub critic_module_ok {
