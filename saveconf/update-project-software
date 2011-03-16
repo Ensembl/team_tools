@@ -1,0 +1,9 @@
+#! /bin/sh
+
+: ${TT_S:=~/gitwk--bg/team_tools}
+SAVEREPO=~/gitwk--bg/project-software.saveconf
+
+$TT_S/saveconf/track-bigdir $SAVEREPO anacode  '*/anacode'
+$TT_S/saveconf/track-bigdir $SAVEREPO annohelp 'annohelp'
+$TT_S/saveconf/track-bigdir $SAVEREPO grit     '*/grit'
+$TT_S/saveconf/track-bigdir $SAVEREPO zfish    '*/zfish'
