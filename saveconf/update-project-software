@@ -3,7 +3,7 @@
 : ${TT_S:=~/gitwk--bg/team_tools}
 SAVEREPO=~/gitwk--bg/project-software.saveconf
 
-$TT_S/saveconf/update-project-software.sh $SAVEREPO anacode  '*/anacode'
-$TT_S/saveconf/update-project-software.sh $SAVEREPO annohelp 'annohelp'
-$TT_S/saveconf/update-project-software.sh $SAVEREPO grit     '*/grit'
-$TT_S/saveconf/update-project-software.sh $SAVEREPO zfish    '*/zfish'
+$TT_S/saveconf/track-bigdir $SAVEREPO anacode  '*/anacode'
+$TT_S/saveconf/track-bigdir $SAVEREPO annohelp 'annohelp'
+$TT_S/saveconf/track-bigdir $SAVEREPO grit     '*/grit'
+$TT_S/saveconf/track-bigdir $SAVEREPO zfish    '*/zfish'
