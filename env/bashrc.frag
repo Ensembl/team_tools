@@ -22,10 +22,6 @@ if [ -d "$TEAM_TOOLS/bin" ]; then
     export PATH="$TEAM_TOOLS/bin:$PATH"
 fi
 
-# PERL5LIB
-#  - not sure how to manage this, so for now a list in this comment:
-#
-# $TEAM_TOOLS/t/tlib   # perl test support modules
 
 # Misc stuff
 export http_proxy="http://wwwcache.sanger.ac.uk:3128/"
