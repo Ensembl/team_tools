@@ -1,0 +1,19 @@
+This subproject currently holds some of the things mca@deskpro17119
+runs from cron.  
+
+See ~mca/cvswork-waypoint/misc/crontab.deskpro17119 for current
+details.
+
+
+  prove_quietly		use the 'prove' tool to run some periodic
+  t/			sanity checks.
+
+  bg.mrconfig		config for mr(1) which mca uses to maintain
+   [experimental]	~/gitwk--bg/ as a stable production
+			environment, separate from other development.
+
+  lib/			modules used only in this subproject.
+
+
+Anacode::DatabasePasswords may well be generally useful.  If so, it
+should be extracted...  but I didn't want a one-file subproject.
