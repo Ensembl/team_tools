@@ -6,17 +6,36 @@ Files on master branch
 
  bin/	 	things we all want on our $PATH, by some consensus?  Not sure about this.
 
- t/		tests that can safely be run with no setup or side-effects[1]
+ t/		tests that can safely be run with no setup or side-effects
+
+ $project/	small, mostly self-contained projects.
+		Should each contain a README ?
+		If they got bigger they might warrant splitting into another repo.
 
 
 Files on branches named $dev/$foo
 =================================
 
-If the branch used the filenames pattern above it could merge to
+$dev = username of developer; the owner of that branch.
+
+$foo = name of some sub-project.  Possibly matching the directory name
+$project/ .
+
+
+mca suggests this form of ownership so that commits on such branches
+may be "owned" but still visible to team members (without an N-squared
+pulling of commits from other people's working copy repos).
+
+These owned branches may be amended/rebased, at any time until they
+are merged to master, even after pushing to intcvs1.
+
+If these branches use the filenames pattern above they will merge to
 master easily, but naming the branch after a developer suggests the
 content is not ready for sharing.
 
 
+Wanted
+======
 
-[1] t/otter_databases.t may write a row when things go very wrong, but
-will then see this and fail until it is deleted again.
+Neat and clean way to make cross-project dependencies.  Without
+crosslinking everything into a bucket of code.
