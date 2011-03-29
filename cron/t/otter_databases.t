@@ -6,10 +6,7 @@ use Test::More 'no_plan'; # tests => 36; # skipping @morechecks breaks the plan
 use DBI;
 use YAML 'Dump';
 
-use FindBin;
-use lib "$FindBin::Bin/tlib";
-
-use DatabasePasswords qw( user_password );
+use Anacode::DatabasePasswords qw( user_password );
 
 
 =head1 NAME

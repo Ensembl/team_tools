@@ -1,11 +1,11 @@
-package DatabasePasswords;
+package Anacode::DatabasePasswords;
 
 use strict;
 use warnings;
 
 =head1 NAME
 
-DatabasePasswords - utility module to get password
+Anacode::DatabasePasswords - utility module to get password
 
 =head1 DESCRIPTION
 
@@ -36,7 +36,7 @@ It uses whatever is available...  maybe.
 =back
 
 This module currently expects "user:pass" lines in F<.dbpass> in the
-directory above F<t/>.  The file must not be publicly readable.
+top directory of the repository.  The file must not be publicly readable.
 
 =head1 EXPORTABLE FUNCTIONS
 
@@ -72,7 +72,7 @@ sub user_password {
 
 	# use an ignored file in this project
 	my $passfn = __FILE__;
-	$passfn =~ s{/[^/]+$}{/../../.dbpass} or die "Cannot make path to project top from $passfn";
+	$passfn =~ s{/cron/lib/.+$}{/.dbpass} or die "Cannot make path to top of repo from $passfn";
 
 	if (!%user2pass) {
 	    %user2pass = _readfile($passfn);

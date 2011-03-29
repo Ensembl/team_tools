@@ -1,20 +1,19 @@
 #! /bin/sh
 
 TMPFILE=`mktemp /tmp/prove_quietly.XXXXXXXXXX` || exit 1
+trap 'rm -f $TMPFILE' EXIT
 
 # ensure PATH element, because cron's environment is stripped 
 PATH=/software/bin:$PATH
 
 
 # assume caller did 'cd' here
-if prove --norc -r -v t/ >> $TMPFILE 2>&1; then
+if prove -I cron/lib --norc -r -v cron/t/ >> $TMPFILE 2>&1; then
     :
 #    echo OK
 else
     echo Tests failed
     cat $TMPFILE
 fi
-
-rm -f $TMPFILE
 
 #   http://github.com/apenwarr/cron2rss would be better
