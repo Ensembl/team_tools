@@ -9,6 +9,43 @@ set -e
 # To be called from cron on mca@deskpro17119 via update-project-software
 # (and previously via update-from-snapshots.sh)
 
+
+### Efficiency fix wanted,
+#
+# Because we vape .git/index before "git add -A <lots>", it must
+# (presumably) fetch and checksum everything in addition to stat'ing
+# each file.
+#
+# One solution: have a repo per branch (with shared or hardlinked
+# packfiles and regular "git prune-packed" to avoid duplicate
+# objects), and avoid using "git reset" when the branch is already in
+# the correct place.
+#
+# It may also help to merge 'meta' into each tracking branch, then use
+# the existence of $SAVE_BRANCH instead of [ -f $SAVE_BRANCH.ignores ]
+# to validate the args.
+#
+#
+#   $ cd ~/gitwk--bg/project-software.saveconf/
+#   $ git reset -q --mixed anacode
+#   $ cd /software/noarch/
+#   $ GIT_DIR=~/gitwk--bg/project-software.saveconf/.git time git add -A */anacode
+#   13.09user 4.83system 4:53.20elapsed 6%CPU (0avgtext+0avgdata 0maxresident)k
+#   4177216inputs+25264outputs (8470major+384092minor)pagefaults 0swaps
+#
+# (but I've seen it take 8.5 minutes)
+#
+# Then on another machine (no hot-cached NFS files) with pre-populated
+# index,
+#
+#   (tracking):/software/noarch$ time git add -A */anacode
+#
+#   real    1m0.677s
+#   user    0m0.772s
+#   sys     0m4.552s
+
+
+
 VERBOSE=
 if [ -n "$VERBOSE" ]; then
     set -x
