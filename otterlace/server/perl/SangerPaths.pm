@@ -20,6 +20,10 @@ $ENV{SCRIPT_FILENAME} ||= $0;
 $ENV{DOCUMENT_ROOT} ||= "${otterlace_server_root}/htdocs";
 $ENV{HTTP_CLIENTREALM} = 'sanger'; # emulate a local user
 
+# set error-wrapping
+$Bio::Otter::ServerScriptSupport::ERROR_WRAPPING_ENABLED =
+    $ENV{OTTERLACE_ERROR_WRAPPING_ENABLED} ? 1 : 0;
+
 # disable compression
 $Bio::Otter::ServerScriptSupport::COMPRESSION_ENABLED = 0;
 

@@ -21,6 +21,8 @@ request_path="$( echo "$REQUEST_URI" | sed -e 's|?.*||' )"
 cgi="${OTTERLACE_SERVER_ROOT}/${request_path}"
 
 # exec() the CGI script
+OTTERLACE_ERROR_WRAPPING_ENABLED=1
+export OTTERLACE_ERROR_WRAPPING_ENABLED
 exec "$cgi_wrapper" "$cgi" "$QUERY_STRING"
 
 # if we get here, the exec() failed
