@@ -17,7 +17,7 @@ my $otter_root =
 # error when running from the command line
 $ENV{SCRIPT_NAME} ||= $0;
 $ENV{SCRIPT_FILENAME} ||= $0;
-$ENV{DOCUMENT_ROOT} ||= "${otterlace_server_root}/htdocs";
+$ENV{DOCUMENT_ROOT} = "${otterlace_server_root}/htdocs";
 $ENV{HTTP_CLIENTREALM} = 'sanger'; # emulate a local user
 
 # set error-wrapping
