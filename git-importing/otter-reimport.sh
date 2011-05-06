@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # Third-level wrapper: do the import again, push to central repo.
 # Makes local assumptions: rederr, otter, intcvs1
@@ -23,8 +23,12 @@ if [ -d /dev/shm/otter.* ]; then
     exit 7
 fi
 
-# Make a sub-tmp directory
+# Make a sub-tmp directory.  Let the team hack with it.
+umask 02
 export TMPDIR=$( TMPDIR=/dev/shm mktemp -d -t otter.XXXXXX )
+chgrp anacode $TMPDIR
+chmod g+ws,a+rx $TMPDIR
+
 IMPLOG=$TMPDIR/import.$$.log
 
 
@@ -64,15 +68,23 @@ else
 fi
 
 
-# Update central repos
-git remote add origin intcvs1:/repos/git/anacode/ensembl-otter-TRIAL-RUN.git
+# Align with central repos
+git remote add origin intcvs1:/repos/git/anacode/cvs/ensembl-otter.git
 git checkout -q cvs/main
 git branch -D master > /dev/null 
-git push -q origin --tags
-git push -q origin --all
 
-git remote add nocvs intcvs1:/repos/git/anacode/ensembl-otter-TRIAL-RUN-no-cvs-branches.git
-git push -q nocvs cvs/main:cvs_MAIN
+git remote add nocvs intcvs1:/repos/git/anacode/ensembl-otter.git
 
-cd /
-rm -rf $TMPDIR
+
+# Push and cleanup is optional.  The crontab does this but it is
+# unhelpful for interactive use.
+if [ -n "$PUSH_AND_CLEAN" ]; then
+    git push -q origin --tags
+    git push -q origin --all
+    git push -q nocvs cvs/main:cvs_MAIN
+
+    cd /
+    rm -rf $TMPDIR
+else
+    echo -e "\n\nImport completed in $PWD\nLeaving you to push to remotes"
+fi
