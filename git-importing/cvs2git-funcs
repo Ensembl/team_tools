@@ -1,0 +1,281 @@
+# -*- shell-script -*-
+
+
+cvs2git__init() {
+    # We assume this for error catching
+    set -e
+
+# Verbosity is optional
+#set -x
+
+    diffok=0
+    diffbad=0
+
+    C2G_TMP=`mktemp -d -t cvs2git-$PROJ.XXXXXX`
+    trap 'echo -e "\nLeaving you to clean up: C2G_TMP=$C2G_TMP\n  rm -rf $C2G_TMP"' EXIT
+
+    REPOCVS=$C2G_TMP/repo
+    REPOGIT=$C2G_TMP/git
+
+    # mktemp gives us privacy.  We probably need to share with the
+    # team.  Let umask have its effect this way.
+    mkdir -p $C2G_TMP/checkrevs/
+    chmod -v --reference $C2G_TMP/checkrevs $C2G_TMP
+
+    echo Running for PROJ=$PROJ in C2G_TMP=$C2G_TMP
+}
+
+
+fetchrepo() {
+    mkdir -p $REPOCVS/CVSROOT/Emptydir
+
+    case $PROJ in
+	ensembl*) fetchrepo_ensembl ;;
+	anacode) fetchrepo_intcvs1 ;;
+	zmap) fetchrepo_intcvs1 ;;
+	*) echo "Fetch $PROJ from which repository?" >&2
+	    exit 9 ;;
+    esac
+
+    cvsrepo_lockfix
+    apply_hackery
+}
+
+fetchrepo_ensembl() {
+    scp -rp cvs.sanger.ac.uk:/cvsroot/ensembl/$PROJ $REPOCVS/
+
+# Provide enough CVSROOT to operate.
+#
+# Don't copy history, taglog or commitlog (too big)
+# Don't include the ,v files because they won't have our tags, and we
+# aren't going to import them
+    scp -rp cvs.sanger.ac.uk:/cvsroot/ensembl/CVSROOT/{modules,loginfo,commitinfo,cvswrappers,config,taginfo,verifymsg,editinfo,rcsinfo,notify,checkoutlist,cvsignore} $REPOCVS/CVSROOT/
+}
+
+fetchrepo_intcvs1() {
+# Don't copy history (big & pointless for us)
+#
+# It would be nice to keep a local copy so we don't fetch it all every
+# time, (the way we must for cvs.sanger.ac.uk)
+    rsync -aSWH intcvs1:/repos/cvs/$PROJ/ $REPOCVS/ --exclude CVSROOT/history --exclude 'CVSROOT/*,v'
+}
+
+cvsrepo_lockfix() {
+# Fix up the config file to let us do checkouts
+    mkdir $C2G_TMP/locks
+    perl -i~ -pe 'BEGIN { $ct = shift } s{^LockDir=.*}{#$&\nLockDir=$ct/locks}' $C2G_TMP $REPOCVS/CVSROOT/config
+}
+
+
+unpack_hwime() { # here's one I made earlier
+    fn=$1
+    cd $C2G_TMP
+    [ -e $fn ] || return 1
+    tar xfz $fn
+    return 0
+}
+
+squirrel_hwime() {
+    # squirrel away some shortcut tarballs?
+    # nb. keep or make the original CVSROOT/config LockDir
+    (cd $C2G_TMP && tar cfz ~/tmp/$PROJ.repo.tgz repo locks)
+    (cd $C2G_TMP && tar cfz ~/tmp/$PROJ.git.tgz git)
+}
+
+
+canon_repocvs() {
+    # The path to $REPOCVS may appear in $Header keywords, which
+    # breaks repeatable imports.
+    #
+    # Canonicalise it (but beware this won't work on a shared machine
+    # where someone else ran this script already)
+
+    linkname=$( tempfile -d /tmp )
+    ln -snvf $REPOCVS $linkname
+
+    REPOCVS=/tmp/$1
+    mv -T $linkname $REPOCVS
+}
+
+apply_hackery() {
+    HACKFILE=$GIDIR/$PROJ-hackery.sh
+    if [ -f "$HACKFILE" ]; then
+	echo Applying $HACKFILE
+	$HACKFILE $REPOCVS
+    else
+	echo $HACKFILE absent, no worries
+    fi
+}
+
+do_import() {
+    mkdir $REPOGIT
+    cd $REPOGIT
+
+    # Build importable files
+    cvs2git  --username cvs2git --keep-cvsignore --cvs-revnums \
+	--blobfile out.blob --dumpfile out.dump \
+	-q \
+	$REPOCVS
+
+    # Cook up the IEC.  Option to let commitid depend on the input
+    # project name.
+    echo "commit refs/heads/master
+mark :999999999
+author ${IEC_NAME:-iec} <iec> 1299601200 +0000
+committer ${IEC_NAME:-iec} <iec> 946684800 +0000
+data 75
+initial empty commit.
+
+this was made just after the cvs2git import process
+
+" > out.iec
+
+    # Make git repo
+    git init
+    cat out.blob out.iec out.dump | git fast-import
+
+    # For git_preresetcheck
+    touch .git/c2g-mark
+
+    # Tidy up and make a neat checkout
+    rm -v out.blob out.iec out.dump
+
+    echo -e "\nTo view\n  (cd $REPOGIT && gitk --all &)\n\n"
+}
+
+
+checktag() {
+    mkdir -p $C2G_TMP/checkrevs/
+    CHKNAME="$C2G_TMP/checkrevs/"$( perl -e '$_ = shift; s{([^-.A-Za-z0-9_ ])}{sprintf("%%%02X", ord($1))}eg; s{ }{,}g; print' "$*.diff" )
+    CVSREV=$1
+    GITREV=${2:-$CVSREV}
+
+    case $CVSREV in
+	unlabeled-*)
+	    echo "$CVSREV: cannot checktag this, fix the CVS repo" > $CHKNAME
+	    diffbad=$[ $diffbad + 1 ]
+	    return 0 ;;
+    esac
+
+    CVSCO=$C2G_TMP/cvsco
+    GITCO=$C2G_TMP/git
+
+    # Put the git working copy where we want it.
+    #
+    # Avoid making a clone, because then we have to deal with branches
+    # having the origin/ prefix when tags do not.
+    cd $GITCO
+    git_preresetcheck
+
+    if ! git show-ref _diff_to_cvs > /dev/null; then
+	git branch _diff_to_cvs
+    fi
+    git checkout -q _diff_to_cvs
+    git reset --hard $GITREV
+
+    # If we have this commit already, there is no point hammering CVS
+    # again to diff it.  Short-circuit to OK.
+    if [ -f "$KNOWN_GOOD_CILIST" ]; then
+	CIID=$( git log -1 --format=%H )
+	if grep $CIID $KNOWN_GOOD_CILIST > /dev/null; then
+	    echo "  checktag $CVSREV vs $GITREV: $CIID is in $KNOWN_GOOD_CILIST"
+	    return 0
+	fi
+    fi
+
+    # Make a fresh CVS checkout
+    rm -rf $CVSCO
+    mkdir $CVSCO
+    cd $CVSCO
+    cvs -q -d $REPOCVS co -d $CVSCO -r $CVSREV . > /dev/null
+
+    # Compare; return the exit code rather than barfing, because we
+    # want to check some more after
+    cd $GITCO
+    if diff -xCVS -x.git -ru $CVSCO $GITCO > $CHKNAME; then
+	diffok=$[ $diffok + 1 ]
+    else
+	diffbad=$[ $diffbad + 1 ]
+    fi
+}
+
+
+# Sets $refs_tag $refs_branch
+# Creates $C2G_TMP/checkrevs{/*,.txt}
+checktags_all() {
+    cd $REPOGIT
+    refs_tag=$( git tag -l | perl -pe 's/^/    /')
+    refs_branch=$( git branch --no-color | perl -ne 's/^[ *]+//; next if m{^master$}; s{^}{    }; print' )
+
+    cat > $C2G_TMP/checkrevs.txt <<LST
+Will compare CVS vs. Git contents for
+
+  HEAD vs. master
+
+  tags:
+$refs_tag
+
+  branches:
+$refs_branch
+
+
+LST
+    cat $C2G_TMP/checkrevs.txt
+
+    cd $C2G_TMP
+    checktag HEAD master
+    for tag in $refs_tag $refs_branch; do
+	checktag $tag
+    done
+}
+
+
+clean_git_namespace() { # Requires $refs_tag $refs_branch
+    cd $REPOGIT
+    git_preresetcheck
+
+    # Rename all CVS branches & tags down a level
+    for ref in $refs_branch; do
+	git branch -m $ref cvs/$ref
+    done
+    for ref in $refs_tag; do
+	echo -ne "Create tag cvs/$ref; \t"
+	git tag cvs/$ref $ref
+	git tag -d $ref
+    done
+
+    # Retain master from CVS MAIN
+    git branch cvs/main master
+
+    # Clean up the temporary branch
+    git checkout -q master
+    git branch -D _diff_to_cvs
+}
+
+clean_git_workingcopy() {
+    # Reset the repo to a plain master
+    cd $REPOGIT
+    git_preresetcheck
+
+    git gc
+    git checkout -q master
+    git reset --hard HEAD
+    git clean -fdqx
+}
+
+checktag_show_summary() {
+# Show diffing summary
+    echo -e "\n\nDiffed some tags and/or branches.\n  Found $diffok with no diff.\n  Found $diffbad with differences between CVS and Git,\n    see $C2G_TMP/checkrevs/\n\n"
+    find $C2G_TMP/checkrevs/ -type f -size +0 -ls
+}
+
+git_preresetcheck() {
+    # Paranoia to avoid another accident.  8-(
+    if [ ! -f ".git/c2g-mark" ]; then
+	echo ".git/c2g-mark not found - not my repo?" >&2
+	exit 11
+    fi
+}
+
+
+cvs2git__init
