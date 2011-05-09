@@ -1,0 +1,31 @@
+#!/bin/sh
+
+#  This is a perlcritic wrapper.  It is used by anacode-perlcritic.el.
+
+#  usage: anacode_perlcritic <path> <severity>
+#    <path>: the path to the Perl source to be criticised
+#    <severity>: the severity of criticism.  An integer between 1
+#      (gentle) and 5 (brutal) inclusive.
+
+#  We silence some warnings that generate much noise of little use.
+
+#  We change to the directory containing the Perl file so that the
+#  perlcritic output includes only the file name instead of the full
+#  path.  (More noise reduction.)
+
+path=$1
+severity=$2
+
+dir="$( dirname "$path" )"
+file="$( basename "$path" )"
+
+if [ -n "$dir" ]
+then
+    cd "$dir"
+fi &&
+perlcritic \
+    --severity "$severity" \
+    --exclude 'RegularExpressions::RequireExtendedFormatting' \
+    --exclude 'ErrorHandling::RequireCarping' \
+    -- "$file" &&
+/bin/true
