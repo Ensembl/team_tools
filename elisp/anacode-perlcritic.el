@@ -45,7 +45,7 @@ If RAW-PREFIX is nil the severity is the value of
        (buffer-name)))))
 
 (defun anacode-perlcritic-perl-mode-hook ()
-  "The anacode-perlcritic.el hook function for Perl mode."
+  "The anacode\\=-perlcritic hook function for Perl mode."
   (local-set-key [?\C-c ?c] 'anacode-perlcritic-run))
 
 (add-hook 'perl-mode-hook 'anacode-perlcritic-perl-mode-hook)

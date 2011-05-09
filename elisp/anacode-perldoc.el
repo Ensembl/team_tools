@@ -32,7 +32,7 @@ are not identical to running perldoc on the terminal."
      (buffer-name))))
 
 (defun anacode-perldoc-perl-mode-hook ()
-  "The anacode-perldoc.el hook function for Perl mode."
+  "The anacode\\=-perldoc hook function for Perl mode."
   (local-set-key [?\C-c ?d] 'anacode-perldoc-run))
 
 (add-hook 'perl-mode-hook 'anacode-perldoc-perl-mode-hook)
