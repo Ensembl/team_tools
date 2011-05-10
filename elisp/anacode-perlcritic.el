@@ -33,16 +33,34 @@ If RAW-PREFIX is nil the severity is the value of
         (let ((file (buffer-file-name)))
           (when file
             (basic-save-buffer)
-            (with-temp-message "Running perlcritic..."
-              (let ((buffer-name "*perlcritic*"))
-                (with-output-to-temp-buffer buffer-name
-                  (with-current-buffer (get-buffer buffer-name)
-                    (call-process
-                     "anacode_perlcritic"
-                     nil t t file severity-arg)))))))
+            (with-current-buffer (get-buffer-create "*perlcritic*")
+              (erase-buffer)
+              (let ((status
+                     (with-temp-message "Running perlcritic..."
+                       (call-process
+                        "anacode_perlcritic"
+                        nil t nil file severity-arg))))
+                (cond
+                 ((eql status 0)
+                  (delete-windows-on (current-buffer))
+                  (message "%s" (anacode-perlcritic-message)))
+                 (t
+                  (display-buffer (current-buffer))))))))
       (message
        "The buffer %s does not appear to contain Perl code!"
        (buffer-name)))))
+
+(defun anacode-perlcritic-message ()
+  "Generate a syntax message for the message command.
+This returns the content of the current buffer with trailing
+whitespace removed.  This is convenient when the content is a
+one-liner because removing the trailing newline lets us display
+it in the minibuffer without enlarging it."
+
+  (let* ((string (buffer-string))
+         (index (string-match "\\s-*\\'" string))
+         (message (substring string 0 index)))
+    message))
 
 (defun anacode-perlcritic-perl-mode-hook ()
   "The anacode\\=-perlcritic hook function for Perl mode."
