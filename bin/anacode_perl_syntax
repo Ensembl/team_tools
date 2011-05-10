@@ -1,0 +1,17 @@
+#!/bin/sh
+
+#  This is a wrapper to run Perl in syntax check mode.  It is used by
+#  anacode-perl-syntax.pl.
+
+#  We remove any #! line because sometimes they specify -T which
+#  causes problems.
+
+#  NB: because we pipe the code to Perl, it always reports the file
+#  name as '-'.  This is not a problem as the Emacs buffer displays
+#  the file name anyway so it is no loss not to see it a second time.
+
+path=$1
+
+sed -e '1s/^#!.*$//' "$path" | # nuke the #! line
+perl -c -MBio::Anacode::Perl::Syntax &&
+/bin/true
