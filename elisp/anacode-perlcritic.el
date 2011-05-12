@@ -3,6 +3,8 @@
 ;; Author: Ana Code <anacode@sanger.ac.uk>
 ;; Keywords: perl perlcritic
 
+(require 'anacode-perl--core)
+
 (defconst anacode-perlcritic nil
   "The documentation for the anacode\\=-perlcritic library.
 Commands:
@@ -29,26 +31,23 @@ If RAW-PREFIX is nil the severity is the value of
               (prefix-numeric-value raw-prefix)
             anacode-perlcritic-severity-default))
          (severity-arg (number-to-string severity)))
-    (if (eq major-mode 'perl-mode)
-        (let ((file (buffer-file-name)))
-          (when file
-            (basic-save-buffer)
-            (with-current-buffer (get-buffer-create "*perlcritic*")
-              (erase-buffer)
-              (let ((status
-                     (with-temp-message "Running perlcritic..."
-                       (call-process
-                        "anacode_perlcritic"
-                        nil t nil file severity-arg))))
-                (cond
-                 ((eql status 0)
-                  (delete-windows-on (current-buffer))
-                  (message "%s" (anacode-perlcritic-message)))
-                 (t
-                  (display-buffer (current-buffer))))))))
-      (message
-       "The buffer %s does not appear to contain Perl code!"
-       (buffer-name)))))
+    (anacode-perl-require-major-mode-is-perl
+     (let ((file (buffer-file-name)))
+       (when file
+         (basic-save-buffer)
+         (with-current-buffer (get-buffer-create "*perlcritic*")
+           (erase-buffer)
+           (let ((status
+                  (with-temp-message "Running perlcritic..."
+                    (call-process
+                     "anacode_perlcritic"
+                     nil t nil file severity-arg))))
+             (cond
+              ((eql status 0)
+               (delete-windows-on (current-buffer))
+               (message "%s" (anacode-perlcritic-message)))
+              (t
+               (display-buffer (current-buffer)))))))))))
 
 (defun anacode-perlcritic-message ()
   "Generate a syntax message for the message command.

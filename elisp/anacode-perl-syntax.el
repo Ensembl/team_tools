@@ -3,6 +3,8 @@
 ;; Author: Ana Code <anacode@sanger.ac.uk>
 ;; Keywords: perl syntax
 
+(require 'anacode-perl--core)
+
 (defconst anacode-perl-syntax nil
   "The documentation for the anacode\\=-perl-syntax library.
 Commands:
@@ -17,24 +19,21 @@ If the check fails then it displays the output in an alternative
 buffer.
 Unsaved changes are saved before checking the syntax."
   (interactive)
-  (if (eq major-mode 'perl-mode)
-      (let ((file (buffer-file-name)))
-        (when file
-          (basic-save-buffer)
-          (with-current-buffer (get-buffer-create "*Perl Syntax*")
-            (erase-buffer)
-            (let ((status
-                   (with-temp-message "Syntax checking..."
-                     (call-process "anacode_perl_syntax" nil t nil file))))
-              (cond
-               ((eql status 0)
-                (delete-windows-on (current-buffer))
-                (message "%s" (anacode-perl-syntax-message)))
-               (t
-                (display-buffer (current-buffer))))))))
-    (message
-     "The buffer %s does not appear to contain Perl code!"
-     (buffer-name))))
+  (anacode-perl-require-major-mode-is-perl
+   (let ((file (buffer-file-name)))
+     (when file
+       (basic-save-buffer)
+       (with-current-buffer (get-buffer-create "*Perl Syntax*")
+         (erase-buffer)
+         (let ((status
+                (with-temp-message "Syntax checking..."
+                  (call-process "anacode_perl_syntax" nil t nil file))))
+           (cond
+            ((eql status 0)
+             (delete-windows-on (current-buffer))
+             (message "%s" (anacode-perl-syntax-message)))
+            (t
+             (display-buffer (current-buffer))))))))))
 
 (defun anacode-perl-syntax-message ()
   "Generate a syntax message for the message command.
