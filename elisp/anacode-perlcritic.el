@@ -41,7 +41,7 @@ If RAW-PREFIX is nil the severity is the value of
                   (with-temp-message "Running perlcritic..."
                     (call-process
                      "anacode_perlcritic"
-                     nil t nil file severity-arg))))
+                     file t nil severity-arg))))
              (cond
               ((eql status 0)
                (delete-windows-on (current-buffer))

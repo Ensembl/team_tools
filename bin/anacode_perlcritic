@@ -2,30 +2,20 @@
 
 #  This is a perlcritic wrapper.  It is used by anacode-perlcritic.el.
 
-#  usage: anacode_perlcritic <path> <severity>
-#    <path>: the path to the Perl source to be criticised
+#  usage: anacode_perlcritic <severity>
 #    <severity>: the severity of criticism.  An integer between 1
 #      (gentle) and 5 (brutal) inclusive.
 
 #  We silence some warnings that generate much noise of little use.
 
-#  We change to the directory containing the Perl file so that the
-#  perlcritic output includes only the file name instead of the full
-#  path.  (More noise reduction.)
+#  We read the source from STDIN so that perlcritic does not report
+#  the path.  This saves space when displaying the output in the Emacs
+#  echo region.  Note that the Emacs buffer displays the file name
+#  anyway so it is no loss not to see it a second time.
 
-path=$1
-severity=$2
+severity=$1
 
-dir="$( dirname "$path" )"
-file="$( basename "$path" )"
-
-if [ -n "$dir" ]
-then
-    cd "$dir"
-fi &&
 perlcritic \
     --severity "$severity" \
     --exclude 'RegularExpressions::RequireExtendedFormatting' \
     --exclude 'ErrorHandling::RequireCarping' \
-    -- "$file" &&
-/bin/true
