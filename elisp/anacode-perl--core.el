@@ -7,6 +7,15 @@
   '(perl-mode cperl-mode)
   "The list of Perl major modes.")
 
+(defconst anacode-perl-mode-hook-list
+  '(perl-mode-hook cperl-mode-hook)
+  "The list of Perl major mode hooks.")
+
+(defun anacode-perl-mode-add-hook (function)
+  "Add a hook function to the hooks of the Perl major modes."
+  (dolist (hook anacode-perl-mode-hook-list)
+    (add-hook hook function)))
+
 (defun anacode-perl-major-mode-is-perl-p ()
   "Return whether the current major mode is a Perl mode."
   (memq major-mode anacode-perl-mode-list))

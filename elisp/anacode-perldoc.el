@@ -34,7 +34,7 @@ are not identical to running perldoc on the terminal."
   "The anacode\\=-perldoc hook function for Perl mode."
   (local-set-key [?\C-c ?d] 'anacode-perldoc-run))
 
-(add-hook 'perl-mode-hook 'anacode-perldoc-perl-mode-hook)
+(anacode-perl-mode-add-hook 'anacode-perldoc-perl-mode-hook)
 
 (provide 'anacode-perldoc)
 

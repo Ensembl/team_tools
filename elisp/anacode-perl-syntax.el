@@ -51,7 +51,7 @@ it in the minibuffer without enlarging it."
   "The anacode\\=-perl-syntax hook function for Perl mode."
   (local-set-key [?\C-c ?s] 'anacode-perl-syntax-run))
 
-(add-hook 'perl-mode-hook 'anacode-perl-syntax-perl-mode-hook)
+(anacode-perl-mode-add-hook 'anacode-perl-syntax-perl-mode-hook)
 
 (provide 'anacode-perl-syntax)
 

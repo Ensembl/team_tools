@@ -77,7 +77,7 @@ it in the minibuffer without enlarging it."
   "The anacode\\=-perlcritic hook function for Perl mode."
   (local-set-key [?\C-c ?c] 'anacode-perlcritic-run))
 
-(add-hook 'perl-mode-hook 'anacode-perlcritic-perl-mode-hook)
+(anacode-perl-mode-add-hook 'anacode-perlcritic-perl-mode-hook)
 
 (provide 'anacode-perlcritic)
 
