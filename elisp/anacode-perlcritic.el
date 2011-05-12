@@ -17,6 +17,20 @@ Commands:
 The initial value is 3, corresponding to --harsh.
 The valid values are 1 to 5 inclusive.")
 
+(defvar anacode-perlcritic-exclusions
+  '(
+    "RegularExpressions::RequireExtendedFormatting"
+    "ErrorHandling::RequireCarping"
+    )
+  "The list of policies to exclude.")
+
+(defun anacode-perlcritic-arguments (severity)
+  "Return a list of arguments for perlcritic."
+  `("--severity" ,(number-to-string severity)
+    ,@(apply 'append
+             (mapcar (lambda (exclude) `("--exclude" ,exclude))
+                     anacode-perlcritic-exclusions))))
+
 (defun anacode-perlcritic-run (raw-prefix)
   "Run perlcritic on your Perl source.
 This runs perlcritic on the contents of the buffer and
@@ -26,28 +40,26 @@ The prefix argument RAW-PREFIX specifies the severity of the criticism.
 If RAW-PREFIX is nil the severity is the value of
 `anacode-perlcritic-severity-default'."
   (interactive "P")
-  (let* ((severity
-          (if raw-prefix
-              (prefix-numeric-value raw-prefix)
-            anacode-perlcritic-severity-default))
-         (severity-arg (number-to-string severity)))
-    (anacode-perl-require-major-mode-is-perl
-     (let ((file (buffer-file-name)))
-       (when file
-         (basic-save-buffer)
-         (with-current-buffer (get-buffer-create "*perlcritic*")
-           (erase-buffer)
-           (let ((status
-                  (with-temp-message "Running perlcritic..."
-                    (call-process
-                     "anacode_perlcritic"
-                     file t nil severity-arg))))
-             (cond
-              ((eql status 0)
-               (delete-windows-on (current-buffer))
-               (message "%s" (anacode-perlcritic-message)))
-              (t
-               (display-buffer (current-buffer)))))))))))
+  (anacode-perl-require-major-mode-is-perl
+   (let ((file (buffer-file-name)))
+     (when file
+       (basic-save-buffer)
+       (with-current-buffer (get-buffer-create "*perlcritic*")
+         (erase-buffer)
+         (let* ((severity
+                 (if raw-prefix
+                     (prefix-numeric-value raw-prefix)
+                   anacode-perlcritic-severity-default))
+                (arguments (anacode-perlcritic-arguments severity))
+                (status
+                 (with-temp-message "Running perlcritic..."
+                   (apply 'call-process "perlcritic" file t nil arguments))))
+           (cond
+            ((eql status 0)
+             (delete-windows-on (current-buffer))
+             (message "%s" (anacode-perlcritic-message)))
+            (t
+             (display-buffer (current-buffer))))))))))
 
 (defun anacode-perlcritic-message ()
   "Generate a syntax message for the message command.
