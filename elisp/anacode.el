@@ -1,4 +1,4 @@
-;;; anacode.el -- run perlcritic on Perl source
+;;; anacode.el -- Elisp libraries
 
 ;; Author: Ana Code <anacode@sanger.ac.uk>
 ;; Keywords: perl
