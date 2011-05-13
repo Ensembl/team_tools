@@ -12,7 +12,7 @@
   "The list of Perl major mode hooks.")
 
 (defun anacode-perl-mode-add-hook (function)
-  "Add a hook function to the hooks of the Perl major modes."
+  "Add the hook FUNCTION to the hooks of the Perl major modes."
   (dolist (hook anacode-perl-mode-hook-list)
     (add-hook hook function)))
 
