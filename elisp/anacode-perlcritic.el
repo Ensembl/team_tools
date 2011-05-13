@@ -3,6 +3,7 @@
 ;; Author: Ana Code <anacode@sanger.ac.uk>
 ;; Keywords: perl perlcritic
 
+(require 'anacode--core)
 (require 'anacode-perl--core)
 
 (defconst anacode-perlcritic nil
@@ -44,34 +45,14 @@ If RAW-PREFIX is nil the severity is the value of
    (let ((file (buffer-file-name)))
      (when file
        (basic-save-buffer)
-       (with-current-buffer (get-buffer-create "*perlcritic*")
-         (erase-buffer)
-         (let* ((severity
-                 (if raw-prefix
-                     (prefix-numeric-value raw-prefix)
-                   anacode-perlcritic-severity-default))
-                (arguments (anacode-perlcritic-arguments severity))
-                (status
-                 (with-temp-message "Running perlcritic..."
-                   (apply 'call-process "perlcritic" file t nil arguments))))
-           (cond
-            ((eql status 0)
-             (delete-windows-on (current-buffer))
-             (message "%s" (anacode-perlcritic-message)))
-            (t
-             (display-buffer (current-buffer))))))))))
-
-(defun anacode-perlcritic-message ()
-  "Generate a syntax message for the message command.
-This returns the content of the current buffer with trailing
-whitespace removed.  This is convenient when the content is a
-one-liner because removing the trailing newline lets us display
-it in the minibuffer without enlarging it."
-
-  (let* ((string (buffer-string))
-         (index (string-match "\\s-*\\'" string))
-         (message (substring string 0 index)))
-    message))
+       (let* ((severity
+               (if raw-prefix
+                   (prefix-numeric-value raw-prefix)
+                 anacode-perlcritic-severity-default))
+              (arguments (anacode-perlcritic-arguments severity)))
+         (apply 'anacode-call-check
+                "*perlcritic*" "Running perlcritic..."
+                "perlcritic" file t nil arguments))))))
 
 (defun anacode-perlcritic-perl-mode-hook ()
   "The anacode\\=-perlcritic hook function for Perl mode."

@@ -3,6 +3,7 @@
 ;; Author: Ana Code <anacode@sanger.ac.uk>
 ;; Keywords: perl syntax
 
+(require 'anacode--core)
 (require 'anacode-perl--core)
 
 (defconst anacode-perl-syntax nil
@@ -23,29 +24,9 @@ Unsaved changes are saved before checking the syntax."
    (let ((file (buffer-file-name)))
      (when file
        (basic-save-buffer)
-       (with-current-buffer (get-buffer-create "*Perl Syntax*")
-         (erase-buffer)
-         (let ((status
-                (with-temp-message "Syntax checking..."
-                  (call-process "anacode_perl_syntax" nil t nil file))))
-           (cond
-            ((eql status 0)
-             (delete-windows-on (current-buffer))
-             (message "%s" (anacode-perl-syntax-message)))
-            (t
-             (display-buffer (current-buffer))))))))))
-
-(defun anacode-perl-syntax-message ()
-  "Generate a syntax message for the message command.
-This returns the content of the current buffer with trailing
-whitespace removed.  This is convenient when the content is a
-one-liner because removing the trailing newline lets us display
-it in the minibuffer without enlarging it."
-
-  (let* ((string (buffer-string))
-         (index (string-match "\\s-*\\'" string))
-         (message (substring string 0 index)))
-    message))
+       (anacode-call-check
+        "*Perl Syntax*" "Checking syntax..."
+        "anacode_perl_syntax" nil t nil file)))))
 
 (defun anacode-perl-syntax-perl-mode-hook ()
   "The anacode\\=-perl-syntax hook function for Perl mode."
