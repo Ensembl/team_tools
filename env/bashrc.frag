@@ -27,4 +27,7 @@ fi
 export http_proxy="http://wwwcache.sanger.ac.uk:3128/"
 export PRINTER="n318pc"
 
+# cbi4 (on Etch) needs this, because netkit-rsh is installed
+export CVS_RSH=ssh
+
 alias perldoc-5.8.8=/software/perl-5.8.8/bin/perldoc 
