@@ -22,6 +22,8 @@ The valid values are 1 to 5 inclusive.")
   '(
     "RegularExpressions::RequireExtendedFormatting"
     "ErrorHandling::RequireCarping"
+    "ValuesAndExpressions::ProhibitImplicitNewlines"
+    "InputOutput::RequireBriefOpen"
     )
   "The list of policies to exclude.")
 
