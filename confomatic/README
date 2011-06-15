@@ -1,0 +1,17 @@
+Quick utility to maintain a section of ~/.ssh/config with hostname
+aliases.
+
+I was expecting this to expand into something for other config
+files...
+
+
+Incantation for extracting deskpro name from an annotator's otterlace
+logs, requires a call to lock_region
+
+  grep -a hostname= ~mca/.otter/otterlace.* | perl -ne 'print "$1\n" if /hostname=([-a-z0-9.]+)/' | sort | uniq -c
+
+
+My crontab entry,
+
+  TT_S=/nfs/users/nfs_m/mca/gitwk--bg/team_tools
+  37 7 * * *   cd $TT_S/conf_template && bin/config-subst ssh-config.yaml || diff -u ~/.ssh/config~~ ~/.ssh/config

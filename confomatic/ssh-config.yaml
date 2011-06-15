@@ -1,0 +1,28 @@
+---
+file: ~/.ssh/config
+mark_start: "# * Automatic: aliases for people's machines"
+mark_end: "#<< automatic"
+map:
+  deskpro-al1: deskpro20132
+  deskpro-ca1: deskpro20121
+  deskpro-cas: deskpro21242
+  deskpro-dm4: deskpro20103
+  deskpro-dml: deskpro20111
+  deskpro-ds8: deskpro21727
+  deskpro-edgrif: deskpro16113
+  deskpro-erb: deskpro20633
+  deskpro-gdr: deskpro20130
+  deskpro-gm5: deskpro20127
+  deskpro-ib2: deskpro16772
+  deskpro-jh13: deskpro20622
+  deskpro-jkb: deskpro16133
+  deskpro-jm12: deskpro20105
+  deskpro-lw2: deskpro19676
+  deskpro-mca: deskpro17119
+  deskpro-mg13: deskpro18925
+  deskpro-mpk: deskpro19641
+  deskpro-mt4: deskpro20129
+  deskpro-th2: deskpro20629
+  deskpro-vb1: deskpro15567
+  mac-gb10: mac18480i
+  mac-jgrg: mib19055i

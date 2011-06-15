@@ -1,0 +1,152 @@
+#! /usr/bin/env perl
+
+use strict;
+use warnings;
+
+=head1 NAME
+
+config-subst - quick hack to update ~/.ssh/config
+
+=cut
+
+
+use YAML 'LoadFile';
+use Getopt::Long;
+use File::Temp 'tempfile';
+
+sub main {
+    my %opt = (append => 0, dryrun => 0, verbose => 0);
+    $opt{help} = "Bad args"
+      unless GetOptions(\%opt, 'help|h', 'append|A', 'dryrun|dry-run|n', 'verbose|v!');
+
+    my ($config_fn) = @ARGV;
+    if (@ARGV != 1 || ! -f $config_fn || $opt{help}) {
+	die "Syntax: $0 [--append | -A] [--dryrun | -n] <config.yaml>\n";
+    }
+
+    # Load config, quick sanity check
+    my %cfg = %{ get_sane_config($config_fn) };
+
+    config_me(\%cfg);
+
+    # Read and substitute
+    my %text = fetch_old($cfg{file}, $cfg{mark_start}, $cfg{mark_end}, $opt{append});
+    $text{subst} = map2config($cfg{map});
+    $text{new} = join '', @text{qw{ pre start subst end post }};
+
+    # Final action
+    if ($text{subst} eq $text{old}) {
+	warn "No changes\n" if $opt{verbose};
+	return 0;
+    } elsif ($opt{dryrun}) {
+	print YAML::Dump(\%text);
+	return 0;
+    } else {
+	my $backup = overwrite_fn($cfg{file}, $text{new});
+	warn "Changes made, backup in $backup\n" if $opt{verbose};
+	return 4;
+    }
+}
+
+sub get_sane_config {
+    my ($fn) = @_;
+
+    # De-serialise YAML
+    my $cfg = LoadFile($fn);
+
+    # Ensure some keys
+    my @lack = grep { ! $$cfg{$_} } qw{ file mark_start mark_end map };
+    die "Config $fn lacks @lack fields" if @lack;
+
+    # Enforce some newlines
+    foreach (@{$cfg}{qw{ mark_start mark_end }}) {
+	s/\n*\Z/\n/;
+    }
+
+    # Expand "~/"
+    my $home = $ENV{HOME};
+    $home =~ s{/*$}{/};
+    $$cfg{file} =~ s{^~/+}{$home};
+
+    return $cfg;
+}
+
+sub config_me {
+    my ($cfg) = @_;
+
+    # Make extra alias
+    my $me = __username();
+    my ($me_box) = grep /-${me}$/, keys %{ $$cfg{map} };
+    if (defined $me_box) {
+	# e.g. mca want an extra entry 'deskpro' which is the same as 'deskpro-mca'
+	my ($boxtype) = $me_box =~ /^(.*)-/;
+	$$cfg{map}{$boxtype} = $$cfg{map}{$me_box};
+    }
+}
+
+sub __username { return scalar getpwuid($<) }
+
+sub slurp {
+    my ($fn, $what) = @_;
+    open my $fh, '<', $fn
+      or die "Can't read $what$fn: $!";
+
+    return <$fh>;
+}
+
+sub fetch_old {
+    my ($fn, $mstart, $mend, $append) = @_;
+
+    my $old_txt = join '', slurp($fn, 'configurable ');
+    my ($old_pre, $old_subst, $old_post) =
+      $old_txt =~ m{\A  (.*\n)  (?:\Q$mstart\E)  (.*?\n)  (?:\Q$mend\E)  (.*)\Z}sx;
+
+    if (!defined $old_post) {
+	# no existing marks in file
+	if ($append) {
+	    ($old_pre, $old_subst, $old_post) = ($old_txt, "", "");
+	    $old_pre =~ s/\n*\Z/\n\n\n/;
+	} else {
+	    die "No existing marks in $fn, pass '-A' flag to append\n";
+	}
+    } else {
+	if ($append) {
+	    die "$fn already contains markers, do not pass '-A' flag\n";
+	} # else no worries
+    }
+
+    return (all => $old_txt,
+	    pre => $old_pre, old => $old_subst, post => $old_post,
+	    start => $mstart, end => $mend);
+}
+
+sub map2config {
+    my ($map) = @_;
+
+    my @out;
+    foreach my $key (sort keys %$map) {
+	push @out, qq{Host $key\nHostName $$map{$key}\n};
+    }
+
+    return join "\n", @out;
+}
+
+sub overwrite_fn {
+    my ($dest_fn, $text) = @_;
+
+    # Make tempfile; we probably rename it before it is cleaned
+    my ($fh, $fn) = tempfile("$dest_fn.XXXXXX", UNLINK => 1);
+
+    print {$fh} $text or die "Writing $fn: $!";
+    close $fh or die "Closing $fn: $!";
+
+    my $backup = $dest_fn.'~~';
+    unlink $backup; # ignore error; hardlink will fail if file remains
+    link $dest_fn, $backup or die "Hardlink $dest_fn to backup: $!";
+    rename $fn, $dest_fn or die "Replace $dest_fn: $!";
+
+    return $backup;
+}
+
+
+exit main();
