@@ -39,7 +39,9 @@ sub main {
 	warn "No changes\n" if $opt{verbose};
 	return 0;
     } elsif ($opt{dryrun}) {
-	print YAML::Dump(\%text);
+	print( $opt{verbose}
+	       ? YAML::Dump(\%text)
+	       : $text{new} );
 	return 0;
     } else {
 	my $backup = overwrite_fn($cfg{file}, $text{new});
