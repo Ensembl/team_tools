@@ -13,6 +13,16 @@ Commands:
     mnemonic: (c)ritic
     details: `anacode-perlcritic-run'")
 
+(defconst anacode-perlcritic-severity-list
+  '(
+    "brutal"
+    "cruel"
+    "harsh"
+    "stern"
+    "gentle"
+    )
+  "The list of perlcritic severity levels.")
+
 (defvar anacode-perlcritic-severity-default 3
   "The default severity for `anacode-perlcritic'.
 The initial value is 3, corresponding to --harsh.
@@ -47,13 +57,19 @@ If RAW-PREFIX is nil the severity is the value of
    (let ((file (buffer-file-name)))
      (when file
        (basic-save-buffer)
-       (let* ((severity
-               (if raw-prefix
-                   (prefix-numeric-value raw-prefix)
-                 anacode-perlcritic-severity-default))
-              (arguments (anacode-perlcritic-arguments severity)))
+       (let*
+           ((severity
+             (if raw-prefix
+                 (prefix-numeric-value raw-prefix)
+               anacode-perlcritic-severity-default))
+            (severity-as-string
+             (elt anacode-perlcritic-severity-list (- severity 1)))
+            (arguments (anacode-perlcritic-arguments severity))
+            (message
+             (format "Running perlcritic, severity = %d (%s)..."
+                     severity severity-as-string)))
          (apply 'anacode-call-check
-                "*perlcritic*" "Running perlcritic..."
+                "*perlcritic*" message
                 "perlcritic" file t nil arguments))))))
 
 (defun anacode-perlcritic-perl-mode-hook ()
