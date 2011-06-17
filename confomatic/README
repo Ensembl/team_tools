@@ -14,4 +14,4 @@ logs, requires a call to lock_region
 My crontab entry,
 
   TT_S=/nfs/users/nfs_m/mca/gitwk--bg/team_tools
-  37 7 * * *   cd $TT_S/conf_template && bin/config-subst ssh-config.yaml || diff -u ~/.ssh/config~~ ~/.ssh/config
+  37 7 * * *   cd $TT_S/confomatic && bin/config-subst ssh-config.yaml || diff -u ~/.ssh/config~~ ~/.ssh/config
