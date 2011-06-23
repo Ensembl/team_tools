@@ -1,0 +1,13 @@
+#! /bin/sh
+
+cvspush=$( grep -i cvs/ )
+if [ -z "$cvspush" ]; then
+    # no worries
+    exit 0
+else
+    echo Preventing push containing references in a cvs/ namespace,
+    echo
+    echo "$cvspush"
+    echo
+    exit 1
+fi >&2
