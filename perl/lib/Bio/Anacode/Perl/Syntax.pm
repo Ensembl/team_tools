@@ -14,14 +14,17 @@ use warnings;
 # Fake include some modules.
 $INC{$_}++ for
 
-    # only on the web server
+    # exist on the web server
     qw(
     SangerPaths.pm
     SangerWeb.pm
     Bio/Das/Lite.pm
     ),
 
-    'WrapDBI.pm', # only exists on cbi
+    # exist on cbi4
+    qw(
+    WrapDBI.pm
+    ),
 
     ;
 
