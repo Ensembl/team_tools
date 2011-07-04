@@ -22,13 +22,7 @@ $INC{$_}++ for
     ),
 
     'WrapDBI.pm', # only exists on cbi
-    'OtterDefs.pm', # reads a file that is not available locally
+
     ;
-
-# Declare some variables that are normally declared by the modules
-# that we just faked.
-
-package Bio::Otter::ServerSide;
-use vars qw( $OTTER_SPECIES ); # declared by the real OtterDefs.pm
 
 1;
