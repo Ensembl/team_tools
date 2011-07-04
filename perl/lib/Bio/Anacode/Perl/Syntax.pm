@@ -1,8 +1,7 @@
 
-# This module fakes a few other Perl modules that are not found or do
-# not work in the developers' environment but nevertheless work in
-# their proper context.  This fixes some false negatives when syntax
-# checking Perl.
+# This module fakes some other Perl modules that are not in the
+# developers' environment but exist when looked for in their proper
+# context.  This fixes some false failures when syntax checking Perl.
 
 ## no critic(Modules::ProhibitMultiplePackages)
 
