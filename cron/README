@@ -1,9 +1,10 @@
 This subproject currently holds some of the things mca@deskpro17119
-runs from cron.  
+runs from cron.
 
 See ~mca/cvswork-waypoint/misc/crontab.deskpro17119 for current
 details.
 
+  github-pushes		publish selected refs to Github.
 
   prove_quietly		use the 'prove' tool to run some periodic
   t/			sanity checks.

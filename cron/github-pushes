@@ -1,0 +1,91 @@
+#! /bin/sh
+
+# Requirements:
+#
+#     a Github.com account, which has been granted push access for the
+#     repositories.
+#
+#     running ssh-agent containing github pushing key
+#
+#     existing clones of the pushees, as listed in REPO variables in
+#     all_repos
+#
+#     those existing clones must have 'origin' as intcvs1, and these
+#     branches will be updated
+#
+# This script is young and probably fragile, sorry.
+
+
+setup_vars() {
+    # Assume there is just one ssh-agent running; don't pester the X11 user
+    export SSH_AGENT_PID=$( pidof ssh-agent )
+    export SSH_AUTH_SOCK=$( echo /tmp/keyring-*/ssh )
+    DISPLAY=
+
+    if [ -z "$SSH_AUTH_SOCK" ] || [ -z "$SSH_AGENT_PID" ]; then
+        echo Warning: cannot see your ssh-agent
+    fi >&2
+
+    if [ "$1" = "--wet-run" ]; then
+        ECHO="true"
+        PUSHOPTS="-q"
+    else
+        ECHO="echo"
+        PUSHOPTS="--dry-run -v"
+    fi
+}
+
+all_repos() {
+    REFS_WHITE='refs/tags/(humpub-release-.*|initial_empty_commit|cvs_MAIN_final)|origin/humpub-branch-.*'
+    REFS_BLACK='origin/master|refs/tags/cvs/.*'
+    FROM_REMOTE='origin'
+    REPO="$HOME/gitwk-anacode/ensembl-otter"
+    TO_REMOTE='git@github.com:Anacode/ensembl-otter.git'
+    do_push
+
+
+    REFS_WHITE='origin/anacode|origin/master'
+    REFS_BLACK='nil'
+    FROM_REMOTE='origin'
+    REPO="$HOME/_httpd/cgi-bin/cron2rss"
+    TO_REMOTE='git@github.com:Anacode/cron2rss.git'
+    do_push
+}
+
+
+list_refs() {
+    git tag -l | perl -ne 'print "refs/tags/$_"'
+    git branch -r | perl -wne 's{^[ *]*}{}; print if m{^$ENV{FROM_REMOTE}/}'
+}
+
+do_push() {
+#    set -x
+    set -e
+
+    cd $REPO
+    git fetch -q $FROM_REMOTE
+
+    export REFS_WHITE REFS_BLACK FROM_REMOTE
+    push_refs=$(
+        list_refs | perl -wne '
+ use strict;
+ next if /^#/;
+ next if / -> /;
+ my $good = m{^($ENV{REFS_WHITE})$};
+ my $bad  = m{^($ENV{REFS_BLACK})$};
+ die qq{Good and bad: "$_"}    if $good && $bad;
+ die qq{Not good or bad: "$_"} if !$good && !$bad;
+ s{^($ENV{FROM_REMOTE}/)(.*)}{$1$2:refs/heads/$2};
+ print if $good;'
+        )
+
+    if [ -z "$ECHO" ] || [ -z "$PUSHOPTS" ]; then
+        echo Missing some vars, not safe
+        exit 1
+    fi >&2
+    $ECHO '>git' push $PUSHOPTS $TO_REMOTE $push_refs
+    git push $PUSHOPTS $TO_REMOTE $push_refs
+}
+
+setup_vars "$@"
+all_repos
