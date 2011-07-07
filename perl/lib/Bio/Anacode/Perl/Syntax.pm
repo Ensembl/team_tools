@@ -23,6 +23,7 @@ $INC{$_}++ for
     # exist on cbi4
     qw(
     WrapDBI.pm
+    Bio/DB/Sam.pm
     ),
 
     ;
