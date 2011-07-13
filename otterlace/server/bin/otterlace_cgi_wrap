@@ -16,7 +16,7 @@
 
 
 # the path to the Anacode Perl modules
-anacode_perl="/nfs/anacode/otterlace/perl"
+anacode_prefix="/software/anacode"
 
 # the path to our Otterlace server Perl modules
 otterlace_server_perl="$( cd "$( dirname "$0")/.." && pwd )/perl"
@@ -25,8 +25,8 @@ otterlace_server_perl="$( cd "$( dirname "$0")/.." && pwd )/perl"
 # exec() the real CGI script
 exec /software/bin/perl \
     "-I${otterlace_server_perl}" \
-    "-I${anacode_perl}" \
-    "-I${anacode_perl}/lib/site_perl/5.8.8" \
+    "-I${anacode_prefix}/lib" \
+    "-I${anacode_prefix}/lib/site_perl" \
     -T "$@"
 
 # if we get here, the exec() failed
