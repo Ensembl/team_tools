@@ -17,13 +17,11 @@ $INC{$_}++ for
     qw(
     SangerPaths.pm
     SangerWeb.pm
-    Bio/Das/Lite.pm
     ),
 
     # exist on cbi4
     qw(
     WrapDBI.pm
-    Bio/DB/Sam.pm
     ),
 
     ;
