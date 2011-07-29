@@ -10,9 +10,11 @@ map:
   deskpro-dml: deskpro20111
   deskpro-ds8: deskpro21727
   deskpro-edgrif: deskpro16113
+  deskpro-ek1: deskpro20734
   deskpro-erb: deskpro20633
   deskpro-gdr: deskpro20130
   deskpro-gm5: deskpro20127
+  deskpro-gs6: deskpro17116
   deskpro-ib2: deskpro16772
   deskpro-jh13: deskpro20622
   deskpro-jkb: deskpro16133
@@ -24,6 +26,7 @@ map:
   deskpro-mpk: deskpro19641
   deskpro-mt4: deskpro20129
   deskpro-th2: deskpro20629
+  deskpro-test: deskpro17537
   deskpro-vb1: deskpro15567
   mac-gb10: mac18480i
   mac-jgrg: mib19055i
