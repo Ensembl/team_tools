@@ -11,9 +11,12 @@ $PATH\
 :$ANACODE_TEAM_TOOLS/otterlace/server/bin\
 "
 
-    export PERL5LIB="\
-$ANACODE_TEAM_TOOLS/perl/lib\
+    PERL5LIB="\
+$PERL5LIB\
+:$ANACODE_TEAM_TOOLS/perl/lib\
 "
+PERL5LIB="${PERL5LIB#:}" # in case $PERL5LIB was originally empty
+export PERL5LIB
 
 export no_proxy=localhost
 export http_proxy=http://webcache.sanger.ac.uk:3128
