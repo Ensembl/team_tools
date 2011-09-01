@@ -1,0 +1,25 @@
+#! /bin/sh
+
+# curl wrapper to
+#   - take Otterlace's cookie for WTSISignOn; assume it is current
+#   - zcat if necessary
+#   - avoid the proxy
+#   - be quiet
+
+unset http_proxy
+unset HTTP_PROXY
+
+zcat_maybe() {
+    perl -e '
+ undef $/;
+ $data = <>;                    # assume the file is not too huge
+ if ($data =~ m{\A\037\213}) {
+   open my $fh, "|-", "zcat"
+     or die "Pipe to zcat failed: $!";
+   print $fh $data;
+ } else {
+   print $data;
+ }'
+}
+
+curl -s -b ~/.otter/ns_cookie_jar "$@" | zcat_maybe
