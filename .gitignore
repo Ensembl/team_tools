@@ -1,3 +1,7 @@
 
 *~
 /.dbpass
+
+
+# Timestamp files for Test::Sometimes
+.test-sometimes.*
