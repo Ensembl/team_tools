@@ -13,10 +13,12 @@ filesystem stamps
 
 =head1 SYNOPSIS
 
+ use Test::More; # do not plan here
  use Test::Sometimes 'skip_sometimes';
-
+ 
  # want to run once every 8 hours, skip every other time
  skip_sometimes(8 * 3600);
+ plan tests => 5;
 
 =head1 DESCRIPTION
 
@@ -69,15 +71,14 @@ sub skip_sometimes {
     my ($run_every_seconds) = @_;
 
     my $fn = stamp_filename();
-    my $skip;
     if (-f $fn) {
         my $age_sec = 86400 * -M _;
         if ($age_sec < $run_every_seconds) {
             # Stamp exists and is newer than our run interval.
             my $age = time_in_units($age_sec);
             my $interval = time_in_units($run_every_seconds);
-            print "1..0 # Skipped: ran this $age ago, plan to run every $interval\n";
-            $skip = 1;
+            do_skip("Ran this $age ago, plan to run every $interval");
+            # not reached
         } else {
             # Update the stamp and proceed with the run.
             utime(undef, undef, $fn)
@@ -91,8 +92,7 @@ sub skip_sometimes {
         rename($new_fn, $fn) or die "Failed rename to $fn: $!";
     }
 
-    exit 0 if $skip;
-    return ();
+    return (); # may already have called exit
 }
 
 sub stamp_filename {
@@ -111,6 +111,19 @@ sub time_in_units {
         }
     }
     return "$sec seconds";
+}
+
+sub do_skip {
+    my ($msg) = @_;
+
+    if ($INC{"Test/More.pm"}) {
+        # use the provided mechanism, else it will decide we failed
+        Test::More::plan skip_all => $msg;
+        # should call exit for us
+    } else {
+        print "1..0 # Skipped: $msg\n";
+    }
+    exit(0);
 }
 
 1;
