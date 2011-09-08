@@ -9,6 +9,7 @@ then
 $PATH\
 :$ANACODE_TEAM_TOOLS/bin\
 :$ANACODE_TEAM_TOOLS/otterlace/server/bin\
+:$ANACODE_TEAM_TOOLS/otterlace/release/scripts\
 "
 
     PERL5LIB="\
