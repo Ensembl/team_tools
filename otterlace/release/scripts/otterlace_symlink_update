@@ -7,11 +7,6 @@
 . "$( dirname "$0" )/_otterlace.sh"
 
 
-# go to the right place first
-cd "$( dirname "$0" )/../.."
-ensembl_otter_root="$( pwd )"
-
-
 version_major="$( config version_major )"
 version_minor="$( config version_minor )"
 
