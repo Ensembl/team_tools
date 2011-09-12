@@ -31,10 +31,6 @@
 . "$( dirname "$0" )/_otterlace.sh"
 
 
-# ensure that we find the otterlace_zmap_dir command
-export PATH=${PATH}:/nfs/anacode/otterlace/bin
-
-
 ensembl_otter_root="$( pwd )"
 
 
@@ -277,14 +273,12 @@ otterlace_client_install() {
 
 otterlace_install() {
 
-    install="${ensembl_otter_root}/dist/scripts/$( basename "$0" )"
-
     otterlace_server_install &&
     for host in \
         lenny-dev32 \
         lenny-dev64 \
         ; do
-        ssh -A "$host" "$install" "--client-install=${host}"
+        ssh -A "$host" "$0" "--client-install=${host}"
     done
 
     date="$( date +'%Y/%m/%d-%H:%M:%S' )"
@@ -297,7 +291,7 @@ otterlace_install() {
 }
 
 # environment
-export PATH=/software/perl-5.12.2/bin:/bin:/usr/bin:/usr/local/bin
+export PATH=/software/perl-5.12.2/bin:/bin:/usr/bin:/usr/local/bin:$dist_scripts
 export LD_LIBRARY_PATH=
 umask 002 # NB: running over ssh can set a surprising umask
 
