@@ -35,8 +35,6 @@
 export PATH=${PATH}:/nfs/anacode/otterlace/bin
 
 
-# go to the right place first
-cd "$( dirname "$0" )/../.."
 ensembl_otter_root="$( pwd )"
 
 
