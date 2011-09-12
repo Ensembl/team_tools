@@ -1,0 +1,38 @@
+#!/usr/bin/env perl
+
+
+#  This returns the path to a ZMap build directory, as determined by
+#  a specification of on of these forms:
+#    'DEVELOPMENT':           the current development build
+#    'RELEASE: <version>':    the release build of <version>
+#    'PRODUCTION: <version>': the production build of <version>
+
+
+use strict;
+use warnings;
+
+use File::Basename;
+
+die sprintf "usage: %s <specification>", basename($0)
+    unless @ARGV == 1;
+
+my ( $specification ) = @ARGV;
+
+my $dir;
+if ( $specification eq "DEVELOPMENT" ) {
+    my $zmap_home_dir= (getpwnam('zmap'))[7];
+    $dir = sprintf "%s/BUILD.DEVELOPMENT", $zmap_home_dir;
+}
+elsif ( $specification =~ /RELEASE:[[:blank:]]*(.*)$/ ) {
+    my ( $version ) = ( $1 );
+    $dir = sprintf "/nfs/zmap/BUILDS/RELEASE_BUILDS/ZMap.%s.BUILD", $version;
+}
+elsif ( $specification =~ /PRODUCTION:[[:blank:]]*(.*)$/ ) {
+    my ( $version ) = ( $1 );
+    $dir = sprintf "/nfs/zmap/BUILDS/PRODUCTION_BUILDS/ZMap.%s.BUILD", $version;
+}
+else {
+    die sprintf "invalid specification '%s'", $specification;
+}
+
+printf "%s\n", $dir;
