@@ -31,7 +31,12 @@
 . "$( dirname "$0" )/_otterlace.sh"
 
 
-ensembl_otter_root="$( pwd )"
+if [ -n "$ensembl_otter_root" ]
+then
+    cd "$ensembl_otter_root"
+else
+    ensembl_otter_root="$( pwd )"
+fi
 
 
 version_major="$( config version_major )"
@@ -278,7 +283,9 @@ otterlace_install() {
         lenny-dev32 \
         lenny-dev64 \
         ; do
-        ssh -A "$host" "$0" "--client-install=${host}"
+        ssh -A "$host" \
+            env "ensembl_otter_root=${ensembl_otter_root}" \
+            "$0" "--client-install=${host}"
     done
 
     date="$( date +'%Y/%m/%d-%H:%M:%S' )"
