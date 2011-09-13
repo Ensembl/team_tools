@@ -39,6 +39,12 @@ else
 fi
 
 
+# environment
+export PATH=/software/perl-5.12.2/bin:/bin:/usr/bin:/usr/local/bin:$dist_scripts
+export LD_LIBRARY_PATH=
+umask 002 # NB: running over ssh can set a surprising umask
+
+
 version_major="$( config version_major )"
 version_minor="$( config version_minor )"
 client_ensembl_version="$( config client_ensembl_version )"
@@ -296,11 +302,6 @@ otterlace_install() {
     fi
     echo "${date}: ${version}: ${commit}" >> "$build_log"
 }
-
-# environment
-export PATH=/software/perl-5.12.2/bin:/bin:/usr/bin:/usr/local/bin:$dist_scripts
-export LD_LIBRARY_PATH=
-umask 002 # NB: running over ssh can set a surprising umask
 
 if [ -n "$1" ]
 then
