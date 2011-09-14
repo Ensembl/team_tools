@@ -176,6 +176,9 @@ git_is_synced() {
             ;;
     esac >&2
 
+    [ -z "$( git status -s | grep -v '^\?\?' )" ]
+    return $?
+
     rc=0
     try_fetch || rc=1
     committable || rc=1
