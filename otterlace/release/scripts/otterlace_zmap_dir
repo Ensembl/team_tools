@@ -2,7 +2,7 @@
 
 
 #  This returns the path to a ZMap build directory, as determined by
-#  a specification of on of these forms:
+#  a specification of one of these forms:
 #    'DEVELOPMENT':           the current development build
 #    'RELEASE: <version>':    the release build of <version>
 #    'PRODUCTION: <version>': the production build of <version>
