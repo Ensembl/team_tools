@@ -271,14 +271,22 @@ otterlace_client_install() {
         exit 1
     fi
 
-    otterlace_local="/software/anacode/bin/otterlace_rel${version}"
+    # support versions pre-58
+    otterlace_template=dist/templates/otterlace
 
     echo &&
     echo "removing old otterlace installation" &&
     with_new_directory "$otterlace_prefix" otterlace_client_install_client &&
-    cp -- dist/templates/otterlace "$otterlace_local" &&
-    otterlace_script_version_update "$otterlace_local" &&
-    chmod -v 775 "$otterlace_local" &&
+    if [ -f "$otterlace_template" ] ; then
+        # support versions pre-58
+        otterlace_local="/software/anacode/bin/otterlace_rel${version}"
+        cp -- "$otterlace_template" "$otterlace_local" &&
+        otterlace_script_version_update "$otterlace_local" &&
+        chmod -v 775 "$otterlace_local" &&
+        /bin/true
+    else
+        otterlace_script_version_update "${otterlace_prefix}/bin/otterlace"
+    fi &&
     /bin/true
 }
 

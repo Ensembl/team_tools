@@ -18,5 +18,11 @@ else
 fi
 
 track="$( config "track" )"
-ln -vnfs -- "otterlace_rel${version}" "/software/anacode/bin/otterlace_${track}"
+
+# support versions pre-58 
+otterlace_rel="otterlace_rel${version}"
+if [ -f "/software/anacode/bin/${otterlace_rel}" ] ; then
+    ln -vnfs -- "$otterlace_rel" "/software/anacode/bin/otterlace_${track}"
+fi
+
 ln -vnfs -- "otter_rel${version}" "/software/anacode/otter/otter_${track}"
