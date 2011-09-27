@@ -83,7 +83,8 @@ build_log=/nfs/anacode/otterlace/ensembl_otter_build_log.txt
 anacode_cvsroot=:ext:cvs.internal.sanger.ac.uk:/repos/cvs/anacode
 ensembl_cvsroot=:ext:cvs.sanger.ac.uk:/cvsroot/ensembl
 otterlace_server_root=/nfs/WWWdev/SANGER_docs
-otterlace_prefix="/software/anacode/otter/otter_rel${version}"
+otterlace_root="/software/anacode/otter"
+otterlace_prefix="${otterlace_root}/otter_rel${version}"
 # echo "otterlace_prefix = '${otterlace_prefix}'" ; exit # uncomment to test
 # / EXTERNAL PARAMETERS
 
@@ -287,6 +288,7 @@ otterlace_client_install() {
     else
         otterlace_script_version_update "${otterlace_prefix}/bin/otterlace"
     fi &&
+    ln -vnfs -- "otter_rel${version}" "${otterlace_root}/otter_${track}" &&
     /bin/true
 }
 
