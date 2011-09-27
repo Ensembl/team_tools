@@ -56,6 +56,7 @@ case "$track" in
     test|live) remove_existing_directories=false ;;
     *)         remove_existing_directories=true  ;;
 esac
+check_remove_existing_directories=true
 
 if [ -n "$version_minor" ]
 then
@@ -101,11 +102,13 @@ with_new_directory() {
     command="$2"
     shift 2
     if [ -e "$dir" ] ; then
-        if $remove_existing_directories ; then
-            rm -rf -- "$dir"
-        else
+        if $check_remove_existing_directories &&
+            ! $remove_existing_directories
+        then
             echo "error: directory '${dir}' already exists, refusing to remove it" >&2
             return 1
+        else
+            rm -rf -- "$dir"
         fi
     fi &&
     mkdir -v -p -- "$dir" &&
@@ -150,11 +153,12 @@ otterlace_server_install_cgi() {
 }
 
 otterlace_server_install() {
-    local module_dir cgi_bin_dir
+    local module_dir cgi_bin_dir check_remove_existing_directories
     echo ""
     echo "installing server"
     module_dir="${otterlace_server_root}/lib/otter/${version_major}"
     cgi_bin_dir="${otterlace_server_root}/cgi-bin/otter/${version_major}"
+    check_remove_existing_directories=false
     echo "installing server: perl modules" &&
     with_new_directory "$module_dir" otterlace_server_install_modules &&
     echo "installing server: CGI scripts" &&
