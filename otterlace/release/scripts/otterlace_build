@@ -134,6 +134,12 @@ git_cache_create() {
     /bin/true
 }
 
+otterlace_script_version_update() {
+    sed -i \
+        -e "/^version=/s/=.*/=${version}/" \
+        "$1"
+}
+
 otterlace_server_install_modules() {
     local install_dir source_dir
     install_dir="$1"
@@ -271,9 +277,7 @@ otterlace_client_install() {
     echo "removing old otterlace installation" &&
     with_new_directory "$otterlace_prefix" otterlace_client_install_client &&
     cp -- dist/templates/otterlace "$otterlace_local" &&
-    sed -i \
-        -e "/^version=/s/=.*/=${version}/" \
-        "$otterlace_local" &&
+    otterlace_script_version_update "$otterlace_local" &&
     chmod -v 775 "$otterlace_local" &&
     /bin/true
 }
