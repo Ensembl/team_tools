@@ -183,19 +183,13 @@ otterlace_client_install_perl_modules() {
             checkout $ensembl_cvs_flags \
             ensembl-variation/modules &&
 
-        # Needs for-loop a la make_dist (or function)
+        cvs_run -d "$anacode_cvsroot" \
+            checkout -r "$humpub_release" \
+            PerlModules/Hum &&
 
-        ( if [ -n "$version_minor" ]
-          then
-              cvs_run -d "$anacode_cvsroot" rtag -r "$humpub_branch" "$humpub_release" PerlModules/Hum
-          fi ) &&
-        cvs_run -d "$anacode_cvsroot" checkout -r "$humpub_release"                    PerlModules/Hum &&
-
-        ( if [ -n "$version_minor" ]
-          then
-              cvs_run -d "$ensembl_cvsroot" rtag -r "$humpub_branch" "$humpub_release" ensembl-analysis/modules
-          fi ) &&
-        cvs_run -d "$ensembl_cvsroot" checkout -r "$humpub_release"                    ensembl-analysis/modules &&
+        cvs_run -d "$ensembl_cvsroot" \
+            checkout -r "$humpub_release" \
+            ensembl-analysis/modules &&
 
         mkdir -p -- ensembl-otter &&
         cp -r \
