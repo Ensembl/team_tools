@@ -286,7 +286,12 @@ otterlace_client_install() {
         chmod -v 775 "$otterlace_local" &&
         /bin/true
     else
-        otterlace_script_version_update "${otterlace_prefix}/bin/otterlace"
+        otterlace_script_version_update "${otterlace_prefix}/bin/otterlace_env.sh" &&
+        sed -i \
+            -e '/^otterlace_installed=/s/=.*$/=true/' \
+            "${otterlace_prefix}/bin/otterlace" \
+            &&
+        /bin/true
     fi &&
     ln -vnfs -- "otter_rel${version}" "${otterlace_root}/otter_${track}" &&
     /bin/true
