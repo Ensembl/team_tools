@@ -4,4 +4,4 @@
 
 
 # Timestamp files for Test::Sometimes
-.test-sometimes.*
+.*.test-sometimes

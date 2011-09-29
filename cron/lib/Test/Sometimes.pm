@@ -87,7 +87,7 @@ sub skip_sometimes {
     } else {
         # Create the stamp
         my ($fh, $new_fn) = tempfile("$fn.XXXXXX");
-        print "made as $new_fn\n";
+#        warn "made as $new_fn\n";
         close $fh;
         rename($new_fn, $fn) or die "Failed rename to $fn: $!";
     }
@@ -97,20 +97,28 @@ sub skip_sometimes {
 
 sub stamp_filename {
     my $stampfile = $0;
-    $stampfile =~ s{^(.*?)([^/]+)$}{$1.test-sometimes.$2}
+    $stampfile =~ s{^(.*?)([^/]+)$}{$1.$2.test-sometimes}
       or die "Failed to construct stampfile from $stampfile";
     return $stampfile;
 }
 
 sub time_in_units {
     my ($sec) = @_;
-    foreach my $pair ([ week => 604800 ], [ day => 86400 ], [ hour => 3600 ], [ minute => 60 ]) {
+    my @out;
+    foreach my $pair ([ week => 604800 ], [ day => 86400 ],
+                      [ h => 3600 ], [ m => 60 ], [ s => 1 ]) {
         my ($unit_name, $unit_size) = @$pair;
-        if ($sec > 1.5 * $unit_size) {
-            return sprintf("%.1f %ss", $sec / $unit_size, $unit_name);
+        if ($sec > $unit_size) {
+            my $n = int($sec / $unit_size);
+            push @out,
+              (length($unit_name) == 1
+               ? sprintf("%d%s", $n, $unit_name)
+               : sprintf("%d %s%s", $n, $unit_name, $n == 1 ? '' : 's'));
+            $sec -= $n * $unit_size;
         }
     }
-    return "$sec seconds";
+    @out = "$sec sec" unless @out;
+    return join ' ', "@out";
 }
 
 sub do_skip {
