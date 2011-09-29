@@ -1,9 +1,9 @@
-#! /usr/bin/perl -T
+#! /software/bin/perl -T
 use strict;
 use warnings;
 
 use File::Spec;
-use Test::More;
+use Test::More 0.82; # need correct $TODO behaviour
 use Sys::Hostname 'hostname';
 
 =head1 NAME
@@ -53,5 +53,15 @@ sub denynonfastforwards_t {
     my @problem = <$fh>;
     close $fh;
 
-    is("", join '', @problem, "Configs should set denynonfastforwards");
+  TODO: {
+        local $TODO; # it might be TODO, but isn't yet
+        my $ffable_re = qr/--BROKEN\b/;
+        my @no_excuse = grep { $_ !~ $ffable_re } @problem;
+        $TODO = "All are $ffable_re" if @problem && !@no_excuse;
+
+        my $got = join '', @problem;
+        chomp $got;
+        is($got, '', # expect no output
+           '*.git/config: should set denyNonFastforwards');
+    }
 }
