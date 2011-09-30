@@ -87,7 +87,7 @@ sub skip_sometimes {
     } else {
         # Create the stamp
         my ($fh, $new_fn) = tempfile("$fn.XXXXXX");
-#        warn "made as $new_fn\n";
+        chmod (0777 &~ umask(), $new_fn); # prefer it to be public, just to fit with other files
         close $fh;
         rename($new_fn, $fn) or die "Failed rename to $fn: $!";
     }
