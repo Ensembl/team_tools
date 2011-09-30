@@ -1,0 +1,134 @@
+#! /software/bin/perl -T
+
+use strict;
+use warnings;
+
+use CGI 'escapeHTML';
+use File::Slurp qw( read_dir );
+use File::Find 'find';
+use List::Util 'min';
+
+=head1 NAME
+
+cgi-bin/taskbucket - publish work-in-progress files
+
+=head1 DESCRIPTION
+
+This lists files under your htdocs/ which relate to an RT ticket.  It
+is intended for "developer's local Apache" use.
+
+Directories are listed when they are public and the name matches
+C<qr{\.RT\d+}>.
+
+Symlinks to the directory (for Apache's directory lister) and to the
+RT ticket are generated.
+
+Symlinks to all public files below the directory (chasing symlinks)
+are also listed, with exclusions for Git/CVS/SVN.
+
+=cut
+
+sub main {
+    my $dir = $0;
+    $dir =~ s{/cgi-bin/taskbucket}{/htdocs};
+
+    my $Q = new CGI;
+
+    print <<"HDR" unless $Q->param('include');
+Content-type: text/html\n
+<html><head>
+ <title>Task bucket</title>
+ <style type="text/css">
+  .taskbucket {
+    border: thin black solid;
+    text-color: black;
+    background-color: white;
+    padding: 3px;
+    margin: 1em;
+  }
+  .taskbucket .title, .taskbucket .detail  { float: left; margin: 0.25ex; background-color: #d0ffd0 }
+  .taskbucket .detail { width: 70% }
+  .taskbucket .title  { width: 20%; font-size: 140% }
+  .taskbucket ul      { clear: both; border: 3px #ffd0ff solid; padding-top: 1em; padding-bottom: 1em; margin: 0 0 0 2em }
+ </style>
+</head>
+<body><h1>Task bucket</h1>
+<p>
+  Files from Matthew's home directory, for investigations &amp;
+  development on RT tickets, which don't warrant being piled into the
+  RT database.
+</p>
+
+HDR
+
+    my @dir = sort { -M "$dir/$a" <=> -M "$dir/$b" } read_dir($dir);
+
+    foreach my $leaf (@dir) {
+        my $fn = "$dir/$leaf";
+        next unless -d $fn && public($fn);
+        next unless my ($rt_id) = $leaf =~ /\.RT(\d{5,8})$/;
+
+        my $hleaf = escapeHTML($leaf);
+        my $hfn = escapeHTML($fn);
+        my ($age, @item) = files_in($fn, "../$hleaf");
+
+        print <<"ITEM";
+<div id="$rt_id" class="taskbucket">
+  <div class="title"> $hleaf </div>
+  <div class="detail">
+    Files under <a href="../$hleaf"> $hfn </a>, <br />
+    for <a href="https://rt.sanger.ac.uk/Ticket/Display.html?id=$rt_id"> RT ticket $rt_id </a>
+  </div>
+  <ul> @item </ul>
+</div>
+ITEM
+    }
+
+    print <<"FTR" unless $Q->param('include');
+</body></html>
+FTR
+}
+
+sub files_in {
+    my ($fn, $rel) = @_;
+
+    my @age = (-M $fn);
+    my @file;
+    find({ wanted => sub {
+               my $file = $_;
+               if ($file =~ m{/(\.git|\.svn|CVS)}) {
+                   $File::Find::prune = 1;
+                   return;
+               }
+               return unless -f $file && public($file);
+               my $oldpfx  = substr($file, 0, length($fn)+1, "");
+               return unless $oldpfx eq "$fn/";
+               push @file, $file;
+               push @age, -M $_;
+           },
+           no_chdir => 1,
+           follow_skip => 1,
+           follow => 1,
+         }, $fn);
+
+    my @out;
+    foreach my $leaf (@file) {
+        my $hleaf = escapeHTML($leaf);
+        push @out, qq{<li><a href="$rel/$hleaf"> $hleaf </a></li>};
+    }
+
+    my $newest = min(@age);
+    return ($newest, @out);
+}
+
+
+sub public {
+    my ($fn) = @_;
+    my @s = stat($fn);
+    my $u = ($s[2] & 0500) >> 6;
+    my $o = ($s[2] & 07);
+#   warn sprintf("%s: user=%o other=%o\n", $fn, $u, $o);
+    return $o == $u;
+}
+
+main();
