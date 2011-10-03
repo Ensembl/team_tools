@@ -50,6 +50,7 @@ Content-type: text/html\n
   .taskbucket .detail { width: 70% }
   .taskbucket .title  { width: 20%; font-size: 140% }
   .taskbucket ul      { clear: both; border: 3px #ffd0ff solid; padding-top: 1em; padding-bottom: 1em; margin: 0 0 0 2em }
+  li.hi               { border-left: 0.5ex red solid; padding-left: 0.5ex }
  </style>
 </head>
 <body><h1>Task bucket</h1>
@@ -62,6 +63,8 @@ Content-type: text/html\n
 HDR
 
     my @dir = sort { -M "$dir/$a" <=> -M "$dir/$b" } read_dir($dir);
+    my $hit_re = $Q->param('hi');
+    $hit_re = defined $hit_re ? qr{$hit_re} : undef;
 
     foreach my $leaf (@dir) {
         my $fn = "$dir/$leaf";
@@ -70,7 +73,7 @@ HDR
 
         my $hleaf = escapeHTML($leaf);
         my $hfn = escapeHTML($fn);
-        my ($age, @item) = files_in($fn, "../$hleaf");
+        my ($age, @item) = files_in($fn, "../$hleaf", $hit_re);
 
         print <<"ITEM";
 <div id="$rt_id" class="taskbucket">
@@ -90,7 +93,7 @@ FTR
 }
 
 sub files_in {
-    my ($fn, $rel) = @_;
+    my ($fn, $rel, $hit_re) = @_;
 
     my @age = (-M $fn);
     my @file;
@@ -114,7 +117,10 @@ sub files_in {
     my @out;
     foreach my $leaf (@file) {
         my $hleaf = escapeHTML($leaf);
-        push @out, qq{<li><a href="$rel/$hleaf"> $hleaf </a></li>};
+        my $hi = $hit_re && "$rel/$leaf" =~ $hit_re ? ' class="hi"' : '';
+        my $hileaf = $hleaf;
+        $hileaf =~ s{($hit_re)}{<b>$1</b>} if $hi; # could fail if escapeHTML obscures the match
+        push @out, qq{<li$hi><a href="$rel/$hleaf"> $hileaf </a></li>};
     }
 
     my $newest = min(@age);
