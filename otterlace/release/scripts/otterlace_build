@@ -306,8 +306,10 @@ otterlace_install() {
         lenny-dev64 \
         ; do
         ssh -A "$host" \
-            env "ensembl_otter_root=${ensembl_otter_root}" \
-            "$0" "--client-install=${host}"
+            env \
+            "ensembl_otter_root=${ensembl_otter_root}" \
+            "otterlace_client_host=${host}" \
+            "$0"
     done
 
     date="$( date +'%Y/%m/%d-%H:%M:%S' )"
@@ -319,15 +321,9 @@ otterlace_install() {
     echo "${date}: ${version}: ${commit}" >> "$build_log"
 }
 
-if [ -n "$1" ]
+if [ -n "$otterlace_client_host" ]
 then
-    case "$1" in
-        --client-install=*)
-        otterlace_client_host="$( echo "$1" | sed -n -e 's|^--client-install=||p' )"
-        otterlace_client_install
-        ;;
-        *) echo "$( basename "$0" ): usage error" >&2 ; exit 1 ; ;;
-    esac
+    otterlace_client_install
 else
     otterlace_install
 fi
