@@ -31,6 +31,13 @@
 . "$( dirname "$0" )/_otterlace.sh"
 
 
+if [ -z "$zmap_build" ]
+then
+    zmap_build="$1"
+    [ -n "$zmap_build" ] ||
+    bail "usage: $( basename "$0" ) <zmap_build>"
+fi
+
 if [ -n "$ensembl_otter_root" ]
 then
     cd "$ensembl_otter_root"
@@ -48,7 +55,6 @@ umask 002 # NB: running over ssh can set a surprising umask
 version_major="$( config version_major )"
 version_minor="$( config version_minor )"
 client_ensembl_version="$( config client_ensembl_version )"
-zmap_version="$( config zmap_version )"
 track="$( config track )"
 
 case "$track" in
@@ -73,10 +79,7 @@ then
     exit 1
 fi
 
-zmap_dir="$( otterlace_zmap_dir "$zmap_version" )"
-[ -n "$zmap_dir" ] ||
-bail "failed to determine the ZMap directory"
-zmap_prefix="${zmap_dir}/Linux_$( uname -m )"
+zmap_prefix="${zmap_build}/Linux_$( uname -m )"
 
 # EXTERNAL PARAMETERS
 build_log=/nfs/anacode/otterlace/ensembl_otter_build_log.txt
@@ -226,7 +229,7 @@ otterlace_client_install_zmap() {
     rm -rf -- "$build_dir" &&
     mkdir -p -- "$build_dir" &&
     ( cd "$build_dir" &&
-        cp -r -- "${zmap_dir}/ZMap/src/perl/X11-XRemote-0.01" . &&
+        cp -r -- "${zmap_build}/ZMap/src/perl/X11-XRemote-0.01" . &&
         cd X11-XRemote-0.01 &&
         perl Makefile.PL \
             PREFIX=${install_dir} \
@@ -308,6 +311,7 @@ otterlace_install() {
         ssh -A "$host" \
             env \
             "ensembl_otter_root=${ensembl_otter_root}" \
+            "zmap_build=${zmap_build}" \
             "otterlace_client_host=${host}" \
             "$0"
     done
