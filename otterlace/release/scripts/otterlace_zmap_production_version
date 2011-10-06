@@ -1,7 +1,0 @@
-#!/bin/sh
-
-#  This prints the version of the latest ZMap production build.
-
-ls -1Ar -- /nfs/zmap/BUILDS/PRODUCTION_BUILDS |
-sed -n -e 's|^ZMap\.\(.*\)\.BUILD$|\1|p' |
-head -n 1
