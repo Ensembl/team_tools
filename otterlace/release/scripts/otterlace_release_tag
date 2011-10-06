@@ -220,9 +220,11 @@ cvs_update_repo() {
     local repo module
     repo="$1"
     module="$2"
-    ${dryrun:+echo DRYRUN:} cvs -d "$repo" -q rtag    -rHEAD           "$release_tag"    "$module" &&
     if [ -n "$version_major_new" ]; then
-        ${dryrun:+echo DRYRUN:} cvs -d "$repo" -q rtag -b -r"$release_tag" "$release_branch" "$module"
+        ${dryrun:+echo DRYRUN:} cvs -d "$repo" -q rtag    -rHEAD              "$release_tag"    "$module" &&
+        ${dryrun:+echo DRYRUN:} cvs -d "$repo" -q rtag -b -r"$release_tag"    "$release_branch" "$module"
+    else
+        ${dryrun:+echo DRYRUN:} cvs -d "$repo" -q rtag    -r"$release_branch" "$release_tag"    "$module"
     fi &&
     true
 }
