@@ -40,7 +40,8 @@
 #     minor version bump
 
 
-ensembl_cvs_repo=cvs.sanger.ac.uk/cvsroot/ensembl
+# CVSROOTs need to be suitable for use both with "cvs -d" and scp
+ensembl_cvs_repo=cvs.sanger.ac.uk:/cvsroot/ensembl
 anacode_cvs_repo=cvs.internal.sanger.ac.uk:/repos/cvs/anacode
 ensembl_otter_git_repo=git:/repos/git/anacode/ensembl-otter
 
@@ -57,23 +58,23 @@ _create_dummy_repos_cvs() {
     # Make fake repos
     #  ens-ott is deliberately != ensembl-otter
     #  humscripts is a canary module, should not be changed
-    #  ensembl-analysis can be empty?
+    #  ensembl-analysis is a copy of the real module, transplanted into a fresh CVS repo
     (
         set -e
         cd "$dummies"
         # set -e, cd : local to the ( ... )
 
-        mkdir -p $dummies/{ensembl/ensembl-analysis,anacode,cvslock}
+        mkdir -p $dummies/{ensembl/ensembl-analysis,anacode}
         git clone -q --bare "$ensembl_otter_git_repo" ens-ott.git
 
-        cd "$dummies/anacode"
-        scp -rpq ${anacode_cvs_repo}/{CVSROOT,PerlModules,humscripts} .
-        # intcvs1 uses a separate LockDir, which we don't have
-        LKDIR="$dummies/cvslock" perl -i~ -pe 's{LockDir=.*}{LockDir=$ENV{LKDIR}}' CVSROOT/config
+        scp -rpq ${anacode_cvs_repo}/{CVSROOT,PerlModules,humscripts} "$dummies/anacode"
 
+        # avoid copying ensembl's CVSROOT, it has huge history
         cvs -d "$dummies/ensembl" init
-        # provide one file, to be tagged
-        cp -pR "$dummies/ensembl"/{CVSROOT/config\,v,ensembl-analysis}
+        scp -rpq ${ensembl_cvs_repo}/ensembl-analysis "$dummies/ensembl/"
+
+        # CVS repos use separate LockDir, which we don't have or want
+        perl -i~ -pe 's{(LockDir=.*)}{#### $1}' $dummies/anacode/CVSROOT/config
         )
 }
 
@@ -335,7 +336,8 @@ main() {
         true ) &&
 
     if [ -n "$with_dummy" ]; then
-        echo "# Would 'git pull -v' here, but we are using dummy repos"
+        echo "# Would 'git pull -v' to your working copy here, but"
+        echo "# we are using dummy repos so here is a dry-run fetch instead"
         echo "git fetch --dry-run $ensembl_otter_git_repo, as if from origin:"
         git fetch --dry-run $ensembl_otter_git_repo 'refs/heads/*:refs/remotes/origin/*' 'refs/tags/*:refs/tags/*'
         # The explicit tags fetch is redundant unless there are tags
