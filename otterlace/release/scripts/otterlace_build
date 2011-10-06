@@ -331,7 +331,7 @@ otterlace_install() {
         --commit   "$commit"   \
         --zmap     "$zmap"     \
         --seqtools "$seqtools" \
-        >> "$build_log"
+        | tee --append -- "$build_log"
 }
 
 if [ -n "$otterlace_client_host" ]
