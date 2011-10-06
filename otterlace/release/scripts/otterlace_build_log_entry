@@ -1,0 +1,20 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use YAML();
+use Getopt::Long;
+
+my $log_entry = { };
+
+die unless GetOptions(
+    $log_entry,
+    'date=s',
+    'version=s',
+    'commit=s',
+    'zmap=s',
+    'seqtools=s',
+    );
+
+print YAML::Dump($log_entry);

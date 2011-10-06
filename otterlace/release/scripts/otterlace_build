@@ -322,7 +322,16 @@ otterlace_install() {
     then
         commit="NONE"
     fi
-    echo "${date}: ${version}: ${commit}" >> "$build_log"
+    zmap="$(     "${zmap_prefix}/bin/zmap"   --version      )"
+    seqtools="$( "${zmap_prefix}/bin/blixem" --version 2>&1 )"
+
+    otterlace_build_log_entry \
+        --date     "$date"     \
+        --version  "$version"  \
+        --commit   "$commit"   \
+        --zmap     "$zmap"     \
+        --seqtools "$seqtools" \
+        >> "$build_log"
 }
 
 if [ -n "$otterlace_client_host" ]
