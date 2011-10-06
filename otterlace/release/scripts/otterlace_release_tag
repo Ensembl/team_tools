@@ -47,10 +47,6 @@ ensembl_otter_git_repo=git:/repos/git/anacode/ensembl-otter
 . "$( dirname "$0" )/_otterlace.sh"
 
 
-# ensure that we find the otterlace_zmap_*_version commands
-export PATH=${PATH}:/nfs/anacode/otterlace/bin
-
-
 # Dummy repositories for script testing.
 _create_dummy_repos_cvs() {
     dummies="$( mktemp -t -d DUMMY_REPOS.XXXXXX )" || bail "Failed to mktemp -d"
