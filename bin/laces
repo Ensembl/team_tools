@@ -1,0 +1,23 @@
+#! /bin/bash
+
+lsflags="-lcrtd"
+
+show_what="lace_*"
+if [ "$PWD" != "/var/tmp" ]; then
+    show_what="/var/tmp/$show_what"
+fi
+
+if [ $# = 0 ]; then
+    ls $lsflags $show_what | grep -v done
+elif [ "$1" = "-a" ]; then
+    ls $lsflags $show_what
+else
+    {
+        echo "Syntax: $0 [ -a ]"
+        echo
+        echo "    -a    Display also 'done' sessions"
+        echo
+        echo "Lists $show_what in ctime order, excluding by default the 'done' ones"
+        exit 1
+    } >&2
+fi
