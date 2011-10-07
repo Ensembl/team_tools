@@ -13,6 +13,8 @@
 # DOES NOT see any problems with branches or tags in the cvs/
 # namespace.  See redgrep.
 #
+# Only looks upstream to one remote, by default the origin.
+#
 #
 # Side effects: may bring new object or pack files into the object
 # store, but will not move any refs (even remote ones).
@@ -176,17 +178,34 @@ git_is_synced() {
             ;;
     esac >&2
 
-    [ -z "$( git status -s | grep -v '^\?\?' )" ]
-    return $?
-
     rc=0
     try_fetch || rc=1
     committable || rc=1
     remote_stat || rc=1
     pushables || rc=1
 
+    if [[ $rc > 0 ]]; then
+        echo "
+It looks like you are not completely in sync with '$origin'.
+
+  Diagnostics above highlighted in red should explain the problem.
+  If they do not, please show me what went wrong.
+
+  The W: line prefix indicates warnings of possible problems, which
+  do not cause non-zero exit.
+
+  Or run from a clone of a clone hacked to suit your purpose, because
+  this check only looks one level upstream.
+
+  Or   export GIT_IS_SYNCED=ignore   to skip this check completely"
+    fi >&2
+
     return $rc
 }
 
 
-git_is_synced "$1"
+if [ "$GIT_IS_SYNCED" = 'ignore' ]; then
+    echo "$0: GIT_IS_SYNCED=$GIT_IS_SYNCED" >&2
+else
+    git_is_synced "$1"
+fi
