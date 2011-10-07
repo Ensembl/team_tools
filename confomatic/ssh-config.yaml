@@ -4,6 +4,7 @@ mark_start: "# * Automatic: aliases for people's machines"
 mark_end: "#<< automatic"
 map:
   deskpro-aeb: deskpro20629
+  deskpro-af2: deskpro19622
   deskpro-al1: deskpro20132
   deskpro-ca1: deskpro20121
   deskpro-cas: deskpro21242
@@ -25,6 +26,7 @@ map:
   deskpro-mg13: deskpro18925
   deskpro-mh17: deskpro18979
   deskpro-mpk: deskpro19641
+  deskpro-mpk2: deskpro102500
   deskpro-mt4: deskpro20129
   deskpro-th2: deskpro20121
   deskpro-test: deskpro17537
