@@ -58,8 +58,8 @@ client_ensembl_version="$( config client_ensembl_version )"
 track="$( config track )"
 
 case "$track" in
-    test|live) remove_existing_directories=false ;;
-    *)         remove_existing_directories=true  ;;
+    live) remove_existing_directories=false ;;
+    *)    remove_existing_directories=true  ;;
 esac
 check_remove_existing_directories=true
 
