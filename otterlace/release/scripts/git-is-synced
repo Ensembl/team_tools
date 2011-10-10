@@ -29,6 +29,14 @@
 # behaviour which I repeatedly find counter-intuitive.
 
 
+# TODO: quiet flag(s) to prevent warnings, reduce the "grep -C" size, or have silence
+# TODO: selectivity flags: local-only sync check, downgrade "prunable branch" to warning
+# TODO: locality regexps: some branch names (e.g. "dev") don't warrant a warning for not being pushed, but perhaps the opposite "(your | somebody's) dev branches have leaked out"
+# TODO: switch to control ANSI colour usage
+#
+# This lot will probably not fly straight until there are tests...
+
+
 echodent() {
     echo "$1" | sed -e 's/^/   /'
 }
