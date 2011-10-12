@@ -12,7 +12,7 @@
 # See also http://search.cpan.org/dist/Module-PortablePath/
 
 
-. "$( dirname "$0" )/_otterlace.sh"
+. "$( dirname "$0" )/_otterlace.sh" || exit 1
 
 
 # check the usage

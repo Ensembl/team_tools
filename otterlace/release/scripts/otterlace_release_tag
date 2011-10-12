@@ -47,7 +47,7 @@ ensembl_cvs_repo=cvs.sanger.ac.uk:/cvsroot/ensembl
 anacode_cvs_repo=cvs.internal.sanger.ac.uk:/repos/cvs/anacode
 ensembl_otter_git_repo=git:/repos/git/anacode/ensembl-otter
 
-. "$( dirname "$0" )/_otterlace.sh"
+. "$( dirname "$0" )/_otterlace.sh" || exit 1
 
 
 # Dummy repositories for script testing.

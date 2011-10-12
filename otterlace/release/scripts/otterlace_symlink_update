@@ -4,7 +4,7 @@
 # This updates the symbolic links for the current development track.
 
 
-. "$( dirname "$0" )/_otterlace.sh"
+. "$( dirname "$0" )/_otterlace.sh" || exit 1
 
 
 version_major="$( config version_major )"

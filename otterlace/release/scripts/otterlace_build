@@ -28,7 +28,7 @@
 # / NB
 
 
-. "$( dirname "$0" )/_otterlace.sh"
+. "$( dirname "$0" )/_otterlace.sh" || exit 1
 
 
 # Process commandline args & optional variables passed in environment.
