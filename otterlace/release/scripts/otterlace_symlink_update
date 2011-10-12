@@ -24,5 +24,13 @@ otterlace_rel="otterlace_rel${version}"
 if [ -f "/software/anacode/bin/${otterlace_rel}" ] ; then
     ln -vnfs -- "$otterlace_rel" "/software/anacode/bin/otterlace_${track}"
 fi
+# else
+#    we have /software/anacode/bin/otterlace_${track} which should
+#    point to permanently, for each new-enough $track, to
+#    /software/anacode/otter/otter_${track}/bin/otterlace
+#
+# and then
+#    the following symlink does it all,
+#    and the build is self-contained
 
 ln -vnfs -- "otter_rel${version}" "/software/anacode/otter/otter_${track}"

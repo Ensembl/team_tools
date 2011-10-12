@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Bumps version numbers which are stored in files.
+# Bumps the version numbers which are stored as files in
+# ensembl-otter/dist/conf/ .
 #
 # Creates tags in Git and CVS modules, acting (more or less) directly
 # on the central repositories.  That means you can run the current
@@ -24,6 +25,7 @@
 #   on the master branch,
 #     keep minor version unset
 #     have a major version bump
+#     tag it as the next -dev, for the benefit of Bio::Otter::Git
 #
 # We are then ready for new release & dev builds
 

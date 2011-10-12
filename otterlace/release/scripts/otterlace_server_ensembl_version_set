@@ -1,7 +1,15 @@
 #!/bin/bash
 
 
-# This sets the ensembl version used by the Otterlace CGI scripts.
+# This sets the ensembl version used by the Otterlace CGI scripts,
+#   in ensembl-otter/dist/conf/server_ensembl_version
+#   in ensembl-otter/scripts/apache/*
+#
+# The SangerPaths module
+#   was last seen at /usr/lib/perl/5.8/SangerPaths.pm on the webserver, so not directly accessible
+#   seems to be driven from /nfs/WWWdev/conf/perlconfig.ini (may differ on live)
+#   can be checked with SangerPaths->dump
+# See also http://search.cpan.org/dist/Module-PortablePath/
 
 
 . "$( dirname "$0" )/_otterlace.sh"
