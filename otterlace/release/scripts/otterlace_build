@@ -129,6 +129,7 @@ with_new_directory() {
             echo "error: directory '${dir}' already exists, refusing to remove it" >&2
             return 1
         else
+            write_build_log_entry --level deleting_old --dir "$dir"
             rm -rf -- "$dir"
         fi
     fi &&
@@ -162,6 +163,8 @@ otterlace_script_version_update() {
         "$1"
 }
 
+
+
 otterlace_server_install_modules() {
     local install_dir source_dir
     install_dir="$1"
@@ -190,8 +193,13 @@ otterlace_server_install() {
     with_new_directory "$module_dir" otterlace_server_install_modules &&
     echo "installing server: CGI scripts" &&
     with_new_directory "$cgi_bin_dir" otterlace_server_install_cgi &&
+    write_build_log_entry --level server \
+        --lib "$module_dir" \
+        --cgi "$cgi_bin_dir" &&
     /bin/true
 }
+
+
 
 otterlace_client_install_perl_modules() {
     local install_dir
@@ -315,6 +323,13 @@ otterlace_client_install() {
             &&
         /bin/true
     fi &&
+    (
+        zmap="$(     "${otterlace_prefix}/bin/zmap"   --version 2>&1 )"
+        seqtools="$( "${otterlace_prefix}/bin/blixem" --version 2>&1 )"
+        write_build_log_entry --level client \
+            --zmap     "$zmap"     \
+            --seqtools "$seqtools"
+        ) &&
     /bin/true
 }
 
@@ -332,12 +347,8 @@ otterlace_install_all() {
             "otterlace_client_host=${host}" \
             "$0"
     done
-    zmap="$(     "${zmap_prefix}/bin/zmap"   --version      )"
-    seqtools="$( "${zmap_prefix}/bin/blixem" --version 2>&1 )"
 
-    write_build_log_entry --level all \
-        --zmap     "$zmap"     \
-        --seqtools "$seqtools"
+    write_build_log_entry --level all
 }
 
 write_build_log_entry() {
@@ -353,6 +364,7 @@ write_build_log_entry() {
     otterlace_build_log_entry \
         --date     "$date"     \
         --version  "$version"  \
+        --track    "$track"    \
         --commit   "$commit"   \
         --builder  "$thisprog" \
         --user     "$( whoami )"      \
