@@ -34,6 +34,11 @@
 if [ -z "$zmap_build" ]
 then
     zmap_build="$1"
+    shift
+    [ ! -d "$zmap_build" ] && {
+        echo "zmap_build=-h: not a directory" >&2
+        zmap_build=""
+    }
     [ -n "$zmap_build" ] ||
     bail "usage: $( basename "$0" ) <zmap_build>"
 fi
