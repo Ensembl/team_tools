@@ -338,6 +338,16 @@ otterlace_install() {
             "otterlace_client_host=${host}" \
             "$0"
     done
+    zmap="$(     "${zmap_prefix}/bin/zmap"   --version      )"
+    seqtools="$( "${zmap_prefix}/bin/blixem" --version 2>&1 )"
+
+    write_build_log_entry --level all \
+        --zmap     "$zmap"     \
+        --seqtools "$seqtools"
+}
+
+write_build_log_entry() {
+    local date commit
 
     date="$( date +'%Y/%m/%d-%H:%M:%S' )"
     commit="$( git rev-list --max-count=1 HEAD )"
@@ -345,15 +355,15 @@ otterlace_install() {
     then
         commit="NONE"
     fi
-    zmap="$(     "${zmap_prefix}/bin/zmap"   --version      )"
-    seqtools="$( "${zmap_prefix}/bin/blixem" --version 2>&1 )"
 
     otterlace_build_log_entry \
         --date     "$date"     \
         --version  "$version"  \
         --commit   "$commit"   \
-        --zmap     "$zmap"     \
-        --seqtools "$seqtools" \
+        --builder  "$thisprog" \
+        --user     "$( whoami )"      \
+        --host     "$( hostname -s )" \
+        "$@"                   \
         | tee --append -- "$build_log"
 }
 
