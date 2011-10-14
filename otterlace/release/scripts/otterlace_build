@@ -79,11 +79,13 @@ setup_globals() {
 
     if [ -n "$version_minor" ]
     then
+        # (already tagged by otterlace_release_tag)
         version="${version_major}.${version_minor}"
-        humpub_release="humpub-release-${version_major}-${version_minor}"
+        cvs_humpub_release="humpub-release-${version_major}-${version_minor}"
     else
+        # (ensembl-otter dev branch)
         version="$version_major"
-        humpub_release="HEAD"
+        cvs_humpub_release="HEAD"
     fi
 
     # sanity check
@@ -106,6 +108,7 @@ setup_globals() {
 
 
     ensembl_cvs_flags="-r branch-ensembl-${client_ensembl_version}"
+    # (ensembl libs on the server are provided by the web team)
 }
 
 get_opts_inputvars "$@"
@@ -213,11 +216,11 @@ otterlace_client_install_perl_modules() {
             ensembl-variation/modules &&
 
         cvs_run -d "$anacode_cvsroot" \
-            checkout -r "$humpub_release" \
+            checkout -r "$cvs_humpub_release" \
             PerlModules/Hum &&
 
         cvs_run -d "$ensembl_cvsroot" \
-            checkout -r "$humpub_release" \
+            checkout -r "$cvs_humpub_release" \
             ensembl-analysis/modules &&
 
         mkdir -p -- ensembl-otter &&
