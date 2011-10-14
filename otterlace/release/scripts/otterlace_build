@@ -111,11 +111,6 @@ setup_globals() {
     # (ensembl libs on the server are provided by the web team)
 }
 
-get_opts_inputvars "$@"
-setup_globals
-# echo "otterlace_prefix = '${otterlace_prefix}'" ; exit # uncomment to test
-
-
 
 cvs_run() {
     # run CVS quietly
@@ -324,7 +319,7 @@ otterlace_client_install() {
     /bin/true
 }
 
-otterlace_install() {
+otterlace_install_all() {
 
     otterlace_server_install &&
     for host in \
@@ -367,9 +362,16 @@ write_build_log_entry() {
         | tee --append -- "$build_log"
 }
 
+
+
+get_opts_inputvars "$@"
+setup_globals
+# echo "otterlace_prefix = '${otterlace_prefix}'" ; exit # uncomment to test
+
+
 if [ -n "$otterlace_client_host" ]
 then
     otterlace_client_install
 else
-    otterlace_install
+    otterlace_install_all
 fi
