@@ -31,73 +31,88 @@
 . "$( dirname "$0" )/_otterlace.sh"
 
 
-if [ -z "$zmap_build" ]
-then
-    zmap_build="$1"
-    shift
-    [ ! -d "$zmap_build" ] && {
-        echo "zmap_build=-h: not a directory" >&2
-        zmap_build=""
-    }
-    [ -n "$zmap_build" ] ||
-    bail "usage: $( basename "$0" ) <zmap_build>"
-fi
+# Process commandline args & optional variables passed in environment.
+# May chdir un-scoped.
+get_opts_inputvars() {
+    # zmap_build, ensembl_otter_root : not local
 
-if [ -n "$ensembl_otter_root" ]
-then
-    cd "$ensembl_otter_root"
-else
-    ensembl_otter_root="$( pwd )"
-fi
+    if [ -z "$zmap_build" ]
+    then
+        zmap_build="$1"
+        shift
+        [ ! -d "$zmap_build" ] && {
+            echo "zmap_build=-h: not a directory" >&2
+            zmap_build=""
+        }
+        [ -n "$zmap_build" ] ||
+        bail "usage: $( basename "$0" ) <zmap_build>"
+    fi
+
+    if [ -n "$ensembl_otter_root" ]
+    then
+        cd "$ensembl_otter_root"
+    else
+        ensembl_otter_root="$( pwd )"
+    fi
+}
 
 
-# environment
-export PATH=/software/perl-5.12.2/bin:/bin:/usr/bin:/usr/local/bin:$dist_scripts
-export LD_LIBRARY_PATH=
-umask 002 # NB: running over ssh can set a surprising umask
+# Set some environment variables, global variables for the script,
+# umask...
+setup_globals() {
+    # environment
+    export PATH=/software/perl-5.12.2/bin:/bin:/usr/bin:/usr/local/bin:$dist_scripts
+    export LD_LIBRARY_PATH=
+    umask 002 # NB: running over ssh can set a surprising umask
 
 
-version_major="$( config version_major )"
-version_minor="$( config version_minor )"
-client_ensembl_version="$( config client_ensembl_version )"
-track="$( config track )"
+    version_major="$( config version_major )"
+    version_minor="$( config version_minor )"
+    client_ensembl_version="$( config client_ensembl_version )"
+    track="$( config track )"
 
-case "$track" in
-    live) remove_existing_directories=false ;;
-    *)    remove_existing_directories=true  ;;
-esac
-check_remove_existing_directories=true
+    case "$track" in
+        live) remove_existing_directories=false ;;
+        *)    remove_existing_directories=true  ;;
+    esac
+    check_remove_existing_directories=true
 
-if [ -n "$version_minor" ]
-then
-    version="${version_major}.${version_minor}"
-    humpub_release="humpub-release-${version_major}-${version_minor}"
-else
-    version="$version_major"
-    humpub_release="HEAD"
-fi
+    if [ -n "$version_minor" ]
+    then
+        version="${version_major}.${version_minor}"
+        humpub_release="humpub-release-${version_major}-${version_minor}"
+    else
+        version="$version_major"
+        humpub_release="HEAD"
+    fi
 
-# sanity check
-if [ -z "$version" ]
-then
-    echo "error: the otterlace version is not set" >&2
-    exit 1
-fi
+    # sanity check
+    if [ -z "$version" ]
+    then
+        echo "error: the otterlace version is not set" >&2
+        exit 1
+    fi
 
-zmap_prefix="${zmap_build}/Linux_$( uname -m )"
+    zmap_prefix="${zmap_build}/Linux_$( uname -m )"
 
-# EXTERNAL PARAMETERS
-build_log=/nfs/anacode/otterlace/ensembl_otter_build_log.txt
-anacode_cvsroot=:ext:cvs.internal.sanger.ac.uk:/repos/cvs/anacode
-ensembl_cvsroot=:ext:cvs.sanger.ac.uk:/cvsroot/ensembl
-otterlace_server_root=/nfs/WWWdev/SANGER_docs
-otterlace_root="/software/anacode/otter"
-otterlace_prefix="${otterlace_root}/otter_rel${version}"
+    # EXTERNAL PARAMETERS
+    build_log=/nfs/anacode/otterlace/ensembl_otter_build_log.txt
+    anacode_cvsroot=:ext:cvs.internal.sanger.ac.uk:/repos/cvs/anacode
+    ensembl_cvsroot=:ext:cvs.sanger.ac.uk:/cvsroot/ensembl
+    otterlace_server_root=/nfs/WWWdev/SANGER_docs
+    otterlace_root="/software/anacode/otter"
+    otterlace_prefix="${otterlace_root}/otter_rel${version}"
+    # / EXTERNAL PARAMETERS
+
+
+    ensembl_cvs_flags="-r branch-ensembl-${client_ensembl_version}"
+}
+
+get_opts_inputvars "$@"
+setup_globals
 # echo "otterlace_prefix = '${otterlace_prefix}'" ; exit # uncomment to test
-# / EXTERNAL PARAMETERS
 
 
-ensembl_cvs_flags="-r branch-ensembl-${client_ensembl_version}"
 
 cvs_run() {
     # run CVS quietly
