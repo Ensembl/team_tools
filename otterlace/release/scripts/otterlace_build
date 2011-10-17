@@ -297,7 +297,6 @@ otterlace_client_install() {
             &&
         /bin/true
     fi &&
-    ln -vnfs -- "otter_rel${version}" "${otterlace_root}/otter_${track}" &&
     /bin/true
 }
 
