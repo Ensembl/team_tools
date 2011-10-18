@@ -1,0 +1,15 @@
+#! /bin/bash
+
+# This script is partly an interactive sanity testpoint (what am I
+# doing to install?) but also used for automated testing.
+
+. "$( dirname "$0" )/_otterlace.sh" || exit 1
+
+echo "thisprog=$thisprog"
+echo "full_version=$( full_version )"
+
+echo otter install paths:
+for key in holtdir otter_home bin wrapperfile; do
+    otter_ipath_get val $key
+    echo " $key=$val"
+done
