@@ -4,11 +4,11 @@
 # This updates the symbolic links for the current development track.
 
 
-. "$( dirname "$0" )/_otterlace.sh"
+. "$( dirname "$0" )/_otterlace.sh" || exit 1
 
 
-version_major="$( config version_major )"
-version_minor="$( config version_minor )"
+config_get version_major
+config_get version_minor
 
 if [ -n "$version_minor" ]
 then
@@ -17,7 +17,7 @@ else
     version="$version_major"
 fi
 
-track="$( config "track" )"
+config_get track
 
 # support versions pre-58 
 otterlace_rel="otterlace_rel${version}"

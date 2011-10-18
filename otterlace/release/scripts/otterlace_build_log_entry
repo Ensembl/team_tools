@@ -4,17 +4,14 @@ use strict;
 use warnings;
 
 use YAML();
-use Getopt::Long;
 
 my $log_entry = { };
 
-die unless GetOptions(
-    $log_entry,
-    'date=s',
-    'version=s',
-    'commit=s',
-    'zmap=s',
-    'seqtools=s',
-    );
+while (my ($k, $v) = splice @ARGV, 0, 2) {
+    $k =~ s/^--?//;
+    $log_entry->{$k} = $v;
+}
+die "Syntax: $0 [ <--key> <value> ]+\n"
+  if !%$log_entry || grep { !defined } values %$log_entry;
 
 print YAML::Dump($log_entry);
