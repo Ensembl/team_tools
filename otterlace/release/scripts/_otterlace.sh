@@ -6,8 +6,22 @@
 
 bail() {
     echo "$1" >&2
+    [ -n "$verbose" ] && _stacktrace >&2
     exit 1
 }
+
+
+_stacktrace_raw() {
+    local n
+    n=${1:-0}
+    while caller $n; do
+        n=$(( $n + 1 ))
+    done
+}
+_stacktrace() {
+    _stacktrace_raw ${1:-1} | sed -e 's|^\([0-9]\+\) \([^ ]\+\) \(.*\)$|   \3:\1: in \2()|'
+}
+
 
 config() {
     local key
