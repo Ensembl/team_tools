@@ -7,30 +7,26 @@
 . "$( dirname "$0" )/_otterlace.sh" || exit 1
 
 
-config_get version_major
-config_get version_minor
-
-if [ -n "$version_minor" ]
-then
-    version="${version_major}.${version_minor}"
-else
-    version="$version_major"
-fi
+# e.g. 58.01 (for a release) or 59 (during dev)
+version="$( full_version )"
 
 config_get track
 
+otter_ipath_get holtdir
+
 # support versions pre-58 
-otterlace_rel="otterlace_rel${version}"
-if [ -f "/software/anacode/bin/${otterlace_rel}" ] ; then
-    ln -vnfs -- "$otterlace_rel" "/software/anacode/bin/otterlace_${track}"
+if wrapperfile_outside_otterdir; then
+    otter_ipath_get wrapperfile
+    [ -f "$wrapperfile" ] || bail "wrapperfile=$wrapperfile: not a file"
+    ln -vnfs -- "$(basename "$wrapperfile" )" "$(dirname "$wrapperfile" )/otterlace_${track}"
 fi
 # else
-#    we have /software/anacode/bin/otterlace_${track} which should
-#    point to permanently, for each new-enough $track, to
-#    /software/anacode/otter/otter_${track}/bin/otterlace
+#    we have $swac/bin/otterlace_${track} which should
+#    point permanently, for each new-enough $track, to
+#    $holtdir/otter_${track}/bin/otterlace
 #
 # and then
 #    the following symlink does it all,
 #    and the build is self-contained
 
-ln -vnfs -- "otter_rel${version}" "/software/anacode/otter/otter_${track}"
+ln -vnfs -- "otter_rel${version}" "$holtdir/otter_${track}"

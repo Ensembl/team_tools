@@ -102,7 +102,7 @@ setup_globals() {
     anacode_cvsroot=:ext:cvs.internal.sanger.ac.uk:/repos/cvs/anacode
     ensembl_cvsroot=:ext:cvs.sanger.ac.uk:/cvsroot/ensembl
     otterlace_server_root=/nfs/WWWdev/SANGER_docs
-    otterlace_root="/software/anacode/otter"
+    otter_ipath_get otterlace_root holtdir
     otterlace_prefix="${otterlace_root}/otter_rel${version}"
     # / EXTERNAL PARAMETERS
 
@@ -302,15 +302,14 @@ otterlace_client_install() {
         exit 1
     fi
 
-    # support versions pre-58
-    otterlace_template=dist/templates/otterlace
-
     echo &&
     echo "removing old otterlace installation" &&
     with_new_directory "$otterlace_prefix" otterlace_client_install_client &&
-    if [ -f "$otterlace_template" ] ; then
-        # support versions pre-58
-        otterlace_local="/software/anacode/bin/otterlace_rel${version}"
+    if wrapperfile_outside_otterdir; then
+        # support versions pre-58 : wrapperfile in /sw/ac/bin
+        otterlace_template=dist/templates/otterlace
+        [ -f "$otterlace_template" ] || bail "For version=$version wrapperfile_outside_otterdir is true; expected $otterlace_template to exist"
+        otter_ipath_get otterlace_local wrapperfile
         cp -- "$otterlace_template" "$otterlace_local" &&
         otterlace_script_version_update "$otterlace_local" &&
         chmod -v 775 "$otterlace_local" &&
