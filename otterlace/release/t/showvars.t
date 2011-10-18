@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 8;
+use Test::More tests => 10;
 use File::Temp qw( tempdir );
 use File::Slurp qw( write_file );
 use Cwd 'abs_path';
@@ -81,6 +81,7 @@ sub main {
               \&showvars_tt, "$swac 56.02", <<"TXT");
 (TP)
 full_version=56.02
+wrapperfile_outside_otterdir: yes
 otter install paths:
  holtdir=$swac/otter
  otter_home=$swac/otter/otter_rel56.02
@@ -92,6 +93,7 @@ TXT
               \&showvars_tt, "$swac 58.07", <<"TXT");
 (TP)
 full_version=58.07
+wrapperfile_outside_otterdir: no
 otter install paths:
  holtdir=$swac/otter
  otter_home=$swac/otter/otter_rel58.07
@@ -106,6 +108,7 @@ TXT
               \&showvars_tt, "$swac 56 dev", <<"TXT");
 (TP)
 full_version=56
+wrapperfile_outside_otterdir: yes
 otter install paths:
  holtdir=$swac/otter
  otter_home=$swac/otter/otter_rel56
@@ -117,6 +120,7 @@ TXT
               \&showvars_tt, "$swac 58 dev", <<"TXT");
 (TP)
 full_version=58
+wrapperfile_outside_otterdir: no
 otter install paths:
  holtdir=$swac/otter
  otter_home=$swac/otter/otter_rel58
@@ -125,6 +129,19 @@ otter install paths:
 TXT
 
 
+    # Last test - exercise other full_version combinations
+    local $ENV{SHOWVARS_TEST} = 1;
+    with_temp({ version_major => 58, version_minor => 15 },
+              \&showvars_tt, 'full_version params', <<"TXT");
+(TP)
+full_version=58.15
+full_version(_ foopfx)=foopfx58_15
+full_version(- humpub-release-)=humpub-release-58-15
+abcd goldfish
+full_version(. v foo) => foo=v58.15
+tostdout58--dev<
+oig:holtdir '' => $swac/otter<
+TXT
 }
 
 main();
