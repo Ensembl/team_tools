@@ -1,9 +1,8 @@
 
-# Assumes we were called by script in this directory.  $0 is not this file!
-dist_scripts="$( dirname "$0" )"
+# Functions for inclusion in sibling scripts, with
+#
+#   . "$( dirname "$0" )/_otterlace.sh" || exit 1
 
-# Could differ from what we're operating upon, but probably doesn't
-thisprog="$0 ($( cd "$dist_scripts" && git log -1 --format=%h ))"
 
 bail() {
     echo "$1" >&2
@@ -54,3 +53,17 @@ git_listrefs_maybe() {
         printf "\nBranches\n" && git branch
     fi
 }
+
+_whatami() {
+    local ciid upstream
+    upstream="$( cd "$dist_scripts" && git config --get remote.origin.url || echo '??' )"
+    ciid="$(     cd "$dist_scripts" && git log -1 --format=%h             || echo '??' )"
+    echo "$0 ($ciid from $upstream)"
+}
+
+
+# Assumes we were called by script in this directory.  $0 is not this file!
+dist_scripts="$( dirname "$0" )"
+
+# "What we're operating upon" is now another repo
+thisprog="$( _whatami )"
