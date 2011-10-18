@@ -129,8 +129,9 @@ set_variables_bumpminor() {
     # these variables intentionally not local
     sanity_check_version_major_not_null
 
-    version_major="$( config "version_major" )"
-    version_minor="$( printf "%02d" "$(( 10#$( config version_minor ) + 1 ))" )" || bail "math error"
+    config_get version_major
+    config_get old_version_minor version_minor
+    version_minor="$( printf "%02d" "$(( 10#$old_version_minor + 1 ))" )" || bail "math error"
     # this works on master "56"."" -> "56"."01" for bumpmajor,
     # and on a release branch "56"."01" -> "56"."02"
 
@@ -194,7 +195,7 @@ do_bumpmajor() {
 do_bumpminor() {
     local dev_major
     if [ "$bumprel" = "last" ]; then
-        dev_major="$( config version_major )"
+        config_get dev_major version_major
         bumprel="$( printf "%02d" "$(( 10#$dev_major - 1 ))" )" || bail "math error"
         echo " : Current development is v$dev_major"
     fi

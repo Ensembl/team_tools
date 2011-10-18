@@ -66,10 +66,10 @@ setup_globals() {
     umask 002 # NB: running over ssh can set a surprising umask
 
 
-    version_major="$( config version_major )"
-    version_minor="$( config version_minor )"
-    client_ensembl_version="$( config client_ensembl_version )"
-    track="$( config track )"
+    config_get version_major
+    config_get version_minor
+    config_get client_ensembl_version
+    config_get track
 
     case "$track" in
         live) remove_existing_directories=false ;;

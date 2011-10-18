@@ -65,14 +65,15 @@ _config_sane() {
 
 
 config_show_maybe() {
-    local configs
+    local configs key val
 #    if [ -n "$verbose" ]; then
 # Useful always?
         printf "\ndist/conf/* for "
         git name-rev --always HEAD
         configs=$( cd dist/conf; echo * )
-        for conf in $configs; do
-            printf "  %-40s = '%s'\n" "$conf" "$(config "$conf" )"
+        for key in $configs; do
+            config_get val "$key"
+            printf "  %-40s = '%s'\n" "$key" "$val"
         done
         echo
 #    fi
