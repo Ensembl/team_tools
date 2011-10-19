@@ -263,7 +263,7 @@ otterlace_client_install_zmap() {
         /bin/true ) &&
     mkdir -p -- "$bin_dir" &&
     cp -- ${zmap_prefix}/bin/* "$bin_dir" &&
-    cp -r -- "${zmap_prefix}/share" "$install_dir"
+    cp -r -- "${zmap_prefix}/share" "$install_dir" &&
     /bin/true
 }
 
