@@ -105,6 +105,7 @@ setup_globals() {
     : ${build_log:=/nfs/anacode/otterlace/ensembl_otter_build_log.txt}
     anacode_cvsroot=:ext:cvs.internal.sanger.ac.uk:/repos/cvs/anacode
     ensembl_cvsroot=:ext:cvs.sanger.ac.uk:/cvsroot/ensembl
+    : ${client_build_hosts:= lenny-dev32 lenny-dev64 }
     # / EXTERNAL PARAMETERS
 
     otter_ipath_get otter_home
@@ -340,10 +341,7 @@ otterlace_install_all() {
     env_reexport env_cmd  otter_swac otter_nfswub ensembl_otter_root zmap_build
 
     otterlace_server_install &&
-    for host in \
-        lenny-dev32 \
-        lenny-dev64 \
-        ; do
+    for host in $client_build_hosts; do
         ssh_cmd="ssh -A $host  env $env_cmd otterlace_client_host=$host  $0"
         printf "\n== Client build: $ssh_cmd\n"
         $ssh_cmd || write_build_log_entry --level client --failed "returned $?"
