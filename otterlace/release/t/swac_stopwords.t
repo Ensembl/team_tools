@@ -32,7 +32,7 @@ search for C<< qr{\bswac\b} >>.
 plan tests => 4;
 
 my $verbose = $ENV{HARNESS_IS_VERBOSE} || !$ENV{HARNESS_ACTIVE};
-my $ptn = q{'/software/|/noarch/|/anacode/'}; # @whitelist
+my $ptn = q{'/(software|noarch|anacode|nfs|WWWdev)/'};
 
 sub main {
     my $where = $0;
@@ -47,9 +47,9 @@ sub main {
     cmp_ok(scalar @hits, '>', 0, "expect one hit for this file");
 
     my @whitelist =
-      (qr{^\S+/swac_stopwords\.t:.*ptn = .*whitelist$},
-       qr{^\S+/scripts/_otterlace.sh:\d+:\s*swac=\S+$},
-       qr{^\S+/scripts/otterlace_build:\d+:\s*build_log=/nfs/anac.de/otterlace/},
+      (qr{^\S+/scripts/_otterlace.sh:\d+:\s*swac=\S+$},
+       qr{^\S+/scripts/_otterlace.sh:\d+:\s*nfswub=\S+$},
+       qr{^\S+/scripts/otterlace_build:\d+:.*\bbuild_log:?=/n[f]s/anac[o]de/otterlace/},
        qr{^\S+/scripts/otterlace_release_tag:.*LockDir=.*dummies/anac.de/CVSROOT/config},
        qr{^\S+/scripts/otterlace_release_tag:.*:/repos/git/anac.de/ensembl-otter},
       );

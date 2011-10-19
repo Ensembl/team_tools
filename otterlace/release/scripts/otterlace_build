@@ -102,13 +102,12 @@ setup_globals() {
     zmap_prefix="${zmap_build}/Linux_$( uname -m )"
 
     # EXTERNAL PARAMETERS
-    build_log=/nfs/anacode/otterlace/ensembl_otter_build_log.txt
+    : ${build_log:=/nfs/anacode/otterlace/ensembl_otter_build_log.txt}
     anacode_cvsroot=:ext:cvs.internal.sanger.ac.uk:/repos/cvs/anacode
     ensembl_cvsroot=:ext:cvs.sanger.ac.uk:/cvsroot/ensembl
-    otterlace_server_root=/nfs/WWWdev/SANGER_docs
-    otter_ipath_get otterlace_root holtdir
-    otterlace_prefix="${otterlace_root}/otter_rel${version}"
     # / EXTERNAL PARAMETERS
+
+    otter_ipath_get otter_home
 
 
     ensembl_cvs_flags="-r branch-ensembl-${client_ensembl_version}"
@@ -187,19 +186,19 @@ otterlace_server_install_cgi() {
 }
 
 otterlace_server_install() {
-    local module_dir cgi_bin_dir check_remove_existing_directories
+    local web_lib web_cgi check_remove_existing_directories
     echo ""
     echo "installing server"
-    module_dir="${otterlace_server_root}/lib/otter/${version_major}"
-    cgi_bin_dir="${otterlace_server_root}/cgi-bin/otter/${version_major}"
+    otter_ipath_get web_lib
+    otter_ipath_get web_cgi
     check_remove_existing_directories=false
     echo "installing server: perl modules" &&
-    with_new_directory "$module_dir" otterlace_server_install_modules &&
+    with_new_directory "$web_lib" otterlace_server_install_modules &&
     echo "installing server: CGI scripts" &&
-    with_new_directory "$cgi_bin_dir" otterlace_server_install_cgi &&
+    with_new_directory "$web_cgi" otterlace_server_install_cgi &&
     write_build_log_entry --level server \
-        --lib "$module_dir" \
-        --cgi "$cgi_bin_dir" &&
+        --lib "$web_lib" \
+        --cgi "$web_cgi" &&
     /bin/true
 }
 
@@ -308,7 +307,7 @@ otterlace_client_install() {
 
     echo &&
     echo "removing old otterlace installation" &&
-    with_new_directory "$otterlace_prefix" otterlace_client_install_client &&
+    with_new_directory "$otter_home" otterlace_client_install_client &&
     if wrapperfile_outside_otterdir; then
         # support versions pre-58 : wrapperfile in /sw/ac/bin
         otterlace_template=dist/templates/otterlace
@@ -319,16 +318,16 @@ otterlace_client_install() {
         chmod -v 775 "$otterlace_local" &&
         /bin/true
     else
-        otterlace_script_version_update "${otterlace_prefix}/bin/otterlace_env.sh" &&
+        otterlace_script_version_update "${otter_home}/bin/otterlace_env.sh" &&
         sed -i \
             -e '/^otterlace_installed=/s/=.*$/=true/' \
-            "${otterlace_prefix}/bin/otterlace" \
+            "${otter_home}/bin/otterlace" \
             &&
         /bin/true
     fi &&
     (
-        zmap="$(     "${otterlace_prefix}/bin/zmap"   --version 2>&1 )"
-        seqtools="$( "${otterlace_prefix}/bin/blixem" --version 2>&1 )"
+        zmap="$(     "${otter_home}/bin/zmap"   --version 2>&1 )"
+        seqtools="$( "${otter_home}/bin/blixem" --version 2>&1 )"
         write_build_log_entry --level client \
             --zmap     "$zmap"     \
             --seqtools "$seqtools"
@@ -380,7 +379,7 @@ write_build_log_entry() {
 
 get_opts_inputvars "$@"
 setup_globals
-# echo "otterlace_prefix = '${otterlace_prefix}'" ; exit # uncomment to test
+# echo "otter_home = '${otter_home}'" ; exit # uncomment to test
 
 
 if [ -n "$otterlace_client_host" ]

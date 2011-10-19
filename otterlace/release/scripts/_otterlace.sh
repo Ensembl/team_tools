@@ -130,15 +130,24 @@ _whatami() {
 # recursion; avoid duplicated calculations; avoid array variables.
 otter_ipath_get() {
     local __varname __key __out \
-         swac full_version \
+        version_major full_version swac nfswub \
         _oig_holtdir _oig_otter_home _oig_bin _oig_wrapperfile
 
     __varname="$1"
     __key="${2:-$1}"
     [ -z "$__varname" ] && __varname='__out' # will send to STDOUT
 
-    swac=/software/anacode
+    config_get version_major
     full_version="$( full_version )" || bail "Cannot get version number"
+
+
+    # These are our previously-hardcoded installation paths.
+    # Accept override from the environment.
+    swac=${otter_swac:-/software/anacode}
+    nfswub=${otter_nfswub:-/nfs/WWWdev/SANGER_docs}
+
+    [ -d "$swac"   ] || echo "W: swac=$swac: not a directory" >&2
+    [ -d "$nfswub" ] || echo "W: nfswub=$nfswub: not a directory" >&2
 
 
     # Prepare all relevant paths once, up front...  else we're tempted
@@ -146,6 +155,8 @@ otter_ipath_get() {
     printf -v _oig_holtdir         %s/otter       "$swac"
     printf -v _oig_otter_home      %s/otter_rel%s "$_oig_holtdir" "$full_version"
     printf -v _oig_bin             %s/bin         "$_oig_otter_home"
+    printf -v _oig_web_lib        %s/lib/otter/%s "$nfswub" "$version_major"
+    printf -v _oig_web_cgi    %s/cgi-bin/otter/%s "$nfswub" "$version_major"
 
     if wrapperfile_outside_otterdir; then
         printf -v _oig_wrapperfile %s/bin/otterlace_rel%s "$swac" "$full_version"
@@ -173,6 +184,12 @@ otter_ipath_get() {
             # Complete filename for the 'otterlace' wrapper script.
             # This needs to become version, arch & OS dependent.
             printf -v "$__varname" %s "$_oig_wrapperfile" ;;
+        web_lib)
+            # The directory "use SangerPaths qq{otter$major};" would give us
+            printf -v "$__varname" %s "$_oig_web_lib" ;;
+        web_cgi)
+            # The /cgi-bin/otter/$major/ directory
+            printf -v "$__varname" %s "$_oig_web_cgi" ;;
         *) bail "otter_ipath_get: unknown key '$__key'"
     esac
     [ "$__varname" = '__out' ] && printf %s "$__out"

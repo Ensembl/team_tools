@@ -56,6 +56,7 @@ sub with_temp {
 
 sub showvars_tt {
     my ($name, $constpart) = @_;
+    # runs chdir()d to a temp dir
 
     my $got = qx{ $ottrel/scripts/otterlace_showvars };
 
@@ -72,8 +73,10 @@ sub showvars_tt {
 
 sub main {
     set_ottrel();
+    local @ENV{qw{ otter_nfswub otter_swac SHOWVARS_TEST }}; # prevent outside influence
 
     my $swac = "\x2Fsoftware\x2Fanacode"; # hide from grep
+    my $nfswub = "\x2Fnfs\x2FWWWdev";
 
     ### Release versions, pre- and post- 58
     #
@@ -87,6 +90,8 @@ otter install paths:
  otter_home=$swac/otter/otter_rel56.02
  bin=$swac/otter/otter_rel56.02/bin
  wrapperfile=$swac/bin/otterlace_rel56.02
+ web_lib=$nfswub/SANGER_docs/lib/otter/56
+ web_cgi=$nfswub/SANGER_docs/cgi-bin/otter/56
 TXT
 
     with_temp({ version_major => 58, version_minor => '07' },
@@ -99,6 +104,8 @@ otter install paths:
  otter_home=$swac/otter/otter_rel58.07
  bin=$swac/otter/otter_rel58.07/bin
  wrapperfile=$swac/otter/otter_rel58.07/bin/otterlace
+ web_lib=$nfswub/SANGER_docs/lib/otter/58
+ web_cgi=$nfswub/SANGER_docs/cgi-bin/otter/58
 TXT
 
 
@@ -114,23 +121,35 @@ otter install paths:
  otter_home=$swac/otter/otter_rel56
  bin=$swac/otter/otter_rel56/bin
  wrapperfile=$swac/bin/otterlace_rel56
+ web_lib=$nfswub/SANGER_docs/lib/otter/56
+ web_cgi=$nfswub/SANGER_docs/cgi-bin/otter/56
 TXT
 
+    my $more_tmp = tempdir('showvars.t.XXXXXX', CLEANUP => 1, TMPDIR => 1);
+    diag "  more_tmp is $more_tmp" if $verbose;
+    my $tmp_wub  = "$more_tmp/_httpd";
+    my $tmp_swac = "$more_tmp/sw-ac";
+    mkdir $tmp_wub and mkdir $tmp_swac or die "mkdir: $!";
+
+    $ENV{otter_nfswub} = $tmp_wub;
+    $ENV{otter_swac} = $tmp_swac;
     with_temp({ version_major => 58, version_minor => '' },
               \&showvars_tt, "$swac 58 dev", <<"TXT");
 (TP)
 full_version=58
 wrapperfile_outside_otterdir: no
 otter install paths:
- holtdir=$swac/otter
- otter_home=$swac/otter/otter_rel58
- bin=$swac/otter/otter_rel58/bin
- wrapperfile=$swac/otter/otter_rel58/bin/otterlace
+ holtdir=$tmp_swac/otter
+ otter_home=$tmp_swac/otter/otter_rel58
+ bin=$tmp_swac/otter/otter_rel58/bin
+ wrapperfile=$tmp_swac/otter/otter_rel58/bin/otterlace
+ web_lib=$tmp_wub/lib/otter/58
+ web_cgi=$tmp_wub/cgi-bin/otter/58
 TXT
 
 
     # Last test - exercise other full_version combinations
-    local $ENV{SHOWVARS_TEST} = 1;
+    $ENV{SHOWVARS_TEST} = 1;
     with_temp({ version_major => 58, version_minor => 15 },
               \&showvars_tt, 'full_version params', <<"TXT");
 (TP)
@@ -140,7 +159,7 @@ full_version(- humpub-release-)=humpub-release-58-15
 abcd goldfish
 full_version(. v foo) => foo=v58.15
 tostdout58--dev<
-oig:holtdir '' => $swac/otter<
+oig:holtdir '' => $tmp_swac/otter<
 TXT
 }
 
