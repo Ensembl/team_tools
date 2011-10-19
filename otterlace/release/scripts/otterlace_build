@@ -292,11 +292,11 @@ otterlace_client_install() {
     arch="$( uname -m )"
 
     echo ""
-    echo "client install"
-    echo "network host: ${otterlace_client_host}"
-    echo "host name: $( hostname )"
-    echo "arch: ${arch}"
-    echo "debian version: $( cat /etc/debian_version )"
+    echo "  client install"
+    echo "  intended host: ${otterlace_client_host}"
+    echo "  host name: $( hostname )"
+    echo "  arch: ${arch}"
+    echo "  distro version: $( lsb_release -sc || echo 'no release codename' )"
 
     # sanity test
     if ! [ -d "$zmap_prefix" ]
@@ -336,18 +336,17 @@ otterlace_client_install() {
 }
 
 otterlace_install_all() {
+    local env_cmd ssh_cmd
+    env_reexport env_cmd  otter_swac otter_nfswub ensembl_otter_root zmap_build
 
     otterlace_server_install &&
     for host in \
         lenny-dev32 \
         lenny-dev64 \
         ; do
-        ssh -A "$host" \
-            env \
-            "ensembl_otter_root=${ensembl_otter_root}" \
-            "zmap_build=${zmap_build}" \
-            "otterlace_client_host=${host}" \
-            "$0"
+        ssh_cmd="ssh -A $host  env $env_cmd otterlace_client_host=$host  $0"
+        printf "\n== Client build: $ssh_cmd\n"
+        $ssh_cmd || write_build_log_entry --level client --failed "returned $?"
     done
 
     write_build_log_entry --level all

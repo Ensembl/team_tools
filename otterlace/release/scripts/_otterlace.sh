@@ -249,6 +249,40 @@ wrapperfile_outside_otterdir() {
 #      unlikely enough to ignore.
 
 
+# Call with a variable to write and a list of environment variable
+# names, which must have been exported.  Absent variables are ignored.
+#
+# Generates a string suitable for passing as arguments to env.
+#
+# If it cannot guarantee repeatable quote safety (i.e. no space or
+# meta characters in any keys or values), it will bail.  Fixing this
+# is messy because we expect to pass the result through ssh and there
+# will be multiple quote-unpackings.
+env_reexport() {
+    local __varname __out
+    __varname="$1"
+    shift
+
+    # Bash docs suggest it's possible with [[ "foo" =~ ... ]] but this
+    # is quicker to write
+    __out="$( export "$@"; perl -e 'use strict; use warnings;
+my @out;
+foreach my $k (@ARGV) {
+ die qq{Cannot treat variable name >$k< safely\n} unless
+   $k =~ qr{^[a-z][a-z0-9_]*$}i;
+ next unless exists $ENV{$k};
+ die qq{Cannot treat variable $k contents >$ENV{$k}< safely\n} unless
+   $ENV{$k} =~ qr{\A[-a-zA-Z0-9_%^()=+:@/.,]*\z};
+ push @out, qq{$k=$ENV{$k}};
+}
+print join q{ }, @out;
+'  "$@" )" ||
+      bail "env_reexport: environment stringify fail"
+
+    printf -v $__varname %s "$__out"
+}
+
+
 
 # Assumes we were called by script in this directory.  $0 is not this file!
 dist_scripts="$( dirname "$0" )"
