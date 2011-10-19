@@ -202,20 +202,20 @@ otterlace_client_install_perl_modules() {
 
     ( cd "$install_dir" &&
 
-        cvs_run -d "$ensembl_cvsroot" \
-            checkout $ensembl_cvs_flags \
+        cvs_run -q -f -d "$ensembl_cvsroot" \
+            checkout -P $ensembl_cvs_flags \
             ensembl/modules &&
 
         cvs_run -d "$ensembl_cvsroot" \
-            checkout $ensembl_cvs_flags \
+            checkout -P $ensembl_cvs_flags \
             ensembl-variation/modules &&
 
         cvs_run -d "$anacode_cvsroot" \
-            checkout -r "$cvs_humpub_release" \
+            checkout -P -r "$cvs_humpub_release" \
             PerlModules/Hum &&
 
         cvs_run -d "$ensembl_cvsroot" \
-            checkout -r "$cvs_humpub_release" \
+            checkout -P -r "$cvs_humpub_release" \
             ensembl-analysis/modules &&
 
         mkdir -p -- ensembl-otter &&
