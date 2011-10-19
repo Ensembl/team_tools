@@ -1,0 +1,38 @@
+#! /bin/bash
+
+# This script is partly an interactive sanity testpoint (what am I
+# doing to install?) but also used for automated testing.
+
+. "$( dirname "$0" )/_otterlace.sh" || exit 1
+
+echo "thisprog=$thisprog"
+echo "full_version=$( full_version )"
+
+if [ -n "$SHOWVARS_TEST" ]; then
+    echo "full_version(_ foopfx)=$( full_version _ foopfx )"
+    echo "full_version(- humpub-release-)=$( full_version - humpub-release- )"
+
+    full_version c a '' d b; echo ' goldfish'
+
+    # Get the version in a variable; no other output
+    full_version . v foo
+    echo "full_version(. v foo) => foo=$foo"
+
+    full_version -- tostdout '' dev
+    echo '<'
+
+    echo -n "oig:holtdir '' => "
+    otter_ipath_get '' holtdir
+    echo '<'
+
+else
+
+    printf "wrapperfile_outside_otterdir: %s\n" $( wrapperfile_outside_otterdir && echo yes || echo no )
+
+    echo otter install paths:
+    for key in holtdir otter_home bin wrapperfile web_lib web_cgi; do
+        otter_ipath_get val $key
+        echo " $key=$val"
+    done
+
+fi

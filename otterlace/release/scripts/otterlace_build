@@ -60,8 +60,12 @@ get_opts_inputvars() {
 # Set some environment variables, global variables for the script,
 # umask...
 setup_globals() {
-    # environment
+
     export PATH=/software/perl-5.12.2/bin:/bin:/usr/bin:/usr/local/bin:$dist_scripts
+    # XXX: insertion of a Perl build in PATH should probably be under control of something like otter_ipath_get,
+    # and should from there be replicated to the otterlace wrapperfile (and any other built component running under Perl, probably via $PATH),
+    # t/swac_stopwords.t will be failing while this is here...
+
     export LD_LIBRARY_PATH=
     umask 002 # NB: running over ssh can set a surprising umask
 
@@ -98,13 +102,13 @@ setup_globals() {
     zmap_prefix="${zmap_build}/Linux_$( uname -m )"
 
     # EXTERNAL PARAMETERS
-    build_log=/nfs/anacode/otterlace/ensembl_otter_build_log.txt
+    : ${build_log:=/nfs/anacode/otterlace/ensembl_otter_build_log.txt}
     anacode_cvsroot=:ext:cvs.internal.sanger.ac.uk:/repos/cvs/anacode
     ensembl_cvsroot=:ext:cvs.sanger.ac.uk:/cvsroot/ensembl
-    otterlace_server_root=/nfs/WWWdev/SANGER_docs
-    otterlace_root="/software/anacode/otter"
-    otterlace_prefix="${otterlace_root}/otter_rel${version}"
+    : ${client_build_hosts:= lenny-dev32 lenny-dev64 }
     # / EXTERNAL PARAMETERS
+
+    otter_ipath_get otter_home
 
 
     ensembl_cvs_flags="-r branch-ensembl-${client_ensembl_version}"
@@ -183,19 +187,19 @@ otterlace_server_install_cgi() {
 }
 
 otterlace_server_install() {
-    local module_dir cgi_bin_dir check_remove_existing_directories
+    local web_lib web_cgi check_remove_existing_directories
     echo ""
     echo "installing server"
-    module_dir="${otterlace_server_root}/lib/otter/${version_major}"
-    cgi_bin_dir="${otterlace_server_root}/cgi-bin/otter/${version_major}"
+    otter_ipath_get web_lib
+    otter_ipath_get web_cgi
     check_remove_existing_directories=false
     echo "installing server: perl modules" &&
-    with_new_directory "$module_dir" otterlace_server_install_modules &&
+    with_new_directory "$web_lib" otterlace_server_install_modules &&
     echo "installing server: CGI scripts" &&
-    with_new_directory "$cgi_bin_dir" otterlace_server_install_cgi &&
+    with_new_directory "$web_cgi" otterlace_server_install_cgi &&
     write_build_log_entry --level server \
-        --lib "$module_dir" \
-        --cgi "$cgi_bin_dir" &&
+        --lib "$web_lib" \
+        --cgi "$web_cgi" &&
     /bin/true
 }
 
@@ -289,11 +293,11 @@ otterlace_client_install() {
     arch="$( uname -m )"
 
     echo ""
-    echo "client install"
-    echo "network host: ${otterlace_client_host}"
-    echo "host name: $( hostname )"
-    echo "arch: ${arch}"
-    echo "debian version: $( cat /etc/debian_version )"
+    echo "  client install"
+    echo "  intended host: ${otterlace_client_host}"
+    echo "  host name: $( hostname )"
+    echo "  arch: ${arch}"
+    echo "  distro version: $( lsb_release -sc || echo 'no release codename' )"
 
     # sanity test
     if ! [ -d "$zmap_prefix" ]
@@ -302,30 +306,29 @@ otterlace_client_install() {
         exit 1
     fi
 
-    # support versions pre-58
-    otterlace_template=dist/templates/otterlace
-
     echo &&
     echo "removing old otterlace installation" &&
-    with_new_directory "$otterlace_prefix" otterlace_client_install_client &&
-    if [ -f "$otterlace_template" ] ; then
-        # support versions pre-58
-        otterlace_local="/software/anacode/bin/otterlace_rel${version}"
+    with_new_directory "$otter_home" otterlace_client_install_client &&
+    if wrapperfile_outside_otterdir; then
+        # support versions pre-58 : wrapperfile in /sw/ac/bin
+        otterlace_template=dist/templates/otterlace
+        [ -f "$otterlace_template" ] || bail "For version=$version wrapperfile_outside_otterdir is true; expected $otterlace_template to exist"
+        otter_ipath_get otterlace_local wrapperfile
         cp -- "$otterlace_template" "$otterlace_local" &&
         otterlace_script_version_update "$otterlace_local" &&
         chmod -v 775 "$otterlace_local" &&
         /bin/true
     else
-        otterlace_script_version_update "${otterlace_prefix}/bin/otterlace_env.sh" &&
+        otterlace_script_version_update "${otter_home}/bin/otterlace_env.sh" &&
         sed -i \
             -e '/^otterlace_installed=/s/=.*$/=true/' \
-            "${otterlace_prefix}/bin/otterlace" \
+            "${otter_home}/bin/otterlace" \
             &&
         /bin/true
     fi &&
     (
-        zmap="$(     "${otterlace_prefix}/bin/zmap"   --version 2>&1 )"
-        seqtools="$( "${otterlace_prefix}/bin/blixem" --version 2>&1 )"
+        zmap="$(     "${otter_home}/bin/zmap"   --version 2>&1 )"
+        seqtools="$( "${otter_home}/bin/blixem" --version 2>&1 )"
         write_build_log_entry --level client \
             --zmap     "$zmap"     \
             --seqtools "$seqtools"
@@ -334,18 +337,14 @@ otterlace_client_install() {
 }
 
 otterlace_install_all() {
+    local env_cmd ssh_cmd
+    env_reexport env_cmd  otter_swac otter_nfswub ensembl_otter_root zmap_build
 
     otterlace_server_install &&
-    for host in \
-        lenny-dev32 \
-        lenny-dev64 \
-        ; do
-        ssh -A "$host" \
-            env \
-            "ensembl_otter_root=${ensembl_otter_root}" \
-            "zmap_build=${zmap_build}" \
-            "otterlace_client_host=${host}" \
-            "$0"
+    for host in $client_build_hosts; do
+        ssh_cmd="ssh -A $host  env $env_cmd otterlace_client_host=$host  $0"
+        printf "\n== Client build: $ssh_cmd\n"
+        $ssh_cmd || write_build_log_entry --level client --failed "returned $?"
     done
 
     write_build_log_entry --level all
@@ -377,7 +376,7 @@ write_build_log_entry() {
 
 get_opts_inputvars "$@"
 setup_globals
-# echo "otterlace_prefix = '${otterlace_prefix}'" ; exit # uncomment to test
+# echo "otter_home = '${otter_home}'" ; exit # uncomment to test
 
 
 if [ -n "$otterlace_client_host" ]
