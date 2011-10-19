@@ -41,7 +41,7 @@ get_opts_inputvars() {
         zmap_build="$1"
         shift
         [ ! -d "$zmap_build" ] && {
-            echo "zmap_build=-h: not a directory" >&2
+            echo "zmap_build=$zmap_build: not a directory" >&2
             zmap_build=""
         }
         [ -n "$zmap_build" ] ||
