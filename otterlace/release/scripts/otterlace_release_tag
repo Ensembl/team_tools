@@ -178,7 +178,7 @@ do_bumpmajor() {
 
     # version bump
     git checkout master &&
-    otterlace_version_major_set "$version_major_new" &&
+    $dist_scripts/otterlace_version_major_set "$version_major_new" &&
     git tag "$dev_tag" &&
     git_show_maybe &&
     config_show_maybe &&
