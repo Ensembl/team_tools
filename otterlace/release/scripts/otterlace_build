@@ -137,6 +137,7 @@ with_new_directory() {
     chmod -v g+s "$dir" &&
     "$command" "$dir" "$@"
     status=$?
+    echo " [i] with_new_directory: $command returned $status"
     chmod -R ug+rw "$dir" &&
     ( exit "$status" )
 }
@@ -328,6 +329,7 @@ otterlace_client_install() {
             --zmap     "$zmap"     \
             --seqtools "$seqtools"
         ) &&
+    echo " [i] finished otterlace_client_install for $otterlace_client_host" &&
     /bin/true
 }
 
