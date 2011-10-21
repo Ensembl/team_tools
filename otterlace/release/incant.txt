@@ -1,0 +1,14 @@
+That I record the commandline I used in here, suggests we need a
+config file for the build.  YAML input to select options?  It would
+save re-quoting the environment variables, too.
+
+
+mca builds to his home directory & local Apache,
+
+  mkdir ~/_swac
+  ln -snvf /software/anacode/lib ~/_swac/
+  TT_DEV=/nfs/users/nfs_m/mca/gitwk-anacode/team_tools
+
+  for DISTRO in lenny lucid; do
+    otter_nfswub=~/_httpd/OTTER build_log=~/_swac/build_log.yaml otter_suffix=arch:distro client_build_hosts="$DISTRO-dev32 $DISTRO-dev64" otter_swac=~/_swac  $TT_DEV/otterlace/release/scripts/otterlace_build ~zmap/BUILD.DEVELOPMENT.$DISTRO
+  done
