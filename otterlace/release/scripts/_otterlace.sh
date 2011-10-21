@@ -179,6 +179,9 @@ otter_ipath_get() {
 
     # Do the outputting.  Also document what these are.
     case "$__key" in
+        swac)
+            # The root of our software installs
+            printf -v "$__varname" %s "$swac" ;;
         holtdir)
             # The directory in which the "otter_home"s are collected.
             # For internal Linux releases, it has been hardwired here.

@@ -30,7 +30,7 @@ else
     printf "wrapperfile_outside_otterdir: %s\n" $( wrapperfile_outside_otterdir && echo yes || echo no )
 
     echo otter install paths:
-    for key in holtdir otter_home bin wrapperfile web_lib web_cgi; do
+    for key in swac holtdir otter_home bin wrapperfile web_lib web_cgi; do
         otter_ipath_get val $key
         echo " $key=$val"
     done

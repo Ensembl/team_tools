@@ -86,6 +86,7 @@ sub main {
 full_version=56.02
 wrapperfile_outside_otterdir: yes
 otter install paths:
+ swac=$swac
  holtdir=$swac/otter
  otter_home=$swac/otter/otter_rel56.02
  bin=$swac/otter/otter_rel56.02/bin
@@ -100,6 +101,7 @@ TXT
 full_version=58.07
 wrapperfile_outside_otterdir: no
 otter install paths:
+ swac=$swac
  holtdir=$swac/otter
  otter_home=$swac/otter/otter_rel58.07
  bin=$swac/otter/otter_rel58.07/bin
@@ -117,6 +119,7 @@ TXT
 full_version=56
 wrapperfile_outside_otterdir: yes
 otter install paths:
+ swac=$swac
  holtdir=$swac/otter
  otter_home=$swac/otter/otter_rel56
  bin=$swac/otter/otter_rel56/bin
@@ -139,6 +142,7 @@ TXT
 full_version=58
 wrapperfile_outside_otterdir: no
 otter install paths:
+ swac=$tmp_swac
  holtdir=$tmp_swac/otter
  otter_home=$tmp_swac/otter/otter_rel58
  bin=$tmp_swac/otter/otter_rel58/bin
