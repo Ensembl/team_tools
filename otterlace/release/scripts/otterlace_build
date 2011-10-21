@@ -335,7 +335,9 @@ otterlace_client_install() {
 
 otterlace_install_all() {
     local env_cmd ssh_cmd
-    env_reexport env_cmd  otter_swac otter_nfswub ensembl_otter_root zmap_build
+    env_reexport env_cmd \
+        otter_swac otter_nfswub otter_suffix \
+        ensembl_otter_root zmap_build build_log
 
     otterlace_server_install &&
     for host in $client_build_hosts; do

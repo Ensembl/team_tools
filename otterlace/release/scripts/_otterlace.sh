@@ -165,6 +165,17 @@ otter_ipath_get() {
         printf -v _oig_wrapperfile %s/otterlace   "$_oig_bin"
     fi
 
+    if [[ "$otter_suffix" =~ 'arch' ]]; then
+        # When building to non-/software NFS, it is useful to include
+        # the arch
+        printf -v _oig_otter_home %s-%s "$_oig_otter_home" "$(uname -m )"
+    fi
+    if [[ "$otter_suffix" =~ 'distro' ]]; then
+        # While between OS versions, it is useful to include the OS
+        # codename
+        printf -v _oig_otter_home %s-%s "$_oig_otter_home" "$( lsb_release -sc )"
+    fi
+
 
     # Do the outputting.  Also document what these are.
     case "$__key" in
