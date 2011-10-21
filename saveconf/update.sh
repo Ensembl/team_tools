@@ -29,7 +29,7 @@ SAVECONFDIR=$( dirname $0 )
 DATADIR=/nfs/WWWdev/SANGER_docs/data/otter
 
 export GIT_DIR=$SAVEREPO/.git
-
+unset http_proxy
 
 # dotlockfile is in Debian package liblockfile1
 LOCKFN=$GIT_DIR/saveconf.lock
