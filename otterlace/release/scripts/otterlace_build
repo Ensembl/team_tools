@@ -157,10 +157,24 @@ git_cache_create() {
     /bin/true
 }
 
-otterlace_script_version_update() {
-    sed -i \
-        -e "/^version=/s/=.*/=${version}/" \
-        "$1"
+otterlace_script_vars_update() {
+    (
+        otter_ipath_get SUBST_anasoft    swac
+        otter_ipath_get SUBST_OTTER_HOME otter_home
+        export SUBST_version="$version"
+        export SUBST_anasoft SUBST_OTTER_HOME
+        perl -i -pe '
+ if (!$finished && /^(\w+)=$/) {
+   $v=$ENV{"SUBST_$1"};
+   die qq{No value for "$1"} unless defined $v;
+   chomp;
+   $_ .= qq{"$v"\n};
+   $substs ++;
+ } elsif (/^\s*(#|$)/) {
+ } elsif ($substs) {
+   $finished = 1;
+ }' "$1"
+        )
 }
 
 
@@ -311,11 +325,11 @@ otterlace_client_install() {
         [ -f "$otterlace_template" ] || bail "For version=$version wrapperfile_outside_otterdir is true; expected $otterlace_template to exist"
         otter_ipath_get otterlace_local wrapperfile
         cp -- "$otterlace_template" "$otterlace_local" &&
-        otterlace_script_version_update "$otterlace_local" &&
+        otterlace_script_vars_update "$otterlace_local" &&
         chmod -v 775 "$otterlace_local" &&
         /bin/true
     else
-        otterlace_script_version_update "${otter_home}/bin/otterlace_env.sh" &&
+        otterlace_script_vars_update "${otter_home}/bin/otterlace_env.sh" &&
         sed -i \
             -e '/^otterlace_installed=/s/=.*$/=true/' \
             "${otter_home}/bin/otterlace" \
