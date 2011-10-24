@@ -382,7 +382,7 @@ write_build_log_entry() {
         --user     "$( whoami )"      \
         --host     "$( hostname -s )" \
         "$@"                   \
-        | tee --append -- "$build_log"
+        | tee --append -- "$build_log" | sed -e 's/^/\tL:/'
 }
 
 
