@@ -280,6 +280,7 @@ otterlace_client_install_zmap() {
             --with-symbols \
             &&
         make &&
+        make test &&
         make install &&
         rm -rf -- "$build_dir" &&
         /bin/true ) &&
