@@ -1,0 +1,11 @@
+
+# output files
+*.yaml
+logs.txt
+
+# tmp files
+*+
+
+# local copies of .otter directories
+*/etc/blixemrc
+otterlace.*-*.log
