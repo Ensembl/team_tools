@@ -12,3 +12,13 @@ mca builds to his home directory & local Apache,
   for DISTRO in lenny lucid; do
     otter_nfswub=~/_httpd/OTTER build_log=~/_swac/build_log.yaml otter_suffix=arch:distro client_build_hosts="$DISTRO-dev32 $DISTRO-dev64" otter_swac=~/_swac  $TT_DEV/otterlace/release/scripts/otterlace_build ~zmap/BUILD.DEVELOPMENT.$DISTRO
   done
+
+
+building 58.* releases,
+
+  cd ~/gitwk-anacode/eo.58
+  otter_suffix=distro client_build_hosts="lenny-dev32 lenny-dev64" $ANACODE_TEAM_TOOLS/otterlace/release/scripts/otterlace_build ~zmap/BUILD.DEVELOPMENT.lenny
+  otter_suffix=distro client_build_hosts="lucid-dev32 lucid-dev64" $ANACODE_TEAM_TOOLS/otterlace/release/scripts/otterlace_build ~mca/gitwk-anacode/BUILD.DEVELOPMENT.lucid
+
+    Lucid zmap build was copied (~450M) & hacked with renames to deal with
+      https://rt.sanger.ac.uk/Ticket/Display.html?id=234931#txn-4696799
