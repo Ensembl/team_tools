@@ -16,9 +16,40 @@ mca builds to his home directory & local Apache,
 
 building 58.* releases,
 
+  # Lucid zmap build copied (~450M) & hacked with renames to deal with
+  # https://rt.sanger.ac.uk/Ticket/Display.html?id=234931#txn-4696799
+  cp -a ~zmap/BUILD.DEVELOPMENT.lucid/ /tmp
+  pushd /tmp/BUILD..DEVELOPMENT.lucid/Linux_i686/lib
+  mv f=libPFetch.a            libPFetch.a
+  mv f=libPFetch.la           libPFetch.la
+  mv f=libZMap.a              libZMap.a
+  mv f=libZMapApp.a           libZMapApp.a
+  mv f=libZMapApp.la          libZMapApp.la
+  mv f=libzmapfoocanvas.a     libzmapfoocanvas.a
+  mv f=libzmapfoocanvas.la    libzmapfoocanvas.la
+  mv f=libZMap.la             libZMap.la
+  mv f=libZMapThr.a           libZMapThr.a
+  mv f=libZMapThr.la          libZMapThr.la
+  mv f=libZMapXML.a           libZMapXML.a
+  mv f=libZMapXML.la          libZMapXML.la
+  popd
+
+  # Build from clean working copy
   cd ~/gitwk-anacode/eo.58
+  git pull
+
+  $ANACODE_TEAM_TOOLS/otterlace/release/scripts/otterlace_release_tag --minor 58
   otter_suffix=distro client_build_hosts="lenny-dev32 lenny-dev64" $ANACODE_TEAM_TOOLS/otterlace/release/scripts/otterlace_build ~zmap/BUILD.DEVELOPMENT.lenny
   otter_suffix=distro client_build_hosts="lucid-dev32 lucid-dev64" $ANACODE_TEAM_TOOLS/otterlace/release/scripts/otterlace_build ~mca/gitwk-anacode/BUILD.DEVELOPMENT.lucid
 
-    Lucid zmap build was copied (~450M) & hacked with renames to deal with
-      https://rt.sanger.ac.uk/Ticket/Display.html?id=234931#txn-4696799
+  # Fix symlinks manually, there is only one now.  Using the script
+  # would mean having configuration to drive it, which may still be a
+  # good idea but we don't have it.
+  ssh lenny-dev32
+  minor=02
+  cd /software/noarch/linux-i386/anacode/otter
+  ls -l
+  ln -snvf otter_rel58.$minor-lenny otter_test; ln -snvf otter_rel58.$minor-lenny otter_test-lenny; ln -snvf otter_rel58.$minor-lucid otter_test-lucid
+  cd /software/noarch/linux-x86_64/anacode/otter
+  ls -l
+  ln -snvf otter_rel58.$minor-lenny otter_test; ln -snvf otter_rel58.$minor-lenny otter_test-lenny; ln -snvf otter_rel58.$minor-lucid otter_test-lucid
