@@ -39,3 +39,8 @@ building 58.* releases,
   cd /software/noarch/linux-x86_64/anacode/otter
   ls -l
   ln -snvf otter_rel58.$minor-lenny otter_test; ln -snvf otter_rel58.$minor-lenny otter_test-lenny; ln -snvf otter_rel58.$minor-lucid otter_test-lucid
+
+  # wait for symlinks - indirectly and not through noarch/ - RT#239876
+  touch /software/anacode/otter/otter_test/linked
+  check-software-replication -w /software/anacode/otter/otter_test/linked
+  rm /software/anacode/otter/otter_test/linked
