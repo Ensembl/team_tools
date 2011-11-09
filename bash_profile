@@ -23,3 +23,6 @@ export no_proxy=localhost
 export http_proxy=http://webcache.sanger.ac.uk:3128
 
 fi
+
+CVS_RSH=ssh
+export CVS_RSH
