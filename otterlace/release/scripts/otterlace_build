@@ -34,19 +34,31 @@
 # Process commandline args & optional variables passed in environment.
 # May chdir un-scoped.
 get_opts_inputvars() {
-    # zmap_build, ensembl_otter_root : not local
+    # zmap_trees, zmap_build, ensembl_otter_root : not local
 
-    if [ -z "$zmap_build" ]
-    then
-        zmap_build="$1"
-        shift
-        [ ! -d "$zmap_build" ] && {
-            echo "zmap_build=$zmap_build: not a directory" >&2
-            zmap_build=""
-        }
-        [ -n "$zmap_build" ] ||
-        bail "usage: $( basename "$0" ) <zmap_build>"
+
+    # Inner otterlace_client_install() runs needs one build directory,
+    # passed in by otterlace_install_all .  Already in $zmap_build.
+
+    # Outermost otterlace_install_all() run accepts multiple ZMap
+    # build trees.  Store in $zmap_trees.
+    #
+    # Assume it is a space-separated list of directories containing no
+    # funnychars.
+    zmap_trees="$*"
+    if [ -z "$otterlace_client_host" ]; then
+        # we are not doing otterlace_client_install
+
+        if [ -n "$zmap_build" ] && [ -z "$zmap_trees" ]; then
+            zmap_trees="$zmap_build"
+            unset zmap_build
+            echo ' [W] manual $zmap_build override is deprecated, commit here if you still need it' >&2
+            sleep 1
+        fi
+
+        [ -z "$zmap_trees" ] && bail "usage: $( basename "$0" ) <zmap_build> [ <zmap_build_for_another_distro> ]*"
     fi
+
 
     if [ -n "$ensembl_otter_root" ]
     then
@@ -99,13 +111,10 @@ setup_globals() {
         exit 1
     fi
 
-    zmap_prefix="${zmap_build}/Linux_$( uname -m )"
-
     # EXTERNAL PARAMETERS
     : ${build_log:=/nfs/anacode/otterlace/ensembl_otter_build_log.txt}
     anacode_cvsroot=:ext:cvs.internal.sanger.ac.uk:/repos/cvs/anacode
     ensembl_cvsroot=:ext:cvs.sanger.ac.uk:/cvsroot/ensembl
-    : ${client_build_hosts:= lenny-dev32 lenny-dev64 }
     # / EXTERNAL PARAMETERS
 
     otter_ipath_get otter_home
@@ -301,6 +310,7 @@ otterlace_client_install_client() {
 
 otterlace_client_install() {
     local arch
+    # not local: zmap_prefix
     arch="$( uname -m )"
 
     echo ""
@@ -310,12 +320,9 @@ otterlace_client_install() {
     echo "  arch: ${arch}"
     echo "  distro version: $( lsb_release -sc || echo 'no release codename' )"
 
-    # sanity test
-    if ! [ -d "$zmap_prefix" ]
-    then
-        echo "error: client install for ${arch} aborted: the ZMap directory '${zmap_prefix} is missing or invalid" >&2
-        exit 1
-    fi
+    # zmap_prefix is only meaningful during a client install
+    zmap_prefix="${zmap_build}/Linux_$arch"
+    [ -d "$zmap_prefix" ] || bail "error: client install for ${arch} aborted: the ZMap directory ${zmap_prefix} is missing or invalid"
 
     echo &&
     echo "removing old otterlace installation" &&
@@ -340,7 +347,14 @@ otterlace_client_install() {
     (
         zmap="$(     "${otter_home}/bin/zmap"   --version 2>&1 )"
         seqtools="$( "${otter_home}/bin/blixem" --version 2>&1 )"
+        zmap_prefix_real="$( readlink -e "$zmap_prefix" || echo ?? )"
+        if [ "$zmap_prefix" = "$zmap_prefix_real" ]; then
+            is_ln=""
+        else
+            is_ln=" -> $zmap_prefix_real"
+        fi
         write_build_log_entry --level client \
+            --zmap_prefix "$zmap_prefix$is_ln" \
             --zmap     "$zmap"     \
             --seqtools "$seqtools"
         ) &&
@@ -350,12 +364,26 @@ otterlace_client_install() {
 
 otterlace_install_all() {
     local env_cmd ssh_cmd
-    env_reexport env_cmd \
-        otter_swac otter_nfswub otter_suffix \
-        ensembl_otter_root zmap_build build_log
+
+    if [ -n "$client_build_hosts" ]; then
+        echo ' [W] $client_build_hosts override is deprecated, commit here if you still need it' >&2
+        sleep 1
+        # else we would have a local variable
+    else
+        # choose build hosts to match our zmap build(s)
+        client_build_hosts="$( _otterlace_build_config.pl $zmap_trees )" \
+            || bail "No build hosts - no build"
+    fi
 
     otterlace_server_install &&
     for host in $client_build_hosts; do
+        export zmap_build="$( _otterlace_build_config.pl -host $host $zmap_trees )" \
+            || bail "No zmap_build for $host ..?"
+        env_reexport env_cmd \
+            otter_swac otter_nfswub otter_suffix \
+            ensembl_otter_root zmap_build build_log
+        unset zmap_build
+
         ssh_cmd="ssh -A $host  env $env_cmd otterlace_client_host=$host  $0"
         printf "\n== Client build: $ssh_cmd\n"
         $ssh_cmd || write_build_log_entry --level client --failed "returned $?"
