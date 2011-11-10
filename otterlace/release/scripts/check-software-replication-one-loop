@@ -1,0 +1,25 @@
+#! /bin/sh
+
+# Make a timestamp in /software , wait for it to sync, then delete it.
+#
+# Rationale: it's more efficient to sometimes wait an extra turn
+# around the syncing loop, than to wait for the wrong path (and then
+# make a premature release announcement, or wait in vain for sync)
+#
+# This script runs from anywhere.
+# It is anacode-specific.
+# The exit is the cue; it provides no exit code.
+# The name tab-completes right after its workhorse.
+# Simultaneous runs are safe.
+
+sync_stamp() {
+    STAMP_PATH=/software/anacode/otter/sync_stamp.$USER.$$
+    VERBOSE_SET="set -x;"
+    ssh -t lucid-dev32 "$VERBOSE_SET touch $STAMP_PATH; /software/bin/check-software-replication -w $STAMP_PATH; rm -v $STAMP_PATH"
+}
+
+logstamp() {
+    /software/bin/perl -MDate::Format=time2str -pe 'print time2str("%Y-%m-%d %T  ", time)'
+}
+
+sync_stamp 2>&1 | logstamp
