@@ -5,18 +5,20 @@ save re-quoting the environment variables, too.
         (still true, but much improved now)
 
 
+assume
+  PATH=$PATH:$ANACODE_TEAM_TOOLS/otterlace/release/scripts
+
 
 build to home directory & local Apache,
 
   mkdir ~/_swac
   ln -snvf /software/anacode/lib ~/_swac/
-  TT_DEV=~/gitwk-anacode/team_tools
 
-  otter_nfswub=~/_httpd/OTTER otter_swac=~/_swac build_log=~/_swac/build_log.yaml otter_suffix=arch:distro  $TT_DEV/otterlace/release/scripts/otterlace_build ~zmap/BUILD.DEVELOPMENT.{lenny,lucid}
+  otter_nfswub=~/_httpd/OTTER otter_swac=~/_swac build_log=~/_swac/build_log.yaml otter_suffix=arch:distro  otterlace_build ~zmap/BUILD.DEVELOPMENT.{lenny,lucid}
 
 
 otterlace_dev build
-  $ANACODE_TEAM_TOOLS/otterlace/release/scripts/otterlace_build ~zmap/BUILD.DEVELOPMENT.{lenny,lucid}
+  otterlace_build ~zmap/BUILD.DEVELOPMENT.{lenny,lucid}
 
 
 building 58.* releases,
@@ -27,10 +29,10 @@ building 58.* releases,
   git pull
 
   # tag it
-  $ANACODE_TEAM_TOOLS/otterlace/release/scripts/otterlace_release_tag --minor 58
+  otterlace_release_tag --minor 58
 
   # build
-  $ANACODE_TEAM_TOOLS/otterlace/release/scripts/otterlace_build ~zmap/BUILD.DEVELOPMENT.{lenny,lucid}
+  otterlace_build ~zmap/BUILD.DEVELOPMENT.{lenny,lucid}
 
   # check server status
   diffdevlive /nfs/WWWdev/SANGER_docs/{lib,data,cgi-bin}/otter/58 | ~mca/bin/ansi_bleach | grep -vE '^ *- *X *X *SANGER'
