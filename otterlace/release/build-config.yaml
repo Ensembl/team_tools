@@ -1,0 +1,10 @@
+# Map the zmap build host to an otterlace build host; undef to ignore
+# that build
+---
+zhost2ohost:
+  cbi4a: lenny-dev64
+  cbi4h: lenny-dev64
+  deskpro20407: lucid-dev32
+  lucid-dev64: lucid-dev64
+  mac18480i: ~
+  tviewsrv: lenny-dev32

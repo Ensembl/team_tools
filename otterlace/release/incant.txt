@@ -2,16 +2,23 @@ That I record the commandline I used in here, suggests we need a
 config file for the build.  YAML input to select options?  It would
 save re-quoting the environment variables, too.
 
+        (still true, but much improved now)
 
-mca builds to his home directory & local Apache,
+
+assume
+  PATH=$PATH:$ANACODE_TEAM_TOOLS/otterlace/release/scripts
+
+
+build to home directory & local Apache,
 
   mkdir ~/_swac
   ln -snvf /software/anacode/lib ~/_swac/
-  TT_DEV=/nfs/users/nfs_m/mca/gitwk-anacode/team_tools
 
-  for DISTRO in lenny lucid; do
-    otter_nfswub=~/_httpd/OTTER build_log=~/_swac/build_log.yaml otter_suffix=arch:distro client_build_hosts="$DISTRO-dev32 $DISTRO-dev64" otter_swac=~/_swac  $TT_DEV/otterlace/release/scripts/otterlace_build ~zmap/BUILD.DEVELOPMENT.$DISTRO
-  done
+  otter_nfswub=~/_httpd/OTTER otter_swac=~/_swac build_log=~/_swac/build_log.yaml otter_suffix=arch:distro  otterlace_build ~zmap/BUILD.DEVELOPMENT.{lenny,lucid}
+
+
+otterlace_dev build
+  otterlace_build ~zmap/BUILD.DEVELOPMENT.{lenny,lucid}
 
 
 building 58.* releases,
@@ -22,15 +29,17 @@ building 58.* releases,
   git pull
 
   # tag it
-  $ANACODE_TEAM_TOOLS/otterlace/release/scripts/otterlace_release_tag --minor 58
+  otterlace_release_tag --minor 58
 
   # build
-  otter_suffix=distro client_build_hosts="lenny-dev32 lenny-dev64" $ANACODE_TEAM_TOOLS/otterlace/release/scripts/otterlace_build ~zmap/BUILD.DEVELOPMENT.lenny
-  otter_suffix=distro client_build_hosts="lucid-dev32 lucid-dev64" $ANACODE_TEAM_TOOLS/otterlace/release/scripts/otterlace_build ~zmap/BUILD.DEVELOPMENT.lucid
+  otterlace_build ~zmap/BUILD.DEVELOPMENT.{lenny,lucid}
+
+  # check server status
+  diffdevlive /nfs/WWWdev/SANGER_docs/{lib,data,cgi-bin}/otter/58 | ~mca/bin/ansi_bleach | grep -vE '^ *- *X *X *SANGER'
 
   # Fix symlinks manually, there is only one now.  Using the script
-  # would mean having configuration to drive it, which may still be a
-  # good idea but we don't have it.
+  # would mean having configuration to drive it,
+  # (which is now available)
   ssh lenny-dev32
   minor=02
   cd /software/noarch/linux-i386/anacode/otter
@@ -40,7 +49,5 @@ building 58.* releases,
   ls -l
   ln -snvf otter_rel58.$minor-lenny otter_test; ln -snvf otter_rel58.$minor-lenny otter_test-lenny; ln -snvf otter_rel58.$minor-lucid otter_test-lucid
 
-  # wait for symlinks - indirectly and not through noarch/ - RT#239876
-  touch /software/anacode/otter/otter_test/linked
-  check-software-replication -w /software/anacode/otter/otter_test/linked
-  rm /software/anacode/otter/otter_test/linked
+  # wait
+  check-software-replication-one-loop

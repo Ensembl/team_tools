@@ -130,7 +130,7 @@ _whatami() {
 # recursion; avoid duplicated calculations; avoid array variables.
 otter_ipath_get() {
     local __varname __key __out \
-        version_major full_version swac nfswub \
+        version_major full_version swac nfswub otterhome_suffixing \
         _oig_holtdir _oig_otter_home _oig_bin _oig_wrapperfile
 
     __varname="$1"
@@ -140,6 +140,13 @@ otter_ipath_get() {
     config_get version_major
     full_version="$( full_version )" || bail "Cannot get version number"
 
+    if [ -n "$otter_suffix" ]; then
+        # override from environment; slightly deprecated, but probably
+        # useful enough to keep
+        otterhome_suffixing="$otter_suffix"
+    else
+        config_get otterhome_suffixing
+    fi
 
     # These are our previously-hardcoded installation paths.
     # Accept override from the environment.
@@ -165,12 +172,12 @@ otter_ipath_get() {
         printf -v _oig_wrapperfile %s/otterlace   "$_oig_bin"
     fi
 
-    if [[ "$otter_suffix" =~ 'arch' ]]; then
+    if [[ "$otterhome_suffixing" =~ 'arch' ]]; then
         # When building to non-/software NFS, it is useful to include
         # the arch
         printf -v _oig_otter_home %s-%s "$_oig_otter_home" "$(uname -m )"
     fi
-    if [[ "$otter_suffix" =~ 'distro' ]]; then
+    if [[ "$otterhome_suffixing" =~ 'distro' ]]; then
         # While between OS versions, it is useful to include the OS
         # codename
         printf -v _oig_otter_home %s-%s "$_oig_otter_home" "$( lsb_release -sc )"
