@@ -372,7 +372,7 @@ otterlace_install_all() {
     else
         # choose build hosts to match our zmap build(s)
         client_build_hosts="$( _otterlace_build_config.pl $zmap_trees )" \
-            || bail "No build hosts - no build"
+            || bail "Bad zmap builds?  No build hosts - no build"
     fi
 
     otterlace_server_install &&

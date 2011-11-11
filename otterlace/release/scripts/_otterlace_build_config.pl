@@ -65,16 +65,15 @@ sub main {
     my @zmapdirs = @ARGV;
 
     # Sane?
-    my @bad = grep { ! -d $_ || ! -d "$_/ZMap" || ! -d "$_/Dist" } @zmapdirs;
-    if (!@zmapdirs || @bad) {
-        my $usage = "Syntax: $0 [ -host <buildhost> ] <ZMap_build_tree>*\n
+    if (my @bad = grep { ! -d $_ || ! -d "$_/ZMap" || ! -d "$_/Dist" } @zmapdirs) {
+        die "$0: not ZMap build directories: @bad\n";
+    }
+    if (!@zmapdirs) {
+        die "Syntax: $0 [ -host <buildhost> ] <ZMap_build_tree>*\n
   Without -host flag, output the set of Otterlace build hosts for
   these ZMap trees.\n
   When given a buildhost (which must be from that set), return the one
   ZMap tree which should be used on the host.\n";
-
-        die "Not ZMap build directories: @bad\n\n$usage" if @bad;
-        die $usage;
     }
 
     # Read config
