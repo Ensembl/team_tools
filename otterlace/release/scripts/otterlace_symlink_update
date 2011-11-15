@@ -6,6 +6,23 @@
 
 . "$( dirname "$0" )/_otterlace.sh" || exit 1
 
+DRYRUN=''
+while [ $# -gt 0 ]; do
+    sw=$1
+    shift
+    case $sw in
+        -h | --help)
+            bail "Syntax: $0 [ -n | --dry-run ]
+
+ This should be run from an ensembl-otter working copy
+ which is up-to-date on the appropriate branch." ;;
+        -n | --dry-run)
+            echo "(dry run mode)" >&2
+            DRYRUN='echo :' ;;
+        *) bail "Unknown option $sw" ;;
+    esac
+done
+
 
 # e.g. 58.01 (for a release) or 59 (during dev)
 version="$( full_version )"
@@ -18,7 +35,7 @@ otter_ipath_get holtdir
 if wrapperfile_outside_otterdir; then
     otter_ipath_get wrapperfile
     [ -f "$wrapperfile" ] || bail "wrapperfile=$wrapperfile: not a file"
-    ln -vnfs -- "$(basename "$wrapperfile" )" "$(dirname "$wrapperfile" )/otterlace_${track}"
+    $DRYRUN ln -vnfs -- "$(basename "$wrapperfile" )" "$(dirname "$wrapperfile" )/otterlace_${track}"
 fi
 # else
 #    we have $swac/bin/otterlace_${track} which should
@@ -29,4 +46,4 @@ fi
 #    the following symlink does it all,
 #    and the build is self-contained
 
-ln -vnfs -- "otter_rel${version}" "$holtdir/otter_${track}"
+$DRYRUN ln -vnfs -- "otter_rel${version}" "$holtdir/otter_${track}"
