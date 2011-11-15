@@ -30,6 +30,9 @@ version="$( full_version )"
 config_get track
 
 otter_ipath_get holtdir
+otter_ipath_get otter_home
+
+[ -d "$otter_home" ] || bail "otter_home=$otter_home: not a directory, will not symlink as $holtdir/otter_${track}"
 
 # support versions pre-58 
 if wrapperfile_outside_otterdir; then
@@ -46,4 +49,4 @@ fi
 #    the following symlink does it all,
 #    and the build is self-contained
 
-$DRYRUN ln -vnfs -- "otter_rel${version}" "$holtdir/otter_${track}"
+$DRYRUN ln -vnfs -- "$(basename "$otter_home" )" "$holtdir/otter_${track}"
