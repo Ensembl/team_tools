@@ -51,3 +51,16 @@ building 58.* releases,
 
   # wait
   check-software-replication-one-loop
+
+
+Rebuilding just the server
+
+  (to a disposable non-live copy, using a null zmap build directory)
+  This uses the recently deprecated code path.
+
+    mkdir -p /tmp/junk/{srv,cli}
+    otter_nfswub=/tmp/junk/srv otter_swac=/tmp/junk/cli build_log=/tmp/junk/build_log.yaml \
+      client_build_hosts=' ' /nfs/users/nfs_m/mca/gitwk-anacode/team_tools.stable/otterlace/release/scripts/otterlace_build /tmp/junk/zmapbuild
+
+    diff -ru /tmp/junk/srv/cgi-bin/otter/57 /nfs/WWWdev/SANGER_docs/cgi-bin/otter/57
+    diff -ru /tmp/junk/srv/lib/otter/57 /nfs/WWWdev/SANGER_docs/lib/otter/57
