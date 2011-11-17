@@ -1,0 +1,308 @@
+#! /software/bin/perl
+
+use strict;
+use warnings;
+
+use CGI qw( header escapeHTML );
+use File::Slurp qw( read_dir slurp );
+use File::Spec;
+use Sys::Hostname 'hostname';
+
+
+# Globals. Ick.
+my %vsn; # value = [ path, arch, leaf, version, (flavour), decoration, \@track ], key = path
+my @track; # list of [ path, arch, leaf, designatee_path, designation, (flavour) ]
+my @strange; # HTML strings
+my ($newest, $newfn);
+
+sub main {
+    my $remote = ($ENV{SHOWING_LIVE}
+                  ? q{<br /><span class="new"> This page shows files directly from the dev servers </span>}
+                  : '');
+
+    my @out =
+      (header(-expires => 'now', -type => 'text/html'),
+       qq{<html>
+<head><title>Otterlace versions list</title>
+<style type="text/css">
+ table.vsns    { border-collapse: collapse; border: thin black solid }
+ table.vsns th { border: thin black solid; padding: 1ex }
+ table.vsns td { border: thin black solid; padding: 3px }
+ table.vsns tr.gone td { text-decoration: line-through; color: grey }
+ span.bad      { text-decoration: line-through; color: grey }
+ span.ottvsn   { font-size: 120% }
+ span.binvsn   { font-size: 80%; font-family: monospace }
+ span.titled   { border-bottom: 1px dotted grey }
+ span.new      { font-style: italic; color: red }
+ pre.data      { border: thin #ccf dashed; background-color: #eef }
+ td.empty      { background-color: #ddd }
+</style>
+</head><body>
+ <h1> Otterlace versions </h1>
+ <h2> Internal Linux releases </h2>
+  <p> Please note <p><ul>
+    <li> There may be a delay of about ten minutes between release of
+         a new version, and its visibility on all workstations.  This
+         should have been accounted for when announcements were
+         made. $remote</li>
+    <li> Presence in this list does not mean the version is working or
+         tested.  This is a minimal &quot;what is on the
+         filesystem?&quot; listing. </li>
+  </ul>\n},
+      );
+
+    find_vsns();
+    push @out, display_vsns();
+    push @out, qq{ <h2> Mac versions </h2> <p> Please see <a href="ftp://ftp.sanger.ac.uk/pub/anacode/otterlace">the FTP server</a> for these. </p>\n};
+
+    my $hnow = escapeHTML(scalar localtime);
+    my $hhost = escapeHTML(hostname());
+    push @out, qq{<hr /> <i> Generated at $hnow; files as seen from $hhost </i> <br />\n};
+    if ($newest * 24 < 1) {
+        push @out, sprintf(qq{ <span class="new"> Newest file <tt>%s</tt> is only %.1f minutes old </span>\n},
+                           escapeHTML($newfn), $newest * 24 * 60);
+    }
+    push @out, qq{</body></html>\n};
+    print join '', @out;
+}
+
+
+# We don't scan all file stamps, but the ones we see should be representative
+sub set_newest {
+    foreach (@_) {
+        my $ignore = -l $_; # want the lstat for age
+        next unless -e _;
+        my $age = -M _;
+        next if defined $newest && $age > $newest;
+        $newest = $age;
+        $newfn = $_;
+    }
+}
+
+sub find_vsns {
+    foreach my $arch (qw( linux-i386 linux-x86_64 )) {
+        my $holtdir = "/software/noarch/$arch/anacode/otter";
+        foreach my $leaf (read_dir($holtdir)) {
+            next if $leaf =~ /^sync_stamp\./; # from check-software-replication-one-loop of team_tools
+            my $fn = "$holtdir/$leaf";
+            my $hfn = escapeHTML($fn);
+            set_newest($fn);
+            if (-l $fn) {
+                my $ln = readlink($fn);
+                my $ln_path = File::Spec->rel2abs($ln, $holtdir);
+                if ($leaf eq 'otter_production_main' && $ln eq 'otter_live') {
+                    # ignore legacy alias
+                } elsif ($leaf =~ m{^otter_(\w+)(-\w+)?$}) {
+                    my ($desig, $flav) = ($1, flav($2));
+                    push @track, [ $fn, $arch, $leaf, $ln_path, $desig, $flav ];
+                } else {
+                    my $hln = escapeHTML($ln);
+                    push @strange, qq{Symlink <tt>$hfn</tt> -&gt; <tt>$hln</tt> also found};
+                }
+            } elsif (-d $fn) {
+                if ($leaf =~ m{^otter_rel(\d+\.?\d+)(-\w+)?(~(?i:DEL~?)?)?$}) {
+                    my ($vsn, $flav, $gone) = ($1, flav($2), $3);
+                    my @decor;
+                    push @decor, 'gone' if defined $gone;
+                    push @decor, 'incomplete' unless -x "$fn/bin/zmap";
+                    push @strange, "Displaced duplicate <tt>$hfn</tt> - weird!" if exists $vsn{$fn};
+                    $vsn{$fn} = [ $fn, $arch, $leaf, $vsn, $flav, (join ' ', @decor) ];
+                } else {
+#                    push @strange, qq{Directory <tt>$hfn</tt> also found};
+                }
+                set_newest(qq{$fn/bin/zmap});
+            } else {
+                push @strange, qq{Something else <tt>$hfn</tt>...  weird};
+            }
+        }
+    }
+
+    # Populate \@track designations in %vsn
+    foreach my $T (@track) {
+        my $vpath = $T->[3];
+        push @{ $vsn{$vpath}->[6] }, $T;
+    }
+}
+
+sub display_vsns {
+    my @out;
+
+### Drawing all versions and showing where they're used - too messy
+#
+#    # Draw %vsn
+#    push @out, qq{<table class=vsns>}, tr4(th => qw{ Version Designation Arch });
+#    foreach my $path (sort keys %vsn) {
+#        my %hF = version_row($vsn{$path}, \%vsn);
+#        next unless keys %hF;
+#        my @td = ($hF{vsn}, $hF{tracks}, $hF{arch_flav});
+#        push @out, join '', tr4(td => @td);
+#        $out[-1] =~ s/<tr>/<tr class="$hF{decor}">/ if $hF{decor};
+#    }
+#    push @out, qq{</table>\n};
+
+    # Collect relevant versions
+    my %desig; # key = $designation, value = { key ="$archflav", value = \%V }
+    my %archflav; # key = "$archflav", value undef
+    foreach my $T (@track) {
+        my (%T, %V);
+        @T{qw{ path arch leaf designatee_path designation flav }} = @$T;
+        @V{qw{ path arch leaf vsn flav decor tracks }} = @{ $vsn{ $T{designatee_path} } };
+
+        if ($T{arch} ne $V{arch} || ($T{flav} ne $V{flav} && $T{flav} ne '')) {
+            # weirdness - report it
+            push @strange, 'Symlink to weirdness: '.showdata(track => \%T, version => \%V);
+            next;
+        }
+
+        my $af = $T{arch};
+        $af .= '/'.$T{flav} if $T{flav};
+
+        $archflav{$af} = undef;
+        $desig{$T{designation}}->{$af} = \%V;
+    }
+
+    # Draw %desig
+    my @archflav = sort keys %archflav;
+    push @out, qq{<table class=vsns>}, tr4(th => 'Designation', showarch(@archflav));
+    foreach my $desig (sort by_desig keys %desig) {
+        my %td; # key = archflav, value = vsn
+        @td{ @archflav } = @{ $desig{$desig} }{ @archflav }; # many are undef
+
+        push @out, join '', tr4(td => showdesig($desig), showversion(@td{ @archflav }));
+    }
+    push @out, qq{</table>\n};
+
+    # Mention anything left over
+    push @out, (qq{<p> Also found some things I didn't understand </p><ul>},
+                (map {qq{<li>$_</li>\n}} @strange),
+                qq{</ul>\n}) if @strange;
+
+    return @out;
+}
+
+sub by_desig {
+    ($b eq 'live') <=> ($a eq 'live') ||
+      $a cmp $b;
+}
+
+
+sub showdata {
+    my %D = @_;
+    require YAML;
+    my $D = YAML::Dump(\%D);
+    return qq{<pre class="data">$D</pre>};
+}
+
+sub showdesig {
+    my ($desig) = @_;
+    my $hdesig = escapeHTML($desig);
+    return ($desig eq 'live'
+            ? '<tt>otterlace</tt> (live)'
+            : qq{<tt>otterlace_$hdesig</tt>});
+}
+
+sub showarch {
+    return map {
+        my $orig = $_;
+        local $_ = $_; # avoid changing caller's data via aliasing
+        s/linux-i386/Deskpro/;
+        s/linux-x86_64/Linux 64-bit/;
+        s{/lenny}{<br />Lenny (Debian)};
+        s{/lucid}{<br />Lucid (Ubuntu)};
+        qq{<span class="titled" title="$orig">$_</span>};
+    } @_;
+}
+
+sub showversion {
+    return map {
+        if (defined $_) {
+            my %V = %$_;
+            $V{ZMap} = hoik_compiled_version("$V{path}/bin/zmap");
+            my %hV = quotehash(%V);
+            my $out = $hV{vsn};
+            $out .= ' (dev)' if $V{vsn} =~ /^\d+$/;
+            $out = qq{<span class="ottvsn">$out</span>};
+            foreach my $exe (qw( ZMap )) {
+                next unless defined $V{$exe};
+                my $txt = $hV{$exe};
+                $txt =~ s{\n}{<br />}g;
+                $out .= qq{<br /><span class="binvsn titled" title="$exe">$txt</span>};
+            }
+            $out = qq{<span class="bad titled" title="$hV{decor}">$out</span>} if $V{decor};
+            $out;
+        } else {
+            undef;
+        }
+    } @_;
+}
+
+sub hoik_compiled_version {
+    # this is a nasty hack, but should be safe
+    my ($fn) = @_;
+    return () unless -x $fn && -r _;
+    my $exe = slurp($fn);
+    return $1.($2 ? "\nCompiled $2" : '')
+      if $exe =~ m{\b((?:develop|production)-(?i:Release_)?0_\d+_[-_0-9]+(?:-g[0-9a-f]{4,12}))\x00+([ -~]*\d+:\d{2}:\d{2}[ -~]*)?};
+    return ();
+}
+
+sub quotehash {
+    my %F = @_;
+    my %hF = map {( $_, defined $F{$_} ? escapeHTML($F{$_}) : '' )} keys %F;
+    return %hF;
+}
+
+# sub version_row {
+#     my ($vsn_item, $vsns_hash) = @_;
+#     return () unless defined $vsn_item;
+# 
+#     # The data
+#     my %F;
+#     @F{qw{ path arch leaf vsn flav decor tracks }} = @$vsn_item;
+#     $F{arch_flav} = qq{$F{arch} $F{flav}};
+# 
+#     # Bulk HTML quote
+# #    my %hF = map {( $_, defined $F{$_} ? escapeHTML($F{$_}) : '' )} keys %F;
+#     my %hF = quotehash(%F);
+# 
+#     # Formatting
+#     if ($F{tracks}) {
+#         # list of [ path, arch, leaf, designatee_path, designation, (flavour) ]
+# #        my @desig = map { $_->[4] } @{ $F{tracks} };
+# #        $hF{tracks} = join '; ', map {qq{ <span class="titled" title="$hT{path}"> $hT{designation} </span> }}
+#     }
+# 
+#     return %hF;
+# }
+
+sub flav { # Input: match capture.  Output: description
+    my ($flav) = @_;
+    if (defined $flav) {
+        $flav =~ s/^-//;
+        return $flav;
+    } else {
+        return '';
+    }
+}
+
+
+sub tr4 {
+    my ($ele, @cell) = @_;
+    my @ele = map {( defined $_
+                     ? qq{<$ele> $_ </$ele>}
+                     : qq{<$ele class="empty"></$ele>}
+                   )} @cell;
+
+    # Make colspans
+    for (my $i=0; $i<$#ele; $i++) {
+        my $n = 1;
+        while ($i + $n < @ele && $ele[$i] eq $ele[$i+$n]) { $n++ }
+        next unless $n > 1;
+        splice @ele, $i+1, $n-1 if
+          $ele[$i] =~ s/^<td/<td colspan="$n"/;
+    }
+
+    return (q{<tr>}, @ele, qq{</tr>\n});
+}
+
+main();
