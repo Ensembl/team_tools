@@ -10,7 +10,7 @@ macports_name="MacPorts-${macports_ver}"
 macports_tarball="${macports_name}.tar.bz2"
 
 install_base="${PWD}"
-work_dir="${install_base}/_macports_src"
+work_dir="${install_base}/../_macports_src"
 
 # ensure we don't pick up any previous MacPorts installation
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
@@ -19,7 +19,7 @@ export http_proxy=http://webcache.sanger.ac.uk:3128
 export HTTPS_PROXY="${http_proxy}"
 
 mkdir -v -p "${work_dir}"
-cd "${workdir}"
+cd "${work_dir}"
 
 curl -L "${macports_url_base}/${macports_tarball}" | tar -xzf -
 cd "${macports_name}"
