@@ -38,6 +38,7 @@ sub main {
  td.empty      { background-color: #ddd }
 </style>
 </head><body>
+ <p> <a href="/">Served from developer local Apache</a> </p>
  <h1> Otterlace versions </h1>
  <h2> Internal Linux releases </h2>
   <p> Please note <p><ul>
