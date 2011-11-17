@@ -242,8 +242,12 @@ sub hoik_compiled_version {
     my ($fn) = @_;
     return () unless -x $fn && -r _;
     my $exe = slurp($fn);
+# e.g.
+#   develop-Release_0_1_136_5-59-gaf8fd3c
+#   production-Release_0_1_136_7-1-g7e5a091
+#   release_Release_0_1_138-Release_0_1_136_6-115-g6d689c5
     return $1.($2 ? "\nCompiled $2" : '')
-      if $exe =~ m{\b((?:develop|production)-(?i:Release_)?0_\d+_[-_0-9]+(?:-g[0-9a-f]{4,12}))\x00+([ -~]*\d+:\d{2}:\d{2}[ -~]*)?};
+      if $exe =~ m{\b((?:develop|production|release[_a-zA-Z0-9]*)-(?i:Release_)?0_\d+_[-_0-9]+(?:-g[0-9a-f]{4,12}))\x00+([ -~]*\d+:\d{2}:\d{2}[ -~]*)?};
     return ();
 }
 
