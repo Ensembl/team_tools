@@ -1,2 +1,8 @@
+# list of ports and optional variants
+
+# perl and perl modules
+#
 perl5 +perl5_12
 p5-moosex-classattribute
+
+# EOF

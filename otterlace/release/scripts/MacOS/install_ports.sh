@@ -10,8 +10,13 @@ port_cmd="${install_base}/bin/port"
 
 # source file is at the end of the while...
 while read entry; do
+
+    [[ $entry =~ ^# ]]             && continue # skip comment lines
+    [[ $entry =~ ^[[:space:]]*$ ]] && continue # skip blank lines
+
     # $entry is NOT quoted as it needs to expand to individual tokens
     "${port_cmd}" install $entry
+
 done < "${ports_list}"
 
 exit 0
