@@ -26,7 +26,7 @@ cd "${work_dir}"
 if [ -d "${macports_name}" ]; then
     echo "Doing distclean in ${work_dir}/${macports_name}"
     cd "${macports_name}"
-    make distclean
+   [ -e Makefile ] && make distclean
 else
     echo "Fetching ${macports_download}"
     curl -L "${macports_url_base}/${macports_tarball}" | tar -xzf -
