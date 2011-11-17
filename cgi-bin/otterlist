@@ -83,6 +83,7 @@ sub set_newest {
 sub find_vsns {
     foreach my $arch (qw( linux-i386 linux-x86_64 )) {
         my $holtdir = "/software/noarch/$arch/anacode/otter";
+        set_newest($holtdir);
         foreach my $leaf (read_dir($holtdir)) {
             next if $leaf =~ /^sync_stamp\./; # from check-software-replication-one-loop of team_tools
             my $fn = "$holtdir/$leaf";
