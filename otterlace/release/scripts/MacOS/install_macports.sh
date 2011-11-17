@@ -6,8 +6,10 @@ set -e # bail out on error
 
 macports_url_base="https://distfiles.macports.org/MacPorts"
 macports_ver="2.0.3"
+
 macports_name="MacPorts-${macports_ver}"
 macports_tarball="${macports_name}.tar.bz2"
+macports_download="${macports_url_base}/${macports_tarball}"
 
 install_base="${PWD}"
 work_dir="${install_base}/../_macports_src"
@@ -21,8 +23,15 @@ export HTTPS_PROXY="${http_proxy}"
 mkdir -v -p "${work_dir}"
 cd "${work_dir}"
 
-curl -L "${macports_url_base}/${macports_tarball}" | tar -xzf -
-cd "${macports_name}"
+if [ -d "${macports_name}" ]; then
+    echo "Doing distclean in ${work_dir}/${macports_name}"
+    cd "${macports_name}"
+    make distclean
+else
+    echo "Fetching ${macports_download}"
+    curl -L "${macports_url_base}/${macports_tarball}" | tar -xzf -
+    cd "${macports_name}"
+fi
 
 ./configure \
   --prefix="${install_base}" \
