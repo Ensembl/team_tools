@@ -1,0 +1,13 @@
+---
+comment: "By MG13, chooses XS version, skips tests"
+match:
+  distribution: "^LDS/AcePerl-"
+pl:
+  expect:
+    - "Enter your choice:"
+    - "2\n"
+    - "Do you want to install Ace::Browser?"
+    - "n\n"
+test:
+  args:
+    - "TEST_FILES=''"
