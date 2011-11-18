@@ -91,14 +91,17 @@ sub find_vsns {
             set_newest($fn);
             if (-l $fn) {
                 my $ln = readlink($fn);
+                my $hln = escapeHTML($ln);
                 my $ln_path = File::Spec->rel2abs($ln, $holtdir);
-                if ($leaf eq 'otter_production_main' && $ln eq 'otter_live') {
+                if (!-e $ln_path) {
+                    # dangling symlink
+                    push @strange, qq{Symlink <tt>$hfn</tt> -&gt; <tt>$hln</tt> is dangling};
+                } elsif ($leaf eq 'otter_production_main' && $ln eq 'otter_live') {
                     # ignore legacy alias
                 } elsif ($leaf =~ m{^otter_(\w+)(-\w+)?$}) {
                     my ($desig, $flav) = ($1, flav($2));
                     push @track, [ $fn, $arch, $leaf, $ln_path, $desig, $flav ];
                 } else {
-                    my $hln = escapeHTML($ln);
                     push @strange, qq{Symlink <tt>$hfn</tt> -&gt; <tt>$hln</tt> also found};
                 }
             } elsif (-d $fn) {
