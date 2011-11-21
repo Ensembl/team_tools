@@ -4,7 +4,7 @@ package Bundle::Otterlace::MacOS 1.00;
 
 Ace
 File::Spec::Link
-Bio::Seq
+Bio::Root::Version - actually bioperl, need this to get actual version :-(
 Proc::ProcessTable
 
 =cut
