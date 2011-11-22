@@ -73,6 +73,10 @@ for leaf in species.dat users.txt; do
 	diff -Nsu $DATADIR/{53,54}/$leaf || true
 	diff -Nsu $DATADIR/{54,55}/$leaf || true
 	diff -Nsu $DATADIR/{55,56}/$leaf || true
+	diff -Nsu $DATADIR/{56,57}/$leaf || true
+	diff -Nsu $DATADIR/{57,58}/$leaf || true
+	diff -Nsu $DATADIR/{59,60}/$leaf || true
+	diff -Nsu $DATADIR/{60,61}/$leaf || true
     } > $SAVEREPO/derived/$leaf.v2v.diff
 done
 
