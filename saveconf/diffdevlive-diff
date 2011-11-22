@@ -23,10 +23,10 @@ contain enough information for a human to see what happened.
 
 
 sub main {
+    my $diffdevlive = $ENV{DIFFDEVLIVE} || "/nfs/WWW/bin/diffdevlive";
     foreach my $fn (@ARGV) {
-	open my $fh, "-|",
-	  "/nfs/WWW/bin/diffdevlive", $fn
-	    or die "$0: Failed to pipe from diffdevlive: $!";
+	open my $fh, "-|", $diffdevlive, $fn
+	    or die "$0: Failed to pipe from $diffdevlive: $!";
 
 	# Read & collect output
 	my $hdr_re = qr{^(Webadmin server contacted|(Cwd|Opts|Fn|Cmd): )};
@@ -52,7 +52,7 @@ sub main {
 	    print @diff;
 	} else {
 	    # something went wrong
-	    die "$0: problem during diffdevlive. !=$! ?=$?\n";
+	    die "$0: problem during $diffdevlive. !=$! ?=$?\n";
 	}
     }
 }

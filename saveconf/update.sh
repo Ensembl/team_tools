@@ -60,7 +60,8 @@ find $DATADIR -printf '%M %2n %-8u %-8g %9s %TY-%Tm-%Td %.8TT %p\n' > $SAVEREPO/
 )
 
 # Build dev vs. live differences
-/nfs/WWW/bin/diffdevlive $DATADIR > $SAVEREPO/meta/ddl.asc
+export DIFFDEVLIVE=$SAVECONFDIR/diffdevlive-nag
+$DIFFDEVLIVE $DATADIR > $SAVEREPO/meta/ddl.asc
 $SAVECONFDIR/diffdevlive-fn -0 < $SAVEREPO/meta/ddl.asc | xargs -r0 $SAVECONFDIR/diffdevlive-diff > $SAVEREPO/meta/details.diff
 
 # Build version-to-version differences,
