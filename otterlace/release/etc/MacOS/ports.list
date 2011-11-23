@@ -4,6 +4,13 @@
 #
 perl5 +perl5_12
 
+# required for cpan distroprefs processing
+p5-expect
+p5-yaml
+# although p5-libwww-perl depends on p5.12-libwww-perl, it also seems to conflict with it :-(
+#p5-libwww-perl
+p5.12-libwww-perl
+
 # perl modules
 #
 p5-moosex-classattribute
@@ -13,15 +20,10 @@ p5-data-stag
 p5-dbd-sqlite
 p5-gd
 p5-io-stringy
-# although p5-libwww-perl depends on p5.12-libwww-perl, it also seems to conflict with it :-(
-#p5-libwww-perl
-p5.12-libwww-perl
 p5-lingua-en-inflect
 p5-tk
 p5-xml-libxml
 p5-xml-simple
-# required for cpan distroprefs processing
-p5-expect
 
 # graphics
 #
