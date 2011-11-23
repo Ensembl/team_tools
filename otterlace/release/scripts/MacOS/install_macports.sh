@@ -15,12 +15,6 @@ macports_patch="${etc_macos}/macports.patch"
 
 work_dir="${app_base}/../_macports_src"
 
-# ensure we don't pick up any previous MacPorts installation
-export PATH=/bin:/sbin:/usr/bin:/usr/sbin
-
-export http_proxy=http://webcache.sanger.ac.uk:3128
-export HTTPS_PROXY="${http_proxy}"
-
 mkdir -v -p "${work_dir}"
 cd "${work_dir}"
 
