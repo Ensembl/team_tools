@@ -1,0 +1,11 @@
+--- Makefile.PL.orig	2009-07-10 19:10:07.000000000 +0100
++++ Makefile.PL	2011-11-23 16:06:18.000000000 +0000
+@@ -245,7 +245,7 @@
+     'PL_FILES'  => {'bdf_scripts/bdf2gdfont.PLS' => 'bdf_scripts/bdf2gdfont.pl',
+ 		    'GD/Image.pm.PLS' => 'GD/Image.pm',
+ 		   },
+-    'CCFLAGS'    => '-Wformat=0',
++    'CCFLAGS'    => $Config{ccflags} . ' -Wformat=0',
+     'EXE_FILES' => ['bdf_scripts/bdf2gdfont.pl'],
+     'AUTHOR'    => 'Lincoln Stein (lstein@cshl.org)',
+     'ABSTRACT'  => 'Interface to Gd Graphics Library',
