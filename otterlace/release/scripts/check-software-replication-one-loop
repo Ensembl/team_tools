@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # Make a timestamp in /software , wait for it to sync, then delete it.
 #
@@ -15,11 +15,68 @@
 sync_stamp() {
     STAMP_PATH=/software/anacode/otter/sync_stamp.$USER.$$
     VERBOSE_SET="set -x;"
-    ssh -t lucid-dev32 "$VERBOSE_SET touch $STAMP_PATH; /software/bin/check-software-replication -w $STAMP_PATH; rm -v $STAMP_PATH"
+    ssh -t lucid-dev32 "bash -c '$VERBOSE_SET touch $STAMP_PATH; function sync_tidyup() { rm -vf $STAMP_PATH ; }; trap sync_tidyup EXIT; /software/bin/check-software-replication -w $STAMP_PATH'"
 }
 
 logstamp() {
     /software/bin/perl -MDate::Format=time2str -pe 'print time2str("%Y-%m-%d %T  ", time)'
 }
 
+
+rtid=
+[ -z "$USER" ] && USER="$( whoami )"
+mailto=$USER
+mailsubj='Sync cycle' # status appended
+
+while [[ $# > 0 ]]; do
+    sw=$1
+    shift
+    case $sw in
+        -h | --help)
+            printf 'Syntax: %s [ -R <rt_ticket_number> ] [ message text ]\n
+Wait for one loop around check-software-replication(1)
+
+Optionally sends email when finished.  If a ticket is specified, send
+notification to anacode@ with that ticket number.
+
+If message text is given that is included.  Message text with no
+ticket number causes mail to be sent to yourself instead.\n\n' $0
+            exit 1 ;;
+        -R)
+            if [[ "$1" =~ ^[0-9]{5,7}$ ]]; then
+                rtid=$1
+                shift
+                mailto='anacode@sanger.ac.uk'
+                printf -v mailsubj '[Hinxton #%s] %s' "$rtid" "$mailsubj"
+                [ -z "$mailmsg" ] && mailmsg="Finished: $0 run by $USER"
+            else
+                echo "Bad ticket id '$1'" >&2
+                exit 2
+            fi ;;
+        -*)
+            echo "Unknown option '$sw'" 2>&1
+            exit 2 ;;
+        *)
+            mailmsg="$sw $*"
+            # unshifting - trailing ' ' is messy but adequate
+            shift $# ;;
+    esac
+done
+
+# echo "rtid='$rtid' mailto='$mailto' mailsubj='$mailsubj'(status) mailmsg='$mailmsg'"
+
 sync_stamp 2>&1 | logstamp
+retcode="${PIPESTATUS[*]}"
+if [ "$retcode" = '0 0' ]; then
+    complete='completed ok'
+elif [ "$retcode" = '130 0' ] || [ "$retcode" = '255 0' ]; then
+    complete='interrupted?'
+else
+    complete="failed"
+fi
+
+if [ -n "$mailmsg" ]; then
+    printf "%s\n\nStatus: %s (%s)\n" "$mailmsg" "$complete" "$retcode" | \
+        mail -s "$mailsubj - $complete" "$mailto" && \
+        echo Mail sent >&2
+fi
