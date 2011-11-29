@@ -13,7 +13,7 @@
 # Simultaneous runs are safe.
 
 sync_stamp() {
-    STAMP_PATH=/software/anacode/otter/sync_stamp.$USER.$$
+    STAMP_PATH=/software/anacode/lib/sync_stamp.$USER.$$
     VERBOSE_SET="set -x;"
     ssh -t lucid-dev32 "bash -c '$VERBOSE_SET touch $STAMP_PATH; function sync_tidyup() { rm -vf $STAMP_PATH ; }; trap sync_tidyup EXIT; /software/bin/check-software-replication -w $STAMP_PATH'"
 }
