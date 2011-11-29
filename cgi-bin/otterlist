@@ -29,7 +29,7 @@ sub main {
  table.vsns th { border: thin black solid; padding: 1ex }
  table.vsns td { border: thin black solid; padding: 3px }
  table.vsns tr.gone td { text-decoration: line-through; color: grey }
- span.bad      { text-decoration: line-through; color: grey }
+ strike.bad    { color: grey }
  span.ottvsn   { font-size: 120% }
  span.binvsn   { font-size: 80%; font-family: monospace }
  span.titled   { border-bottom: 1px dotted grey }
@@ -168,7 +168,7 @@ sub display_vsns {
 
     # Draw %desig
     my @archflav = sort keys %archflav;
-    push @out, qq{<table class=vsns>}, tr4(th => 'Designation', showarch(@archflav));
+    push @out, qq{<table border=1 class=vsns>}, tr4(th => 'Designation', showarch(@archflav));
     foreach my $desig (sort by_desig keys %desig) {
         my %td; # key = archflav, value = vsn
         @td{ @archflav } = @{ $desig{$desig} }{ @archflav }; # many are undef
@@ -233,7 +233,7 @@ sub showversion {
                 $txt =~ s{\n}{<br />}g;
                 $out .= qq{<br /><span class="binvsn titled" title="$exe">$txt</span>};
             }
-            $out = qq{<span class="bad titled" title="$hV{decor}">$out</span>} if $V{decor};
+            $out = qq{<strike class="bad titled" title="$hV{decor}">$out looks broken</span>} if $V{decor};
             $out;
         } else {
             undef;
