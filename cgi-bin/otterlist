@@ -52,9 +52,18 @@ sub main {
   </ul>\n},
       );
 
+    my %ftp =
+      (url => 'ftp://ftp.sanger.ac.uk/pub/anacode/otterlace/', # needs last /
+       path => homedir('ftp').'/pub/anacode/otterlace');
+    open $ftp{url_fh}, '-|', 'curl', $ftp{url}
+      or die "Cannot pipe from curl: $!";
+    open $ftp{path_fh}, '-|', 'ls', '-l', $ftp{path}
+      or die "Cannot pipe from ls -l: $!";
+    # let them get started now, so data should be ready after we do other IO
+
     find_vsns();
     push @out, display_vsns();
-    push @out, qq{ <h2> Mac versions </h2> <p> Please see <a href="ftp://ftp.sanger.ac.uk/pub/anacode/otterlace">the FTP server</a> for these. </p>\n};
+    push @out, ftp_vsns(%ftp);
 
     my $hnow = escapeHTML(scalar localtime);
     my $hhost = escapeHTML(hostname());
@@ -312,6 +321,38 @@ sub tr4 {
     }
 
     return (q{<tr>}, @ele, qq{</tr>\n});
+}
+
+
+sub ftp_vsns {
+    my %ftp = @_;
+
+    # require YAML;    my $t = YAML::Dump(\%ftp); my $ht = escapeHTML($t); return qq{<pre class=data>$ht</pre>};
+
+    # Read from subprocesses
+    foreach my $k (qw( url path )) {
+        my $fh = $ftp{"${k}_fh"};
+        $ftp{"${k}_txt"} = join '', <$fh>;
+        close $fh;
+    }
+    $ftp{path_txt} =~ s{^total \d+\n}{}; # hack
+
+    my %hftp = quotehash(%ftp);
+    my @out = qq{<h2> Mac versions </h2>\n <table class="vsns">\n};
+
+    push @out, tr4(th => qq{<tt>$hftp{path}</tt>},
+                   qq{<a href="$hftp{url}">FTP site</a>});
+    push @out, tr4(td =>
+                   qq{<pre class=data>$hftp{path_txt}</pre>},
+                   qq{<pre class=data>$hftp{url_txt}</pre>});
+    push @out, qq{</table>\n};
+
+    return @out;
+}
+
+sub homedir {
+    my ($user) = @_;
+    return (getpwnam($user))[7];
 }
 
 main();
