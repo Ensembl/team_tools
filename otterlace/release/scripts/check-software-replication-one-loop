@@ -76,7 +76,13 @@ else
 fi
 
 if [ -n "$mailmsg" ]; then
-    printf "%s\n\nStatus: %s (%s)\n" "$mailmsg" "$complete" "$retcode" | \
-        mail -s "$mailsubj - $complete" "$mailto" && \
+    {
+        url='http://deskpro17119.internal.sanger.ac.uk:8080/cgi-bin/otterlist_remote'
+        printf "%s\n\nStatus: %s (%s)\n" "$mailmsg" "$complete" "$retcode"
+        printf "\n\n\n%s\nFor your convenience, html2text of the versions page at\n %s\n\n" \
+            '------------------------------------------------------------------------' "$url"
+        echo "Fetching $url" >&2
+        html2text -style pretty -ascii -nobs -width 180 "$url" 2>&1
+    } | mail -s "$mailsubj - $complete" "$mailto" && \
         echo Mail sent >&2
 fi
