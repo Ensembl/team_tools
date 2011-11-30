@@ -30,3 +30,11 @@
 +# Target MacOS X 10.5 (Leopard) and above
 +#
 +macosx_deployment_target	  10.5
+--- ./etc/macports/sources.conf.default	2011-11-22 15:49:19.000000000 +0000
++++ ./etc/macports/sources.conf	2011-11-23 13:31:11.000000000 +0000
+@@ -28,4 +28,5 @@
+ # If an rsync URL points to a .tar file, a signed .rmd160 must exist next to
+ # it on the server and will be used to verify its integrity.
+ 
++file://ARM_LOCAL_PORTS
+ rsync://rsync.macports.org/release/tarballs/ports.tar [default]

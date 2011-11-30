@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -e # bail out on error
+
+echo
+echo "This script will only work when connected to"
+echo "a non-firewalled network such as the WGC open"
+echo "wireless network."
+echo
+
+echo "Doing port selfupdate - may take a few minutes..."
+"ARM_INSTALL_BASE/bin/port" selfupdate
+echo "...done"
+echo
+
+echo "Indexing local ports"
+cd "ARM_LOCAL_PORTS"
+"ARM_INSTALL_BASE/bin/portindex"
+
+echo
+echo "All done."
+exit 0
+
+# EOF
+
