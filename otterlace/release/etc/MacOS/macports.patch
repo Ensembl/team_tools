@@ -9,6 +9,19 @@
  
  # CPU architectures to use for Universal Binaries (+universal variant)
  universal_archs		x86_64 i386
+@@ -71,10 +71,10 @@
+ #destroot_umask 022
+ 
+ # Set whether to automatically execute "clean" after "install" of ports
+-#portautoclean		yes
++portautoclean		no
+ 
+ # Set to yes if you don't want logs to be deleted after successful builds
+-#keeplogs no
++keeplogs yes
+ 
+ # Rsync server to fetch MacPorts sources from. Note that this is only used
+ # for selfupdate. The source(s) for the ports tree are set in sources.conf.
 @@ -131,3 +131,7 @@
  # hosts not to go through the proxy (comma-separated, applies to HTTP, HTTPS,
  # and FTP, but not rsync):
