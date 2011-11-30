@@ -55,9 +55,9 @@ sub main {
     my %ftp =
       (url => 'ftp://ftp.sanger.ac.uk/pub/anacode/otterlace/', # needs last /
        path => homedir('ftp').'/pub/anacode/otterlace');
-    open $ftp{url_fh}, '-|', 'curl', $ftp{url}
+    open $ftp{url_fh}, '-|', 'curl', '-qsS', $ftp{url}
       or die "Cannot pipe from curl: $!";
-    open $ftp{path_fh}, '-|', 'ls', '-l', $ftp{path}
+    open $ftp{path_fh}, '-|', 'ls', '-l', '--time-style=long-iso', $ftp{path}
       or die "Cannot pipe from ls -l: $!";
     # let them get started now, so data should be ready after we do other IO
 
