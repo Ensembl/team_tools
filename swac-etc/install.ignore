@@ -1,0 +1,10 @@
+
+# install gubbins
+install.sh
+install.ignore
+.gitignore
+
+# emacs files
+*~
+.#*
+\#*\#
