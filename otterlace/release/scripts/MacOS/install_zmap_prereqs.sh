@@ -47,7 +47,7 @@ export PATH="${install_base}/bin:${PATH}"
 
 # ACEDB
 
-acedb_tarball=${zmap_dist}/ACEDB-*.src.tar.gz
+acedb_tarball="${zmap_dist}/ACEDB-*.src.tar.gz"
 unpack_matching_tarball "${acedb_tarball}" "ACEDB-"
 acedb_src="${unpacked_tarball}"
 
@@ -66,6 +66,19 @@ sed -e "s|ARM_INSTALL_BASE|${install_base}|"   \
     ln -s wmake/makefile makefile
     export ACEDB_MACHINE="${acedb_machine}"
     make
+)
+
+# libAceConn
+
+libaceconn_tarball="${zmap_dist}/libAceConn-*.tar.gz"
+unpack_matching_tarball "${libaceconn_tarball}" "libAceConn-"
+libaceconn_src="${unpacked_tarball}"
+
+(
+    cd "$libaceconn_src"
+    CFLAGS="${extra_cflags}" ./configure --prefix="${install_base}"
+    make
+    make install
 )
 
 exit 0
