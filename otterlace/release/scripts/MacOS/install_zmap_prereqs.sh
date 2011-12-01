@@ -2,25 +2,8 @@
 
 set -e # bail out on error
 
-. "$( dirname "$0" )/_macos.sh" || exit 1
-
-# side-effects: sets $unpacked_tarball
-#
-unpack_matching_tarball() {
-    local tarball expected_stem
-
-    tarball_pattern="$1"
-    expected_stem="$2"
-
-    real_tarball=$( echo ${tarball_pattern} ) # do the glob expansion
-    echo "Unpacking ${real_tarball}..."
-    tar -xf "${real_tarball}"
-
-    unpacked_tarball=$( echo ${expected_stem}* )
-    echo "...to ${unpacked_tarball}"
-
-    /usr/bin/true
-}
+. "$( dirname "$0" )/_macos.sh"         || exit 1
+. "$( dirname "$0" )/_annotools_env.sh" || exit 2
 
 # FIXME: set via commandline
 zmap_nfs="/net/netapp5a/vol/team119/zmap"
@@ -39,11 +22,6 @@ build_root="${install_base}/var/zmap_build"
 
 mkdir -v -p "${build_root}"
 cd "${build_root}"
-
-extra_cflags="-arch i386 -mmacosx-version-min=10.5 -isysroot /Developer/SDKs/MacOSX10.5.sdk"
-export MACOSX_DEPLOYMENT_TARGET=10.5
-# Now we need access to some of our local tools
-export PATH="${install_base}/bin:${PATH}"
 
 # ACEDB
 
@@ -73,12 +51,6 @@ sed -e "s|ARM_INSTALL_BASE|${install_base}|"   \
 libaceconn_tarball="${zmap_dist}/libAceConn-*.tar.gz"
 unpack_matching_tarball "${libaceconn_tarball}" "libAceConn-"
 libaceconn_src="${unpacked_tarball}"
-
-(
-    cd "$libaceconn_src"
-    CFLAGS="${extra_cflags}" ./configure --prefix="${install_base}"
-    make
-    make install
-)
+config_make_install "${libaceconn_src}"
 
 exit 0

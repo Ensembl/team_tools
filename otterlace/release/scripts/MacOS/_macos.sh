@@ -20,4 +20,22 @@ export http_proxy=http://webcache.sanger.ac.uk:3128
 export HTTPS_PROXY="${http_proxy}"
 export ftp_proxy="${http_proxy}"
 
+# side-effects: sets $unpacked_tarball
+#
+unpack_matching_tarball() {
+    local tarball expected_stem
+
+    tarball_pattern="$1"
+    expected_stem="$2"
+
+    real_tarball=$( echo ${tarball_pattern} ) # do the glob expansion
+    echo "Unpacking ${real_tarball}..."
+    tar -xf "${real_tarball}"
+
+    unpacked_tarball=$( echo ${PWD}/${expected_stem}* )
+    echo "...to ${unpacked_tarball}"
+
+    /usr/bin/true
+}
+
 # EOF
