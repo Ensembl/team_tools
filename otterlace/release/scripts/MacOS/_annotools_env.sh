@@ -2,6 +2,34 @@
 #
 #   . "$( dirname "$0" )/_annotools_env.sh" || exit 1
 
+check_set_zmap_dist_dir_from_arg () {
+
+    # sets global (but not exported) zmap_dist_dir
+    # from supplied_arg
+    zmap_dist_dir="$1"
+    if [ ! -d "${zmap_dist_dir}" ]; then
+	me="$( basename "$0" )"
+	echo "Usage: $me <zmap_dist_dir>" >&2
+	exit 3
+    fi
+
+    /usr/bin/true
+}
+
+# leaves build_root set, goes there and leaves us there
+#
+goto_build_root () {
+
+    build_root="${install_base}/var/annotools_build"
+
+    mkdir -v -p "${build_root}"
+    cd "${build_root}"
+
+    echo "Working in ${build_root}"
+
+    /usr/bin/true
+}
+    
 # These ensure we build for 10.5, i386.
 
 extra_cflags="-arch i386 -mmacosx-version-min=10.5 -isysroot /Developer/SDKs/MacOSX10.5.sdk"
