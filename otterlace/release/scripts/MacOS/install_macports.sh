@@ -55,8 +55,10 @@ cp -v -a ${local_ports_src}/* "${local_ports_dst}"
 
 port_update_src="${etc_macos}/port_update.sh.template"
 port_update_dst="${install_base}/sbin/port_update.sh"
-sed -e "s|ARM_INSTALL_BASE|${install_base}|"   \
-    -e "s|ARM_LOCAL_PORTS|${local_ports_dst}|" \
+created_comment="Created from $( basename ${port_update_src} ) on $( date '+%F %T' )"
+sed -e "s|ARM_INSTALL_BASE|${install_base}|"       \
+    -e "s|ARM_LOCAL_PORTS|${local_ports_dst}|"     \
+    -e "s|ARM_CREATED_COMMENT|${created_comment}|" \
    "${port_update_src}" \
  > "${port_update_dst}"
 chmod +x "${port_update_dst}"

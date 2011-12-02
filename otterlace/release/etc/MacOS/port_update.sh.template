@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#
+# ARM_CREATED_COMMENT
+#
+
 set -e # bail out on error
 
 echo
