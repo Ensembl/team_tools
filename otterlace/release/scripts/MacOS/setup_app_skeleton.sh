@@ -36,7 +36,7 @@ install_base="${app_base}/${resource_path}"
 
 mkdir -v -p "${install_base}"
 
-mkdir -v -p "${shared_non_dist_path}/var/macports/software"
+mkdir -v -p "${shared_non_dist_path}/var/macports/distfiles"
 
 mkdir -v -p "${my_non_dist_path}/share"
 mkdir -v -p "${my_non_dist_path}/var"
@@ -50,14 +50,14 @@ rel_inst_to_non_dist="../../../${non_dist}"
     cd "${install_base}" 
     echo "In ${PWD}:"
     for f in var share; do
-	ln -v -s "${rel_inst_to_non_dist}/${new_app}/$f" .
+	ln -v -sf "${rel_inst_to_non_dist}/${new_app}/$f" .
     done
 )
 
 (
     cd "${my_non_dist_path}/var/macports"
     echo "In ${PWD}:"
-    ln -v -s "../../../${shared_non_dist}/var/macports/software" .
+    ln -v -sf "../../../${shared_non_dist}/var/macports/distfiles" .
 )
 
 exit 0
