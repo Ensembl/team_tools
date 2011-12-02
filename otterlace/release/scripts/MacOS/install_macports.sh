@@ -46,7 +46,9 @@ macports_sources_conf="${install_base}/etc/macports/sources.conf"
 local_ports_src="${etc_macos}/Ports"
 local_ports_dst="${install_base}/etc/local_ports"
 
-sed -i pre-sed -e "s|OTT_REL_MACOS_LOCAL_PORTS|${local_ports_dst}|" "${macports_sources_conf}"
+sed -i ".pre-sed" \
+    -e "s|OTT_REL_MACOS_LOCAL_PORTS|${local_ports_dst}|" \
+   "${macports_sources_conf}"
 
 echo "Installing local ports files"
 
