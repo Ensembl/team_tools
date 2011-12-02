@@ -22,8 +22,8 @@ cpan_home="${install_base}/var/cpan"
 
 [ -e "${config_dst}" ] && mv "${config_dst}" "${config_bak}"
 
-sed -e "s|ARM_CPAN_HOME|${cpan_home}|" \
-    -e "s|ARM_INSTALL_BASE|${install_base}|" \
+sed -e "s|OTT_REL_MACOS_CPAN_HOME|${cpan_home}|" \
+    -e "s|OTT_REL_MACOS_INSTALL_BASE|${install_base}|" \
    "${config_src}" \
  > "${config_dst}"
 

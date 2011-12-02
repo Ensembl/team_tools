@@ -19,8 +19,8 @@ acedb_wmake_defs="${acedb_machine}_DEF"
 acedb_wmake_defs_src="${etc_macos}/${acedb_wmake_defs}"
 acedb_wmake_defs_dst="${acedb_src}/wmake/${acedb_wmake_defs}"
 
-sed -e "s|ARM_INSTALL_BASE|${install_base}|"   \
-    -e "s|ARM_EXTRA_CFLAGS|${extra_cflags}|"   \
+sed -e "s|OTT_REL_MACOS_INSTALL_BASE|${install_base}|"   \
+    -e "s|OTT_REL_MACOS_EXTRA_CFLAGS|${extra_cflags}|"   \
    "${acedb_wmake_defs_src}" \
  > "${acedb_wmake_defs_dst}"
 

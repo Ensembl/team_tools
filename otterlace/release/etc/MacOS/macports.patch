@@ -36,5 +36,5 @@
  # If an rsync URL points to a .tar file, a signed .rmd160 must exist next to
  # it on the server and will be used to verify its integrity.
  
-+file://ARM_LOCAL_PORTS
++file://OTT_REL_MACOS_LOCAL_PORTS
  rsync://rsync.macports.org/release/tarballs/ports.tar [default]

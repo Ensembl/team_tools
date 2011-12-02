@@ -2,22 +2,22 @@
 # This is CPAN.pm's systemwide configuration file. This file provides
 # defaults for users, and the values can be changed in a per-user
 # configuration file. The user-config file is being looked for as
-# ARM_CPAN_HOME/CPAN/MyConfig.pm.
+# OTT_REL_MACOS_CPAN_HOME/CPAN/MyConfig.pm.
 
 $CPAN::Config = {
   'applypatch' => q[],
   'auto_commit' => q[0],
   'build_cache' => q[100],
-  'build_dir' => q[ARM_CPAN_HOME/build],
+  'build_dir' => q[OTT_REL_MACOS_CPAN_HOME/build],
   'build_dir_reuse' => q[0],
   'build_requires_install_policy' => q[yes],
-  'bzip2' => q[ARM_INSTALL_BASE/bin/bzip2],
+  'bzip2' => q[OTT_REL_MACOS_INSTALL_BASE/bin/bzip2],
   'cache_metadata' => q[1],
   'check_sigs' => q[0],
   'colorize_output' => q[0],
   'commandnumber_in_prompt' => q[1],
   'connect_to_internet_ok' => q[1],
-  'cpan_home' => q[ARM_CPAN_HOME],
+  'cpan_home' => q[OTT_REL_MACOS_CPAN_HOME],
   'curl' => q[/usr/bin/curl],
   'ftp' => q[/usr/bin/ftp],
   'ftp_passive' => q[1],
@@ -26,13 +26,13 @@ $CPAN::Config = {
   'gpg' => q[],
   'gzip' => q[/usr/bin/gzip],
   'halt_on_failure' => q[0],
-  'histfile' => q[ARM_CPAN_HOME/histfile],
+  'histfile' => q[OTT_REL_MACOS_CPAN_HOME/histfile],
   'histsize' => q[100],
   'http_proxy' => q[],
   'inactivity_timeout' => q[0],
   'index_expire' => q[1],
   'inhibit_startup_message' => q[0],
-  'keep_source_where' => q[ARM_CPAN_HOME/sources],
+  'keep_source_where' => q[OTT_REL_MACOS_CPAN_HOME/sources],
   'load_module_verbosity' => q[none],
   'lynx' => q[],
   'make' => q[/usr/bin/make],
@@ -51,7 +51,7 @@ $CPAN::Config = {
   'patch' => q[/usr/bin/patch],
   'perl5lib_verbosity' => q[none],
   'prefer_installer' => q[MB],
-  'prefs_dir' => q[ARM_CPAN_HOME/prefs],
+  'prefs_dir' => q[OTT_REL_MACOS_CPAN_HOME/prefs],
   'prerequisites_policy' => q[follow],
   'scan_cache' => q[atstart],
   'shell' => q[/bin/bash],

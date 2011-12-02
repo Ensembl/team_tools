@@ -22,7 +22,7 @@
 
 NAME = DARWIN
 
-LOCAL_LIBS = ARM_INSTALL_BASE
+LOCAL_LIBS = OTT_REL_MACOS_INSTALL_BASE
 
 # Set up pkg-config/gtk etc compile stuff...
 PKGPATH = -local $(LOCAL_LIBS)
@@ -30,7 +30,7 @@ PKGPATH = -local $(LOCAL_LIBS)
 # Compiler used to build 3rd party libraries 
 LIBCC = cc
 
-COPT = -g ARM_EXTRA_CFLAGS
+COPT = -g OTT_REL_MACOS_EXTRA_CFLAGS
 
 GLIB_VER = glib-2.0
 GLIB_LIBS = `../w3rdparty/libs-config $(PKGPATH) $(GLIB_VER)` -lm -lreadline ./libgd.a -lX11

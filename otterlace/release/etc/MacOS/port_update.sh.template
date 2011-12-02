@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# ARM_CREATED_COMMENT
+# OTT_REL_MACOS_CREATED_COMMENT
 #
 
 set -e # bail out on error
@@ -13,13 +13,13 @@ echo "wireless network."
 echo
 
 echo "Doing port selfupdate - may take a few minutes..."
-"ARM_INSTALL_BASE/bin/port" selfupdate
+"OTT_REL_MACOS_INSTALL_BASE/bin/port" selfupdate
 echo "...done"
 echo
 
 echo "Indexing local ports"
-cd "ARM_LOCAL_PORTS"
-"ARM_INSTALL_BASE/bin/portindex"
+cd "OTT_REL_MACOS_LOCAL_PORTS"
+"OTT_REL_MACOS_INSTALL_BASE/bin/portindex"
 
 echo
 echo "All done."
