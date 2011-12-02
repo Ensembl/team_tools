@@ -8,3 +8,6 @@ install.ignore
 *~
 .#*
 \#*\#
+
+# other info kept here, not for install
+fresh-install.tgz
