@@ -1,0 +1,30 @@
+
+=head1 DESCRIPTION
+
+=head2 Who is using it?
+
+Consider only havana members,
+
+  HAVANA_USERS=$( ypmatch havana aliases ),humpub
+  SWCFGS=$(  eval ls -1 ~{$HAVANA_USERS}/.softwarerc )
+  grep -10 anacode $SWCFGS
+
+=head2 Origin
+
+L<http://git.internal.sanger.ac.uk/cgi-bin/gitweb.cgi?p=anacode/team_tools.git;a=tree;f=swac-etc>
+probably the master branch.
+
+=head2 Ignore files
+
+There are two.  One for files that Git ignores, and another for files
+that rsync ignores.
+
+
+=head1 SEE ALSO
+
+L<http://mediawiki.internal.sanger.ac.uk/wiki/index.php/Project_software>
+
+F</etc/bashrc>
+
+F</etc/csh/sanger/> which comes from CVS and contains dotfiles.
+

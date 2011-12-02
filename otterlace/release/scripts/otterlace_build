@@ -366,7 +366,7 @@ otterlace_install_all() {
     local env_cmd ssh_cmd
 
     if [ -n "$client_build_hosts" ]; then
-        echo ' [W] $client_build_hosts override is deprecated, commit here if you still need it' >&2
+        echo ' [W] $client_build_hosts override can (currently) restrict the set of build hosts, but not replace them' >&2
         sleep 1
         # else we would have a local variable
     else

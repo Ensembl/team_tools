@@ -60,7 +60,8 @@ find $DATADIR -printf '%M %2n %-8u %-8g %9s %TY-%Tm-%Td %.8TT %p\n' > $SAVEREPO/
 )
 
 # Build dev vs. live differences
-/nfs/WWW/bin/diffdevlive $DATADIR > $SAVEREPO/meta/ddl.asc
+export DIFFDEVLIVE=$SAVECONFDIR/diffdevlive-nag
+$DIFFDEVLIVE $DATADIR > $SAVEREPO/meta/ddl.asc
 $SAVECONFDIR/diffdevlive-fn -0 < $SAVEREPO/meta/ddl.asc | xargs -r0 $SAVECONFDIR/diffdevlive-diff > $SAVEREPO/meta/details.diff
 
 # Build version-to-version differences,
@@ -72,6 +73,10 @@ for leaf in species.dat users.txt; do
 	diff -Nsu $DATADIR/{53,54}/$leaf || true
 	diff -Nsu $DATADIR/{54,55}/$leaf || true
 	diff -Nsu $DATADIR/{55,56}/$leaf || true
+	diff -Nsu $DATADIR/{56,57}/$leaf || true
+	diff -Nsu $DATADIR/{57,58}/$leaf || true
+	diff -Nsu $DATADIR/{59,60}/$leaf || true
+	diff -Nsu $DATADIR/{60,61}/$leaf || true
     } > $SAVEREPO/derived/$leaf.v2v.diff
 done
 

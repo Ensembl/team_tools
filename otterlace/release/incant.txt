@@ -41,13 +41,14 @@ building 58.* releases,
   # would mean having configuration to drive it,
   # (which is now available)
   ssh lenny-dev32
-  minor=02
+  otter_rel=otter_rel<major>.<minor>
+  otter_track=otter_<track>
   cd /software/noarch/linux-i386/anacode/otter
   ls -l
-  ln -snvf otter_rel58.$minor-lenny otter_test; ln -snvf otter_rel58.$minor-lenny otter_test-lenny; ln -snvf otter_rel58.$minor-lucid otter_test-lucid
+  ln -snvf ${otter_rel}-lenny ${otter_track}; ln -snvf ${otter_rel}-lenny ${otter_track}-lenny; ln -snvf ${otter_rel}-lucid ${otter_track}-lucid
   cd /software/noarch/linux-x86_64/anacode/otter
   ls -l
-  ln -snvf otter_rel58.$minor-lenny otter_test; ln -snvf otter_rel58.$minor-lenny otter_test-lenny; ln -snvf otter_rel58.$minor-lucid otter_test-lucid
+  ln -snvf ${otter_rel}-lenny ${otter_track}; ln -snvf ${otter_rel}-lenny ${otter_track}-lenny; ln -snvf ${otter_rel}-lucid ${otter_track}-lucid
 
   # wait
   check-software-replication-one-loop

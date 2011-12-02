@@ -1,0 +1,35 @@
+#! /bin/bash
+
+diffdevlive_real=/nfs/WWW/bin/diffdevlive
+reps=5
+
+again=$reps
+while [[ $again -gt 0 ]]; do
+    cap_out=$( $diffdevlive_real "$@" 2>&1 )
+    cap_ret=$?
+
+#    printf 'ret=%s, out=>>%s<<\n' "$cap_ret" "$cap_out"
+
+    if [[ "$cap_out" =~ "Error: Failed to contact a webadmin server" ]]; then
+        if [ -n "$verbose" ]; then
+            echo "(failed: cap_ret=$cap_ret, again=$again, cap_out=$cap_out)" >&2
+        fi
+        again=$(( $again - 1 ))
+        sleep 15
+    else
+        #
+        ###  Success
+        #
+        echo "$cap_out"
+        again=0
+        sleep 1
+        exit $cap_ret
+    fi
+done
+
+#
+###  Give up
+#
+
+echo "$diffdevlive_real failed after $reps reptitions" >&2
+exit 10

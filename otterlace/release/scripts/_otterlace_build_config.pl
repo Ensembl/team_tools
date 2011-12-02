@@ -93,7 +93,7 @@ sub main {
     my @unk_zhost = sort
       grep { !exists $CONFIG{zhost2ohost}{$_} } keys %zhost2dir;
     die "$0: unknown (new?) zmap build hosts\n".
-      "  Please tell me about: @unk_zhost\n" if @unk_zhost;
+      "  Please tell me about: @unk_zhost\nby adding to $cfg_fn" if @unk_zhost;
 
     # Output
     my @ohost = sort keys %ohost2dir;
