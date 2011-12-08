@@ -41,6 +41,11 @@ sub main {
  <p> <a href="/">Served from developer local Apache</a> </p>
  <h1> Otterlace versions </h1>
  <h2> Internal Linux releases </h2>
+  <p>
+    [ <a href="otterlist"> view from a deskpro </a>
+    | <a href="otterlist_remote"> view from a build host </a>
+    ]
+  </p>
   <p> Please note <p><ul>
     <li> There may be a delay of about ten minutes between release of
          a new version, and its visibility on all workstations.  This
