@@ -98,6 +98,9 @@ _use_dummy_repos_cvs() {
 
 
 sanity_check_version_minor_is_null() {
+    # This runs on master of a fresh checkout.  Even when we are about
+    # to bump the minor version on an existing release branch.
+    sanity_check_version_major_not_null
     [ -z "$( config version_minor )" ] || {
         echo "version_minor '${version_minor}' is not null"
         echo "on master branch? this is weird, cannot proceed with major version bump"
@@ -105,10 +108,10 @@ sanity_check_version_minor_is_null() {
         # sanity check failed - bail
         exit 1
     } >&2
-    sanity_check_version_major_not_null
 }
 
 sanity_check_version_major_not_null() {
+    # Runs both on master and release branches, at different times
     [ -n "$( config version_major )" ] || {
         echo "version_major is null - weird"
         echo "do we have dist/conf/ on this branch?"
