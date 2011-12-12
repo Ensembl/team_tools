@@ -103,6 +103,15 @@ sub files_in {
                    $File::Find::prune = 1;
                    return;
                }
+               if (-d $file && public($file) && -f "$file/index.html") {
+                   my $idx = "$file/index.html";
+                   if (-f "$file/index-subs-excl.html") {
+                       # hack for NYTProf output - probably a thousand files
+                       $file = $idx;
+                       $File::Find::prune = 1;
+                   }
+                   # else...  counting the contents would be more general
+               }
                return unless -f $file && public($file);
                my $oldpfx  = substr($file, 0, length($fn)+1, "");
                return unless $oldpfx eq "$fn/";
