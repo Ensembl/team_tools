@@ -17,6 +17,15 @@ build to home directory & local Apache,
   otter_nfswub=~/_httpd/OTTER otter_swac=~/_swac build_log=~/_swac/build_log.yaml otter_suffix=arch:distro  otterlace_build ~zmap/BUILD.DEVELOPMENT.{lenny,lucid}
 
 
+build only client to home directory (mg13, as of 2011-12-12):
+
+  otterlace_client_host=deskpro18925   \
+  otter_swac=~/Work/swac               \
+  build_log=~/Work/swac/build_log.yaml \
+  zmap_build=~zmap/BUILD.DEVELOPMENT   \
+  otterlace_build
+
+
 otterlace_dev build
   otterlace_build ~zmap/BUILD.DEVELOPMENT.{lenny,lucid}
 
