@@ -69,4 +69,18 @@ config_make_install () {
     /usr/bin/true
 }
 
+install_binaries () {
+    local src_dir dest
+    src_dir="$1"
+    shift
+
+    dest="${install_base}/bin"
+
+    for prog in "$@"; do
+	cp -v "${src_dir}/${prog}" "${dest}/${prog}"
+    done
+
+    /usr/bin/true
+}
+
 # EOF

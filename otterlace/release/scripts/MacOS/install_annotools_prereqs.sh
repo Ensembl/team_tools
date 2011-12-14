@@ -26,9 +26,11 @@ sed -e "s|OTT_REL_MACOS_INSTALL_BASE|${install_base}|"   \
 
 (
     cd "$acedb_src"
-    ln -s wmake/makefile makefile
+    ln -sf wmake/makefile makefile
     export ACEDB_MACHINE="${acedb_machine}"
     make
+
+    install_binaries "bin.${acedb_machine}" tace sgifaceserver
 )
 
 # libAceConn

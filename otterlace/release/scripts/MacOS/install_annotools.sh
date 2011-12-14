@@ -16,12 +16,14 @@ zmap_tarball="${zmap_dist_dir}/zmap-*.tar.gz"
 unpack_matching_tarball "${zmap_tarball}" "zmap-"
 zmap_src="${unpacked_tarball}"
 config_make "${zmap_src}"
+install_binaries "${zmap_src}" zmap
 
 # Seqtools
 
 seqtools_tarball="${zmap_dist_dir}/seqtools-*.tar.gz"
 unpack_matching_tarball "${seqtools_tarball}" "seqtools-"
 seqtools_src="${unpacked_tarball}"
-config_make "${seqtools_src}"
+config_make_install "${seqtools_src}"
+rm "${install_base}/bin/blixem"
 
 exit 0
