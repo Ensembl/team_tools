@@ -5,7 +5,7 @@ set -e # bail out on error
 . "$( dirname "$0" )/_macos.sh"         || exit 1
 . "$( dirname "$0" )/_annotools_env.sh" || exit 2
 
-check_set_zmap_dist_dir_from_arg "$@"
+check_set_zmap_build_dir_from_arg "$@"
 goto_build_root
 
 echo "In ${PWD}"

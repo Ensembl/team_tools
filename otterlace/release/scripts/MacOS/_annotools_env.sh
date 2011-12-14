@@ -2,17 +2,18 @@
 #
 #   . "$( dirname "$0" )/_annotools_env.sh" || exit 1
 
-check_set_zmap_dist_dir_from_arg () {
+check_set_zmap_build_dir_from_arg () {
 
-    # sets global (but not exported) zmap_dist_dir
-    # from supplied_arg
-    zmap_dist_dir="$1"
-    if [ ! -d "${zmap_dist_dir}" ]; then
+    # sets global (but not exported) zmap_build_dir
+    # from supplied_arg, then also sets zmap_dist_dir
+    zmap_build_dir="$1"
+    if [ ! -d "${zmap_build_dir}" ]; then
 	me="$( basename "$0" )"
-	echo "Usage: $me <zmap_dist_dir>" >&2
+	echo "Usage: $me <zmap_build_dir>" >&2
 	exit 3
     fi
 
+    zmap_dist_dir="${zmap_build_dir}/Dist"
     /usr/bin/true
 }
 
