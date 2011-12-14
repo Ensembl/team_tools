@@ -305,6 +305,12 @@ print join q{ }, @out;
 
 
 
+# Related scripts assume that $( cd foo; echo bar ) chdir(./foo) and
+# capture only bar .  CDPATH breaks these assumptions.  It would be
+# better if the scripts had not so assumed, but this is a reliable fix
+# with no external effects.
+unset CDPATH
+
 # Assumes we were called by script in this directory.  $0 is not this file!
 dist_scripts="$( dirname "$0" )"
 
