@@ -32,4 +32,8 @@ g2
 gtk2
 xorg-libXmu
 
+# misc
+#
+curl
+
 # EOF
