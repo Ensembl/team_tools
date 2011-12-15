@@ -1,0 +1,56 @@
+The scripts in this directory and corresponding config files in
+otterlace/release/etc/MacOS should allow an ab-initio build of the Mac
+otterlace environment, and then of annotools and otterlace itself.
+
+Recipe:
+
+cd ~/Dist # or wherever you want to do your app building
+
+setup_app_skeleton.sh otterlace.app
+
+  # sets up the otterlace.app directory tree, including symlinks out
+  # of the tree for var and share. attempts to share macports
+  # distfiles if appropriate.
+
+
+cd otterlace.app
+
+install_macports.sh
+
+  # downloads, configures and installs MacPorts for and into the app
+  # tree. sets up a local tree for locally-patched port
+  # files. generates the port_update.sh script and prompts for:
+
+# connect to non-rsync-firewalled network and run:
+./Contents/Resources/sbin/port_update.sh 
+
+# connect back to normal network if necessary.
+
+
+install_ports.sh
+
+  # uses MacPorts to install all the ports listed in
+  # etc/MacOs/ports.list
+
+
+install_cpan_bundle.sh
+
+  # configures cpan and sets up the distroprefs mechanism to tailor
+  # the installation of some modules.  uses cpan to install the
+  # modules listed in etc/MacOS/Bundle/Otterlace/MacOS.pm
+  # (which are not available in MacPorts)
+
+
+install_annotools_prereqs.sh <path to zmap build directory>
+
+  # compiles and installs ACEDB and libAceConn, which don't need to
+  # be reinstalled every time there's a new ZMap.
+
+
+install_annotools.sh <path to zmap build directory>
+
+  # configures, compiles and installs ZMap, SeqTools and XRemote.
+
+
+TBC: actual otterlace install, via otterlace_build??
+ 
