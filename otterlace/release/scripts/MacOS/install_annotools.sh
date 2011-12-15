@@ -34,7 +34,7 @@ cp -v -r "$xremote_src_dir" .
 xremote_dir=$( echo ./X11-XRemote-* )
 (
    cd "${xremote_dir}" &&
-   echo "Making XRemote in ${PWD}"
+   echo "Making XRemote in ${PWD}" &&
    perl Makefile.PL \
        PREFIX="${install_base}" \
        --with-x-inc     "${install_base}/include" \
