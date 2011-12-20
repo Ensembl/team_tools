@@ -3,6 +3,7 @@
 set -e # bail out on error
 
 . "$( dirname "$0" )/_macos.sh" || exit 1
+port_sanity_check || exit 3
 
 ports_list="${etc_macos}/ports.list"
 

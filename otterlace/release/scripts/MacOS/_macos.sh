@@ -38,4 +38,34 @@ unpack_matching_tarball() {
     /usr/bin/true
 }
 
+check_binary() {
+    local binary
+    binary="$1"
+
+    binary_path="${install_base}/bin/${binary}"
+    if [ -x "${binary_path}" ]; then
+	/usr/bin/true
+    else
+	echo "Cannot find '${binary_path}'"
+	/usr/bin/false
+    fi
+}
+
+port_sanity_check() {
+
+    if check_binary 'port'; then
+	/usr/bin/true
+    else
+	echo "Check you're at the root of an app tree!"
+	/usr/bin/false
+    fi
+}
+
+perl_sanity_check() {
+    local perl
+
+    port_sanity_check || return
+    check_binary 'perl'
+}
+
 # EOF
