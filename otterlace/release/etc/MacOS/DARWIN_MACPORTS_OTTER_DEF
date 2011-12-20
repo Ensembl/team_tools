@@ -17,7 +17,7 @@
 
 #
 # Use this file for building on a system where gtk was installed
-# from MacPorts using the default install to /opt/local
+# from MacPorts using the default install to OTT_REL_MACOS_INSTALL_BASE
 #
 
 NAME = DARWIN
