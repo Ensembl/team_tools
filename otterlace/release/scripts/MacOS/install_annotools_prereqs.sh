@@ -24,13 +24,14 @@ sed -e "s|OTT_REL_MACOS_INSTALL_BASE|${install_base}|"   \
    "${acedb_wmake_defs_src}" \
  > "${acedb_wmake_defs_dst}"
 
-(
-    cd "$acedb_src"
-    ln -sf wmake/makefile makefile
-    export ACEDB_MACHINE="${acedb_machine}"
-    make
+zmap_acedb_binaries='tace xace sgifaceserver giface makeUserPasswd xremote'
 
-    install_binaries "bin.${acedb_machine}" tace sgifaceserver
+(
+    cd "$acedb_src" &&
+    ln -sf wmake/makefile makefile &&
+    export ACEDB_MACHINE="${acedb_machine}" &&
+    make &&
+    install_binaries "bin.${acedb_machine}" "${stage_root}/bin" $zmap_acedb_binaries
 )
 
 # libAceConn

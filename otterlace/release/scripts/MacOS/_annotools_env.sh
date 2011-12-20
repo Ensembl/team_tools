@@ -18,14 +18,16 @@ check_set_zmap_build_dir_from_arg () {
 }
 
 # leaves build_root set, goes there and leaves us there
-#
+# also sets stage_root
 goto_build_root () {
 
     build_root="${install_base}/var/annotools_build"
+    stage_root="${build_root}/stage"
 
     mkdir -v -p "${build_root}"
-    cd "${build_root}"
+    mkdir -v -p "${stage_root}"
 
+    cd "${build_root}"
     echo "Working in ${build_root}"
 
     /usr/bin/true
@@ -39,15 +41,16 @@ export MACOSX_DEPLOYMENT_TARGET=10.5
 # Now we need access to some of our local tools
 export PATH="${install_base}/bin:${PATH}"
 
-config_make () {
-    local src_dir
+_do_config_make () {
+    local src_dir prefix
     src_dir="$1"
+    prefix="$2"
 
     # use a subshell to avoid permanent cd
     (
 	cd "${src_dir}"
 
-	CFLAGS="${extra_cflags}" ./configure --prefix="${install_base}"
+	CFLAGS="${extra_cflags}" ./configure --prefix="${prefix}"
 	make
 
     )
@@ -55,30 +58,57 @@ config_make () {
     /usr/bin/true
 }
 
-config_make_install () {
-    local src_dir
+_do_config_make_install () {
+    local src_dir prefix
     src_dir="$1"
+    prefix="$2"
 
     # use a subshell to avoid permanent cd
     (
 	cd "${src_dir}"
 
-	config_make "${PWD}"
+	_do_config_make "${PWD}" "${prefix}"
 	make install
     )
 
     /usr/bin/true
 }
 
-install_binaries () {
-    local src_dir dest
+config_make () {
+    local src_dir prefix
     src_dir="$1"
+
+    prefix="${install_base}"
+    _do_config_make "${src_dir}" "${prefix}"
+}
+
+config_make_install () {
+    local src_dir prefix
+    src_dir="$1"
+
+    prefix="${install_base}"
+    _do_config_make_install "${src_dir}" "${prefix}"
+}
+
+stage_config_make_install () {
+    local src_dir prefix
+    src_dir="$1"
+
+    prefix="${stage_root}"
+    _do_config_make_install "${src_dir}" "${prefix}"
+}
+
+install_binaries () {
+    local src_dir dest_dir
+    src_dir="$1"
+    dest_dir="$2"
+    shift
     shift
 
-    dest="${install_base}/bin"
+    mkdir -v -p "${dest_dir}"
 
     for prog in "$@"; do
-	cp -v "${src_dir}/${prog}" "${dest}/${prog}"
+	cp -v "${src_dir}/${prog}" "${dest_dir}/${prog}"
     done
 
     /usr/bin/true
