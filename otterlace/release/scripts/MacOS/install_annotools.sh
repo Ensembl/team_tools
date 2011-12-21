@@ -25,29 +25,15 @@ unpack_matching_tarball "${seqtools_tarball}" "seqtools-"
 seqtools_src="${unpacked_tarball}"
 stage_config_make_install "${seqtools_src}"
 
-exit 0
+# XRemote - just copy it into place
 
-# XRemote
-
-xremote_src_pattern="${zmap_build_dir}/ZMap/src/perl/X11-XRemote-*"
+xremote_rel_src_loc="ZMap/src/perl"
+xremote_src_pattern="${zmap_build_dir}/${xremote_rel_src_loc}/X11-XRemote-*"
 xremote_src_dir=$( echo ${xremote_src_pattern} ) # glob expansion
-cp -v -r "$xremote_src_dir" .
-xremote_dir=$( echo ./X11-XRemote-* )
-(
-   cd "${xremote_dir}" &&
-   echo "Making XRemote in ${PWD}" &&
-   perl Makefile.PL \
-       PREFIX="${install_base}" \
-       --with-x-inc     "${install_base}/include" \
-       --with-x-libs    "${install_base}/lib" \
-       --with-zmap-inc  "${zmap_src}/include" \
-       --with-zmap-libs "${zmap_src}/.libs" \
-       --with-symbols \
-       &&
-   make &&
-   make test &&
-   make install &&
-   /usr/bin/true
-)
+xremote_dest="${stage_dir}/${xremote_rel_src_loc}"
+
+mkdir -v -p "${xremote_dest}"
+echo "${xremote_src_dir} -> ${xremote_dest}"
+cp -r "${xremote_src_dir}" "${xremote_dest}"
 
 exit 0

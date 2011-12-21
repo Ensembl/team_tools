@@ -32,7 +32,7 @@ zmap_acedb_binaries='tace xace sgifaceserver giface makeUserPasswd xremote'
     ln -sf wmake/makefile makefile &&
     export ACEDB_MACHINE="${acedb_machine}" &&
     make &&
-    install_binaries "bin.${acedb_machine}" "${stage_root}/bin" $zmap_acedb_binaries
+    install_binaries "bin.${acedb_machine}" "${stage_prefix}/bin" $zmap_acedb_binaries
 )
 
 # libAceConn

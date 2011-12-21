@@ -18,14 +18,20 @@ check_set_zmap_build_dir_from_arg () {
 }
 
 # leaves build_root set, goes there and leaves us there
-# also sets stage_root
+# also sets stage_dir & stage_prefix
 goto_build_root () {
+    local target_arch alt_arch
 
     build_root="${install_base}/var/annotools_build"
-    stage_root="${build_root}/stage"
+    stage_dir="${build_root}/stage"
+    target_arch="Darwin_i386"
+    alt_arch="Darwin_x86_64"
+    stage_prefix="${stage_dir}/${target_arch}"
 
     mkdir -v -p "${build_root}"
-    mkdir -v -p "${stage_root}"
+    mkdir -v -p "${stage_prefix}"
+
+    ( cd "${stage_dir}" && ln -v -s -f -n "./${target_arch}" "${alt_arch}" )
 
     cd "${build_root}"
     echo "Working in ${build_root}"
@@ -94,7 +100,7 @@ stage_config_make_install () {
     local src_dir prefix
     src_dir="$1"
 
-    prefix="${stage_root}"
+    prefix="${stage_prefix}"
     _do_config_make_install "${src_dir}" "${prefix}"
 }
 
