@@ -356,10 +356,11 @@ otterlace_client_install() {
         true
     else
         otterlace_script_vars_update "${otter_home}/bin/otterlace_env.sh" &&
-        sed -i \
+        sed -i.bak \
             -e '/^otterlace_installed=/s/=.*$/=true/' \
             "${otter_home}/bin/otterlace" \
             &&
+	rm "${otter_home}/bin/otterlace.bak" &&
         true
     fi &&
     (
