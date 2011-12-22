@@ -17,13 +17,19 @@ check_set_zmap_build_dir_from_arg () {
     /usr/bin/true
 }
 
+# sets build_root and stage_dir
+set_stage_dir () {
+    build_root="${install_base}/var/annotools_build"
+    stage_dir="${build_root}/stage"
+}
+
 # leaves build_root set, goes there and leaves us there
 # also sets stage_dir & stage_prefix
 goto_build_root () {
     local target_arch alt_arch
 
-    build_root="${install_base}/var/annotools_build"
-    stage_dir="${build_root}/stage"
+    set_stage_dir
+
     target_arch="Darwin_i386"
     alt_arch="Darwin_x86_64"
     stage_prefix="${stage_dir}/${target_arch}"
