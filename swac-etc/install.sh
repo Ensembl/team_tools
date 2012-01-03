@@ -38,7 +38,7 @@ echo "   to (" $ARCHES ")"
 for ARCH in $ARCHES; do
     echo "==== $ARCH"
     rsync -rlpg -ciSWH --delete-after \
-        --chmod=ug+w,o-w \
+        --chmod=ug+w,o-w,Dg+s \
         --exclude-from $SRCDIR/install.ignore $DRY \
         $SRCDIR /software/noarch/$ARCH/anacode/etc
     # rsync -a : equals -rlptgoD (no -H,-A,-X)
