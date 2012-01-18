@@ -1,0 +1,199 @@
+#!/software/bin/perl
+
+use strict;
+use warnings;
+
+use DBI;
+use Term::ReadKey qw( ReadMode ReadLine );
+
+my $table_columns_hash = {
+
+    attrib_type => [ qw(
+  attrib_type_id
+  code
+  name
+  description
+) ],
+
+  external_db => [ qw(
+  external_db_id
+  db_name
+  db_release
+  status
+  priority
+  db_display_name
+  type
+  secondary_db_name
+  secondary_db_table
+  description
+) ],
+
+  misc_set => [ qw(
+  misc_set_id
+  code
+  name
+  description
+  max_length
+) ],
+
+  unmapped_reason => [ qw(
+  unmapped_reason_id
+  summary_description
+  full_description
+) ],
+
+  };
+
+my $table = q(external_db);
+my $user = "ottadmin";
+
+print STDERR "Enter password for ${user}: ";
+ReadMode("noecho");
+my $password = ReadLine(0);
+print STDERR "\n";
+chomp $password;
+ReadMode("normal");
+
+sub filter_loutre { return ! /^loutre_act/ }
+sub filter_pipe { return 1 }
+
+my $hosts = [
+
+    {
+        host => "otterlive",
+        port => 3324,
+        pattern => 'loutre_%',
+        filter => \&filter_loutre,
+    },
+
+    {
+        host => "otterpipe1",
+        port => 3322,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+    },
+
+    {
+        host => "otterpipe2",
+        port => 3323,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+        extras => [ qw( chromoDB jgrg_human_test jgrg_human_dev ) ],
+    },
+
+    ];
+
+sub host_get_dbh {
+    my ($host) = @_;
+    my $dsn = sprintf "DBI:mysql:host=%s;port=%d", @{$_}{qw( host port )};
+    return DBI->connect($dsn, $user, $password, { RaiseError => 1, AutoCommit => 0,});
+}
+
+sub host_get_databases {
+    my ($host, $dbh) = @_;
+    my $database_select_sql = sprintf "show databases like '%s'", $host->{pattern};
+    my $filter = $host->{filter};
+    return
+        [
+         ( grep { $filter->() } @{$dbh->selectcol_arrayref($database_select_sql)} ),
+         @{$host->{extras} || []},
+        ];
+}
+
+my $columns = join ', ', @{$table_columns_hash->{$table}};
+my $select_sql_template = sprintf <<'SQL', $columns, $table;
+select %s from %%s.%s
+SQL
+    ;
+
+sub path_add {
+    my ($hash, $row) = @_;
+    $hash = $hash->{defined $_ ? $_ : ""} ||= { } for @{$row};
+    return $hash;
+}
+
+sub paths_list { ## no critic (Subroutines::RequireArgUnpacking)
+    return paths_list_2([], @_);
+}
+
+sub paths_list_2 {
+    my ($prefix, $tree) = @_;
+    my @keys = sort keys %{$tree};
+    return @keys
+        ? map { paths_list_2([ @{$prefix}, $_ ], $tree->{$_}) } @keys
+        : $prefix
+        ;
+}
+
+my $databases = { };
+my $paths = { };
+my $paths_with_database = { };
+my $paths_without_id = { };
+for (@{$hosts}) {
+    my $host_dbh = host_get_dbh($_);
+    for my $database (@{host_get_databases($_, $host_dbh)}) {
+        $databases->{$database}++;
+        my $select_sql = sprintf $select_sql_template, $database;
+        for (@{$host_dbh->selectall_arrayref($select_sql)}) {
+            path_add($paths, $_);
+            path_add($paths_with_database, $_)->{$database}++;
+            shift @{$_};
+            path_add($paths_without_id, $_);
+        }
+    }
+    # $host_dbh->commit;
+    $host_dbh->disconnect;
+}
+
+my @databases = sort keys %{$databases};
+my $partitions = { };
+my $partition_id_list = { };
+
+for my $id (sort { $a <=> $b } keys %{$paths}) {
+    my @paths = paths_list($paths->{$id});
+
+    # hash each database against the index of the path that contains it
+    my $database_path_count = { };
+    {
+        my $path_count = 0;
+        for (@paths) {
+            $path_count++;
+            my $path_databases =
+                path_add($paths_with_database, [ $id, @{$_} ]);
+            $database_path_count->{$_} = $path_count
+                for keys %{$path_databases};
+        }
+    }
+
+    my $index_next = 0;
+    my $path_count_index = { };
+    my $database_index = { };
+    my $index_database_list = { };
+    for my $database ( @databases ) {
+        my $path_count = $database_path_count->{$database};
+        next unless $path_count;
+        my $index =
+            ( $path_count_index->{$path_count}
+              ||= ++$index_next );
+        $database_index->{$database} = $index;
+        push @{$index_database_list->{$index}}, $database;
+    }
+
+    my $partition = [ map { $database_index->{$_} || 0 } @databases ];
+    path_add($partitions, $partition);
+    push @{path_add($partition_id_list, $partition)->{list}}, $id;
+
+}
+
+for my $partition ( paths_list($partitions) ) {
+    my $index_database_list = { };
+    my @partition = @{$partition}; # a copy we can safely modify
+    push @{$index_database_list->{shift @partition}}, $_ for @databases;
+    next if keys %{$index_database_list} == 1; # skip the trivial partition
+    $index_database_list->{0} ||= [ ];
+    print "\n";
+    printf "[ %s ]\n", join ' , ', (@{$index_database_list->{$_}})
+        for sort { $a <=> $b } keys %{$index_database_list};
+    my $id_list = path_add($partition_id_list, $partition)->{list};
+    printf "%s\n", join ', ', sort { $a <=> $b } @{$id_list};
+}

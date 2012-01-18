@@ -1,0 +1,95 @@
+#!/software/bin/perl
+
+use strict;
+use warnings;
+
+use DBI;
+use Term::ReadKey qw( ReadMode ReadLine );
+
+my $host_user = "ottadmin";
+
+print STDERR "Enter password for ${host_user}: ";
+ReadMode("noecho");
+my $host_password = ReadLine(0);
+print STDERR "\n";
+chomp $host_password;
+ReadMode("normal");
+
+sub filter_loutre { return ! /^loutre_act/ }
+sub filter_pipe { return 1 }
+
+my $hosts = [
+
+    {
+        name => "otterlive",
+        port => 3324,
+        pattern => 'loutre_%',
+        filter => \&filter_loutre,
+    },
+
+    {
+        name => "otterpipe1",
+        port => 3322,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+    },
+
+    {
+        name => "otterpipe2",
+        port => 3323,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+        extras => [ qw( chromoDB jgrg_human_test jgrg_human_dev ) ],
+    },
+
+    ];
+
+sub fix {
+    my ($host, $dbh, $database) = @_;
+
+    my $referrers = { };
+    for my $table (
+        @{$dbh->selectcol_arrayref(
+              qq(show tables in ${database}))}) {
+        next if $table eq q(misc_set);
+        next unless grep { $_ eq q(misc_set_id) } @{
+            $dbh->selectcol_arrayref(
+                qq(show columns in ${database}.${table}))};
+        $referrers->{$table}++;
+    }
+    die qq(misc_feature_misc_set is missing)
+        unless delete $referrers->{misc_feature_misc_set};
+    die qq(extra referrers)
+        if keys %{$referrers};
+
+    # $dbh->commit;
+    return;
+}
+
+for my $host (@{$hosts}) {
+
+    my ($host_name, $host_port, $host_pattern, $host_filter, $host_extras) =
+        @{$host}{qw( name port pattern filter extras )};
+    $host_extras ||= [ ];
+
+    my $dsn = sprintf "DBI:mysql:host=%s;port=%d", $host_name, $host_port;
+    my $otter_dbh = DBI->connect(
+        $dsn, $host_user, $host_password
+        , { RaiseError => 1, AutoCommit => 0, });
+
+    my $database_select_sql =
+        sprintf "show databases like '%s'", $host_pattern;
+    my $host_databases = [
+        grep { $host_filter->() } @{$otter_dbh->selectcol_arrayref($database_select_sql)},
+        ];
+
+    for (@{$host_databases}, @{$host_extras}) {
+        # catch any error message and reraise it with context prepended
+        die qq($host->{name}: $_: $@) unless eval {
+            fix $host, $otter_dbh, $_;
+            1;
+        };
+    }
+
+    $otter_dbh->disconnect;
+}

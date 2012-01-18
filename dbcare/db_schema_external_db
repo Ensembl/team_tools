@@ -1,0 +1,104 @@
+#!/software/bin/perl
+
+use strict;
+use warnings;
+
+use DBI;
+use Term::ReadKey qw( ReadMode ReadLine );
+
+my $host_user = "ottadmin";
+
+print STDERR "Enter password for ${host_user}: ";
+ReadMode("noecho");
+my $host_password = ReadLine(0);
+print STDERR "\n";
+chomp $host_password;
+ReadMode("normal");
+
+sub filter_loutre { return ! /^loutre_act/ }
+sub filter_pipe { return 1 }
+
+my $hosts = [
+
+    {
+        name => "otterlive",
+        port => 3324,
+        pattern => 'loutre_%',
+        filter => \&filter_loutre,
+    },
+
+    {
+        name => "otterpipe1",
+        port => 3322,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+    },
+
+    {
+        name => "otterpipe2",
+        port => 3323,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+        extras => [ qw( chromoDB jgrg_human_test jgrg_human_dev ) ],
+    },
+
+    ];
+
+my @referrers = qw(
+    dna_align_feature
+    protein_align_feature
+    seq_region_synonym
+    unmapped_object
+    xref
+    );
+
+my $all_id_hash = { };
+my $table_id_hash = { };
+
+sub external_db {
+    my ($host, $dbh, $database) = @_;
+    for my $table (@referrers) {
+        my $id_sql = qq(select distinct external_db_id from ${database}.${table});
+        my $id_list = $dbh->selectcol_arrayref($id_sql);
+        for my $id (grep { defined } @{$id_list}) {
+            $all_id_hash->{$id}++;
+            $table_id_hash->{$table}{$id}++;
+        }
+    }
+    return;
+}
+
+for my $host (@{$hosts}) {
+
+    my ($host_name, $host_port, $host_pattern, $host_filter, $host_extras) =
+        @{$host}{qw( name port pattern filter extras )};
+    $host_extras ||= [ ];
+
+    my $dsn = sprintf "DBI:mysql:host=%s;port=%d", $host_name, $host_port;
+    my $otter_dbh = DBI->connect(
+        $dsn, $host_user, $host_password
+        , { RaiseError => 1, AutoCommit => 0, });
+
+    my $database_select_sql =
+        sprintf "show databases like '%s'", $host_pattern;
+    my $host_databases = [
+        grep { $host_filter->() } @{$otter_dbh->selectcol_arrayref($database_select_sql)},
+        ];
+
+    for (@{$host_databases}, @{$host_extras}) {
+        die qq($host->{name}: $_: $@) unless eval {
+            external_db $host, $otter_dbh, $_;
+            1;
+        };
+    }
+
+    $otter_dbh->disconnect;
+}
+
+printf qq(all: %s\n)
+    , ( join q(, ), sort { $a <=> $b } keys %{$all_id_hash} );
+for my $table (sort keys %{$table_id_hash}) {
+    my $id_hash = $table_id_hash->{$table};
+    printf qq(%s: %s\n)
+        , $table, ( join q(, ), sort { $a <=> $b } keys %{$id_hash} );
+}
