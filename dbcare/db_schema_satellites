@@ -1,0 +1,87 @@
+#!/software/bin/perl
+
+use strict;
+use warnings;
+
+use DBI;
+use Term::ReadKey qw( ReadMode ReadLine );
+
+my $host_user = "ottadmin";
+
+print STDERR "Enter password for ${host_user}: ";
+ReadMode("noecho");
+my $host_password = ReadLine(0);
+print STDERR "\n";
+chomp $host_password;
+ReadMode("normal");
+
+sub filter_loutre { return ! /^loutre_act/ }
+sub filter_pipe { return 1 }
+
+my $hosts = [
+
+    {
+        name => "otterlive",
+        port => 3324,
+        pattern => 'loutre_%',
+        filter => \&filter_loutre,
+    },
+
+    {
+        name => "otterpipe1",
+        port => 3322,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+    },
+
+    {
+        name => "otterpipe2",
+        port => 3323,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+        extras => [ qw( chromoDB jgrg_human_test jgrg_human_dev ) ],
+    },
+
+    ];
+
+my $satellites = { };
+sub satellites {
+    my ($host, $dbh, $database) = @_;
+    my $sql =
+        sprintf "select meta_value from %s.meta"
+        , $database;
+    for (@{$dbh->selectcol_arrayref($sql)}) {
+        next unless my ($satellite) = /'-dbname'[[:blank:]]*=>[[:blank:]]*'([^']*)'/;
+        next unless 1
+            || $satellite =~ /61/
+            || $satellite =~ /62/
+            ;
+        $satellites->{$satellite}++;
+    }
+    return;
+}
+
+for my $host (@{$hosts}) {
+
+    my ($host_name, $host_port, $host_pattern, $host_filter, $host_extras) =
+        @{$host}{qw( name port pattern filter extras )};
+    $host_extras ||= [ ];
+
+    my $dsn = sprintf "DBI:mysql:host=%s;port=%d", $host_name, $host_port;
+    my $otter_dbh = DBI->connect(
+        $dsn, $host_user, $host_password
+        , { RaiseError => 1, AutoCommit => 0, });
+
+    my $database_select_sql =
+        sprintf "show databases like '%s'", $host_pattern;
+    my $host_databases = [
+        grep { $host_filter->() } @{$otter_dbh->selectcol_arrayref($database_select_sql)},
+        ];
+
+    satellites $host, $otter_dbh, $_
+        for @{$host_databases}, @{$host_extras}, ;
+
+    $otter_dbh->disconnect;
+}
+
+printf "%s\n", $_ for sort keys %{$satellites};

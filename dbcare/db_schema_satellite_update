@@ -1,0 +1,141 @@
+#!/software/bin/perl
+
+use strict;
+use warnings;
+
+use DBI;
+use Term::ReadKey qw( ReadMode ReadLine );
+
+my $version_old = 61;
+my $version_new = 62;
+
+# get all of the EnsEMBL databases
+my $ensro_dsn = q(DBI:mysql:host=ens-livemirror.internal.sanger.ac.uk;port=3306);
+my $ensro_dbh = DBI->connect(
+    $ensro_dsn, q(ensro), undef
+    , { RaiseError => 1, AutoCommit => 0, });
+my $databases = $ensro_dbh->selectcol_arrayref(q(show databases));
+$ensro_dbh->disconnect;
+
+# hash them by their version and root name
+my $version_root_db_hash = { };
+for (@{$databases}) {
+    next unless my ($db, $root, $version) = /\A((.*)_([^_]*)_([^_]*))\z/s;
+    $version_root_db_hash->{$version}{$root} = $db;
+}
+
+# create the database map
+my $old_root_db_hash = $version_root_db_hash->{$version_old};
+die "no old databases" unless $old_root_db_hash;
+my $new_root_db_hash = $version_root_db_hash->{$version_new};
+die "no new databases" unless $new_root_db_hash;
+my @unmatched_old =
+    grep { ! $new_root_db_hash->{$_} } keys %{$old_root_db_hash};
+warn sprintf "%s\n", join qq(\n  )
+    , q(unmatched old databases)
+    , sort @unmatched_old
+    if @unmatched_old;
+my @unmatched_new =
+    grep { ! $old_root_db_hash->{$_} } keys %{$new_root_db_hash};
+warn sprintf "%s\n", join qq(\n  )
+    , q(unmatched new databases)
+    , sort @unmatched_new
+    if @unmatched_new;
+my $database_map = {
+    map {
+        $old_root_db_hash->{$_} => $new_root_db_hash->{$_};
+    }
+    grep {
+        $new_root_db_hash->{$_}
+    } keys %{$old_root_db_hash}
+};
+
+# display the database map
+if (0) # uncomment to disable
+{
+    print "\n";
+    for my $old (sort keys %{$database_map}) {
+        my $new = $database_map->{$old};
+        printf "\n%s\n%s\n", $old, $new;
+    }
+}
+
+my $host_user = "ottadmin";
+
+print STDERR "Enter password for ${host_user}: ";
+ReadMode("noecho");
+my $host_password = ReadLine(0);
+print STDERR "\n";
+chomp $host_password;
+ReadMode("normal");
+
+sub filter_loutre { return ! /^loutre_act/ }
+sub filter_pipe { return 1 }
+
+my $hosts = [
+
+    {
+        name => "otterlive",
+        port => 3324,
+        pattern => 'loutre_%',
+        filter => \&filter_loutre,
+    },
+
+    {
+        name => "otterpipe1",
+        port => 3322,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+    },
+
+    {
+        name => "otterpipe2",
+        port => 3323,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+        extras => [ qw( chromoDB jgrg_human_test jgrg_human_dev ) ],
+    },
+
+    ];
+
+sub satellites {
+    my ($host, $dbh, $database) = @_;
+    my $select_sql =
+        sprintf "select meta_key, meta_value from %s.meta"
+        , $database;
+    my $update_sql =
+        sprintf "update %s.meta set meta_value = ? where meta_key = ?"
+        , $database;
+    for (@{$dbh->selectall_arrayref($select_sql)}) {
+        my ($key, $value) = @{$_};
+        next unless my ($pre, $db, $post) = $value =~
+            /\A(.*'-dbname'[[:blank:]]*=>[[:blank:]]*')([^']*)('.*)\z/s;
+        next unless my $db_new = $database_map->{$db};
+        my $value_new = $pre . $db_new . $post;
+        printf "\n%s\n  %s\n  %s\n", $database, $value, $value_new;
+        $dbh->do($update_sql, {}, $value_new, $key);
+        $dbh->commit;
+    }
+    return;
+}
+
+for my $host (@{$hosts}) {
+
+    my ($host_name, $host_port, $host_pattern, $host_filter, $host_extras) =
+        @{$host}{qw( name port pattern filter extras )};
+    $host_extras ||= [ ];
+
+    my $dsn = sprintf "DBI:mysql:host=%s;port=%d", $host_name, $host_port;
+    my $otter_dbh = DBI->connect(
+        $dsn, $host_user, $host_password
+        , { RaiseError => 1, AutoCommit => 0, });
+
+    my $database_select_sql =
+        sprintf "show databases like '%s'", $host_pattern;
+    my $host_databases = $otter_dbh->selectcol_arrayref($database_select_sql);
+
+    satellites $host, $otter_dbh, $_
+        for @{$host_databases}, @{$host_extras}, ;
+
+    $otter_dbh->disconnect;
+}

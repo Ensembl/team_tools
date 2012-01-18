@@ -1,0 +1,101 @@
+#!/software/bin/perl
+
+use strict;
+use warnings;
+
+use DBI;
+use Term::ReadKey qw( ReadMode ReadLine );
+
+my $otter_user = "ottadmin";
+my $otter_password;
+
+print STDERR qq(Enter password for $otter_user: );
+ReadMode("noecho");
+$otter_password = ReadLine(0);
+print STDERR "\n";
+chomp $otter_password;
+ReadMode("normal");
+
+sub filter_loutre { return ! /^loutre_act/ }
+sub filter_pipe { return 1 }
+
+my $hosts = [
+
+    {
+        name => "otterlive",
+        port => 3324,
+        pattern => 'loutre_%',
+        filter => \&filter_loutre,
+    },
+
+    {
+        name => "otterpipe1",
+        port => 3322,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+    },
+
+    {
+        name => "otterpipe2",
+        port => 3323,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+        extras => [ qw( chromoDB jgrg_human_test jgrg_human_dev ) ],
+    },
+
+    ];
+
+my $table = 'attrib_type';
+my $id_column = "${table}_id";
+my $id = 75;
+my $column = 'name';
+
+sub fix {
+    my ($host, $dbh, $database) = @_;
+
+    # get the value
+    my $select_sql = sprintf
+        'select %s from %s.%s where %s = ?'
+        , $column, $database, $table, $id_column;
+    my ($value) = @{$dbh->selectcol_arrayref($select_sql, { }, $id)};
+
+    # fix the value
+    $value =~ s/scRNA_pseudogene/RNA_pseudogene/;
+
+    # update the value
+    my $update_sql = sprintf
+        'update %s.%s set %s = ? where %s = ?'
+        , $database, $table, $column, $id_column;
+    $dbh->do($update_sql, { }, $value, $id);
+
+    $dbh->commit;
+    return;
+}
+
+for my $host (@{$hosts}) {
+
+    my ($host_name, $host_port, $host_pattern, $host_filter, $host_extras) =
+        @{$host}{qw( name port pattern filter extras )};
+    $host_extras ||= [ ];
+
+    my $dsn = sprintf "DBI:mysql:host=%s;port=%d", $host_name, $host_port;
+    my $otter_dbh = DBI->connect(
+        $dsn, $otter_user, $otter_password
+        , { RaiseError => 1, AutoCommit => 0, });
+
+    my $database_select_sql =
+        sprintf "show databases like '%s'", $host_pattern;
+    my $host_databases = [
+        grep { $host_filter->() } @{$otter_dbh->selectcol_arrayref($database_select_sql)},
+        ];
+
+    for (@{$host_databases}, @{$host_extras}) {
+        # catch any error message and reraise it with context prepended
+        die qq($host->{name}: $_: $@) unless eval {
+            fix $host, $otter_dbh, $_;
+            1;
+        };
+    }
+
+    $otter_dbh->disconnect;
+}
