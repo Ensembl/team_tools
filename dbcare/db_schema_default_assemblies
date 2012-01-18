@@ -1,0 +1,90 @@
+#!/software/bin/perl
+
+use strict;
+use warnings;
+
+use DBI;
+use Term::ReadKey qw( ReadMode ReadLine );
+
+my $host_user = "ottadmin";
+
+print STDERR "Enter password for ${host_user}: ";
+ReadMode("noecho");
+my $host_password = ReadLine(0);
+print STDERR "\n";
+chomp $host_password;
+ReadMode("normal");
+
+sub filter_loutre { return ! /^loutre_act/ }
+sub filter_pipe { return 1 }
+
+my $hosts = [
+
+    {
+        name => "otterlive",
+        port => 3324,
+        pattern => 'loutre_%',
+        filter => \&filter_loutre,
+    },
+
+    {
+        name => "otterpipe1",
+        port => 3322,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+    },
+
+    {
+        name => "otterpipe2",
+        port => 3323,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+        extras => [ qw( chromoDB jgrg_human_test jgrg_human_dev ) ],
+    },
+
+    ];
+
+my $has_host_db_hash = { };
+sub default_assembly {
+    my ($host, $dbh, $database) = @_;
+    my $sql =
+        sprintf "select count(*) from %s.meta where meta_key = 'assembly.default'"
+        , $database;
+    my ($count) = @{$dbh->selectcol_arrayref($sql)};
+    $has_host_db_hash->{$count ? 1 : 0}{$host->{name}}{$database}++;
+    return;
+}
+
+for my $host (@{$hosts}) {
+
+    my ($host_name, $host_port, $host_pattern, $host_filter, $host_extras) =
+        @{$host}{qw( name port pattern filter extras )};
+    $host_extras ||= [ ];
+
+    my $dsn = sprintf "DBI:mysql:host=%s;port=%d", $host_name, $host_port;
+    my $otter_dbh = DBI->connect(
+        $dsn, $host_user, $host_password
+        , { RaiseError => 1, AutoCommit => 0, });
+
+    my $database_select_sql =
+        sprintf "show databases like '%s'", $host_pattern;
+    my $host_databases = $otter_dbh->selectcol_arrayref($database_select_sql);
+
+    default_assembly $host, $otter_dbh, $_
+        for @{$host_databases}, @{$host_extras}, ;
+
+    $otter_dbh->disconnect;
+}
+
+for my $has (sort { $a <=> $b } keys %{$has_host_db_hash}) {
+    printf "%s\n", $has ? "yes" : "no";
+    next;
+    my $host_db_hash = $has_host_db_hash->{$has};
+    for my $host (sort keys %{$host_db_hash}) {
+        printf "  %s\n", $host;
+        my $db_hash = $host_db_hash->{$host};
+        for my $db (sort keys %{$db_hash}) {
+            printf "    %s\n", $db;
+        }
+    }
+}

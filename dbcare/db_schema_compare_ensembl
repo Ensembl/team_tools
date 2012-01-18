@@ -1,0 +1,220 @@
+#!/software/bin/perl
+
+=pod
+
+=head1 NAME
+
+db_schema_compare_ensembl
+
+=head1 DESCRIPTION
+
+This compares the contents of a table in all of the loutre/pipe
+databases with its contents in the EnsEMBL master database and reports
+any discrepancies.
+
+We assume that the table has a primary key column whose name is the
+name of the table with "_id" appended.
+
+=cut
+
+use strict;
+use warnings;
+
+use DBI;
+use Term::ReadKey qw( ReadMode ReadLine );
+
+my $table = q(unmapped_reason);
+my $primary_key = "${table}_id";
+
+my $ensembl_user = "ensadmin";
+my $otter_user = "ottadmin";
+my ($ensembl_password, $otter_password);
+
+for (
+    [ $ensembl_user, \$ensembl_password ],
+    [ $otter_user,   \$otter_password   ],
+    ) {
+    my ($name, $password_ref) = @{$_};
+    print STDERR qq(Enter password for $name: );
+    ReadMode("noecho");
+    my $password = ReadLine(0);
+    print STDERR "\n";
+    chomp $password;
+    ReadMode("normal");
+    $$password_ref = $password;
+}
+
+sub filter_loutre { return ! /^loutre_act/ }
+sub filter_pipe { return 1 }
+
+my $hosts = [
+
+    {
+        name => "otterlive",
+        port => 3324,
+        pattern => 'loutre_%',
+        filter => \&filter_loutre,
+    },
+
+    {
+        name => "otterpipe1",
+        port => 3322,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+    },
+
+    {
+        name => "otterpipe2",
+        port => 3323,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+        extras => [ qw( chromoDB jgrg_human_test jgrg_human_dev ) ],
+    },
+
+    ];
+
+sub printablify { ## no critic (Subroutines::RequireArgUnpacking)
+    return map {
+        defined $_ ? ( sprintf "'%s'", $_ ) : 'UNDEF';
+    } @_;
+}
+
+sub value_equal {
+    my ($v0, $v1) = @_;
+    return 1 if ! defined $v0 && ! defined $v1;
+    return 0 if ! defined $v0 || ! defined $v1;
+    return $v0 eq $v1;
+}
+
+sub hash_equal {
+    my ($h0, $h1) = @_;
+    for (keys %{$h0}) {
+        return 0 if ! value_equal($h0->{$_}, $h1->{$_});
+    }
+    return 1;
+}
+
+sub get_table_data {
+    my ($dbh, $database) = @_;
+    my $data_count_select_sql = sprintf "select count(*) from %s.%s", $database, $table;
+    my ($data_count) = @{$dbh->selectcol_arrayref($data_count_select_sql)};
+    my $data_select_sql = sprintf "select * from %s.%s", $database, $table;
+    my $data = $dbh->selectall_hashref($data_select_sql, $primary_key);
+    die "duplicate keys" unless $data_count == keys %{$data};
+    return $data;
+}
+
+my @keys;
+sub dump_list {
+    my ($data, $ids, $key0) = @_;
+     for my $id (sort { $a <=> $b } @{$ids}) {
+        my $datum = $data->{$id};
+        printf "\n";
+        printf "  %s: %s\n", $_, printablify($datum->{$_}) for @keys;
+    }
+    return;
+}
+
+my $ensembl_dbh = DBI->connect(
+    "DBI:mysql:host=ens-staging1;port=3306",
+    $ensembl_user, $ensembl_password, { RaiseError => 1, AutoCommit => 0,});
+my $ensembl_data = get_table_data($ensembl_dbh, "ensembl_production");
+$ensembl_dbh->disconnect;
+
+{
+    my ($id) = keys %{$ensembl_data};
+    my $key = $primary_key;
+    my $keys = { map { $_ => 1 } keys %{$ensembl_data->{$id}} };
+    delete $keys->{$key};
+    @keys = ( $key, sort keys %{$keys} );
+}
+
+sub database_check {
+    my ($host, $otter_dbh, $database) = @_;
+
+    my $otter_data = get_table_data($otter_dbh, $database);
+
+    my $both = [ grep { defined $otter_data->{$_}   } keys %{$ensembl_data} ];
+    my $ensembl_only = [ grep { ! defined $otter_data->{$_}   } keys %{$ensembl_data} ];
+    my $otter_only   = [ grep { ! defined $ensembl_data->{$_} } keys %{$otter_data}   ];
+
+    my $same      = [ ];
+    my $different = [ ];
+    push @{hash_equal($ensembl_data->{$_}, $otter_data->{$_}) ? $same : $different}, $_ for sort @{$both};
+
+    return unless 0
+        || (@{$ensembl_only})
+        || (@{$otter_only})
+        || (@{$different})
+        ;
+
+    # print the summary
+    my @summary =
+        (
+         $database,
+         ( scalar keys %{$ensembl_data} ),
+         ( scalar @{$ensembl_only} ),
+         ( scalar keys %{$otter_data}   ),
+         ( scalar @{$otter_only}   ),
+         ( scalar @{$same} ),
+         ( scalar @{$different} ),
+        );
+    printf <<'SUMMARY', @summary
+
+Database: %s
+Columns:
+EnsEMBL:      %4d
+EnsEMBL-only: %4d
+Otter:        %4d
+Otter-only:   %4d
+Same:         %4d
+Different:    %4d
+SUMMARY
+;
+
+    # return;
+
+    print "\nEnsembl-only\n"; dump_list($ensembl_data, $ensembl_only, $primary_key);
+    print "\nOtter-only\n"; dump_list($otter_data,   $otter_only,   $primary_key);
+
+    print "\nDifferent\n";
+    for (@{$different}) {
+        my $h0 = $ensembl_data->{$_};
+        my $h1 = $otter_data->{$_};
+        print "\n";
+        printf "  %s: %s\n", $primary_key, printablify($h0->{$primary_key});
+        for (@keys) {
+            my $v0 = $h0->{$_};
+            my $v1 = $h1->{$_};
+            next if $_ eq $primary_key;
+            next if value_equal($v0, $v1);
+            printf "    %s\n      %s\n      %s\n"
+                , $_, printablify($v0, $v1);
+        }
+    }
+
+    return;
+}
+
+for my $host (@{$hosts}) {
+
+    my ($host_name, $host_port, $host_pattern, $host_filter, $host_extras) =
+        @{$host}{qw( name port pattern filter extras )};
+    $host_extras ||= [ ];
+
+    my $dsn = sprintf "DBI:mysql:host=%s;port=%d", $host_name, $host_port;
+    my $otter_dbh = DBI->connect(
+        $dsn, $otter_user, $otter_password
+        , { RaiseError => 1, AutoCommit => 0, });
+
+    my $database_select_sql =
+        sprintf "show databases like '%s'", $host_pattern;
+    my $host_databases = [
+        grep { $host_filter->() } @{$otter_dbh->selectcol_arrayref($database_select_sql)},
+        ];
+
+    database_check $host, $otter_dbh, $_
+        for @{$host_databases}, @{$host_extras}, ;
+
+    $otter_dbh->disconnect;
+}

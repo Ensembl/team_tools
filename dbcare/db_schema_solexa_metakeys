@@ -1,0 +1,146 @@
+#!/software/bin/perl
+
+use strict;
+use warnings;
+
+use DBI;
+use Term::ReadKey qw( ReadMode ReadLine );
+
+my $host_user = "ottadmin";
+
+print STDERR "Enter password for ${host_user}: ";
+ReadMode("noecho");
+my $host_password = ReadLine(0);
+print STDERR "\n";
+chomp $host_password;
+ReadMode("normal");
+
+sub filter_loutre { return ! /^loutre_act/ }
+sub filter_pipe { return 1 }
+
+my $hosts = [
+
+    {
+        name => "otterlive",
+        port => 3324,
+        pattern => 'loutre_%',
+        filter => \&filter_loutre,
+    },
+
+    {
+        name => "otterpipe1",
+        port => 3322,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+    },
+
+    {
+        name => "otterpipe2",
+        port => 3323,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+        extras => [ qw( chromoDB jgrg_human_test jgrg_human_dev ) ],
+    },
+
+    ];
+
+my @satellite_keys = qw(
+    -host
+    -port
+    -user
+    -dbname
+    );
+my $satellite_keys = { map { $_ => 1 } @satellite_keys };
+
+my $sat_key_otter_hash = { };
+
+sub solexa_metakey {
+    my ($host, $database, $meta_key, $meta_value) = @_;
+
+    my $host_name = $host->{name};
+
+    my $satellite = { };
+    for (split /[[:blank:]]*,[[:blank:]]*/, $meta_value) {
+        my ($satellite_key, $satellite_value) =
+            /\A'([^']*)'[[:blank:]]*=>[[:blank:]]*'([^']*)'\z/
+            or die sprintf
+            "bogus key-value pair '%s' in value '%s' for metakey '%s'"
+            , $_, $meta_value, $meta_key;
+        $satellite->{$satellite_key} = $satellite_value;
+    }
+
+    for (@satellite_keys) {
+        die sprintf "missing satellite key '%s'", $_
+            unless $satellite->{$_};
+    }
+    for (keys %{$satellite}) {
+        die sprintf "bogus satellite key '%s'", $_
+            unless $satellite_keys->{$_};
+    }
+
+    my ($sat_host, $sat_port, $sat_user, $sat_dbname) =
+        @{$satellite}{qw( -host -port -user -dbname )};
+    die sprintf "bogus satellite host: '%s'", $sat_host
+        unless $sat_host =~ s/\A([[:alnum:]]+)\.internal\.sanger\.ac\.uk\z/$1/;
+    die sprintf "bogus satellite port: '%s'", $sat_port
+        unless $sat_port eq '3306';
+    die sprintf "bogus satellite user: '%s'", $sat_user
+        unless $sat_user eq 'ensro';
+    $sat_key_otter_hash->{$sat_host}{$sat_dbname}{$meta_key}{$host_name}{$database}++;
+
+    return;
+}
+
+sub solexa_metakeys {
+    my ($host, $dbh, $database) = @_;
+    my $sql =
+        sprintf "select meta_key, meta_value from %s.meta where meta_key like '%%solexa%%'"
+        , $database;
+    my $key_value_array = $dbh->selectall_arrayref($sql);
+    solexa_metakey $host, $database, @{$_} for @{$key_value_array};
+    return;
+}
+
+for my $host (@{$hosts}) {
+
+    my ($host_name, $host_port, $host_pattern, $host_filter, $host_extras) =
+        @{$host}{qw( name port pattern filter extras )};
+    $host_extras ||= [ ];
+
+    my $dsn = sprintf "DBI:mysql:host=%s;port=%d", $host_name, $host_port;
+    my $otter_dbh = DBI->connect(
+        $dsn, $host_user, $host_password
+        , { RaiseError => 1, AutoCommit => 0,});
+
+    my $database_select_sql =
+        sprintf "show databases like '%s'", $host_pattern;
+    my $host_databases = $otter_dbh->selectcol_arrayref($database_select_sql);
+
+    solexa_metakeys($host, $otter_dbh, $_) for
+        @{$host_databases},
+        @{$host_extras},
+        ;
+
+    $otter_dbh->disconnect;
+}
+
+# if (0) # uncomment to disable
+{
+    for my $sat_host (sort keys %{$sat_key_otter_hash}) {
+        my $sat_db_key_otter_hash = $sat_key_otter_hash->{$sat_host};
+        for my $sat_db (sort keys %{$sat_db_key_otter_hash}) {
+            printf "%s:%s\n", $sat_host, $sat_db;
+            my $key_otter_hash = $sat_db_key_otter_hash->{$sat_db};
+            for my $key (sort keys %{$key_otter_hash}) {
+                printf "  %s\n", $key;
+                my $otter_hash = $key_otter_hash->{$key};
+                for my $otter_host (sort keys %{$otter_hash}) {
+                    my $otter_db_hash = $otter_hash->{$otter_host};
+                    for my $otter_db (sort keys %{$otter_db_hash}) {
+                        printf "    %s:%s\n", $otter_host, $otter_db;
+                    }
+                }
+            }
+        }
+    }
+}

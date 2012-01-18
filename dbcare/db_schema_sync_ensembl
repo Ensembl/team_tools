@@ -1,0 +1,126 @@
+#!/software/bin/perl
+
+use strict;
+use warnings;
+
+use DBI;
+use Term::ReadKey qw( ReadMode ReadLine );
+
+my $ensembl_user = "ensadmin";
+my $otter_user = "ottadmin";
+my ($ensembl_password, $otter_password);
+
+for (
+    [ $ensembl_user, \$ensembl_password ],
+    [ $otter_user,   \$otter_password   ],
+    ) {
+    my ($name, $password_ref) = @{$_};
+    print STDERR qq(Enter password for $name: );
+    ReadMode("noecho");
+    my $password = ReadLine(0);
+    print STDERR "\n";
+    chomp $password;
+    ReadMode("normal");
+    $$password_ref = $password;
+}
+
+sub filter_loutre { return ! /^loutre_act/ }
+sub filter_pipe { return 1 }
+
+my $hosts = [
+
+    {
+        name => "otterlive",
+        port => 3324,
+        pattern => 'loutre_%',
+        filter => \&filter_loutre,
+    },
+
+    {
+        name => "otterpipe1",
+        port => 3322,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+    },
+
+    {
+        name => "otterpipe2",
+        port => 3323,
+        pattern => 'pipe_%',
+        filter => \&filter_pipe,
+        extras => [ qw( chromoDB jgrg_human_test jgrg_human_dev ) ],
+    },
+
+    ];
+
+my $table = 'attrib_type';
+my $id_column = "${table}_id";
+my $data;
+
+# get the data
+{
+    my $ensembl_dbh = DBI->connect(
+        "DBI:mysql:host=ens-staging1;port=3306",
+        $ensembl_user, $ensembl_password, { RaiseError => 1, AutoCommit => 0,});
+    my $data_select_sql = sprintf "select * from %s.%s", 'ensembl_production', $table;
+    $data = $ensembl_dbh->selectall_hashref($data_select_sql, $id_column);
+    $ensembl_dbh->disconnect;
+}
+exit unless keys %{$data};
+my $columns = [ sort keys %{$data->{(keys %{$data})[0]}} ];
+
+sub fix {
+    my ($host, $dbh, $database) = @_;
+
+    # get the IDs
+    my $id_list_select_sql = sprintf
+        'select %s from %s.%s'
+        , $id_column, $database, $table;
+    my $id_list = $dbh->selectcol_arrayref($id_list_select_sql);
+
+    # delete existing data
+    my $new_data = { %{$data} };
+    delete @{$new_data}{@{$id_list}};
+
+    # insert the new data
+    my $insert_sql = sprintf
+        'insert into %s.%s ( %s ) values ( %s )'
+        , $database, $table
+        , ( join ' , ', @{$columns} )
+        , ( join ' , ', ( '?' ) x @{$columns} )
+        ;
+    my $insert_sth = $dbh->prepare($insert_sql);
+    $insert_sth->execute(@{$_}{@{$columns}})
+        for @{$new_data}{sort { $a <=> $b } keys %{$new_data}};
+
+    $dbh->commit;
+    return;
+}
+
+for my $host (@{$hosts}) {
+
+    my ($host_name, $host_port, $host_pattern, $host_filter, $host_extras) =
+        @{$host}{qw( name port pattern filter extras )};
+    $host_extras ||= [ ];
+
+    my $dsn = sprintf "DBI:mysql:host=%s;port=%d", $host_name, $host_port;
+    my $otter_dbh = DBI->connect(
+        $dsn, $otter_user, $otter_password
+        , { RaiseError => 1, AutoCommit => 0, });
+
+    my $database_select_sql =
+        sprintf "show databases like '%s'", $host_pattern;
+    my $host_databases = [
+        grep { $host_filter->() } @{$otter_dbh->selectcol_arrayref($database_select_sql)},
+        ];
+
+    for (@{$host_databases}, @{$host_extras}) {
+        # catch any error message and reraise it with context prepended
+        die qq($host->{name}: $_: $@) unless eval {
+            fix $host, $otter_dbh, $_;
+            1;
+        };
+    }
+
+    $otter_dbh->disconnect;
+}
