@@ -28,11 +28,9 @@
 # / NB
 
 
-. "$( dirname "$0" )/_otterlace.sh" || exit 1
-
 
 # Process commandline args & optional variables passed in environment.
-# May chdir un-scoped.
+# May chdir un-scoped, or exit
 get_opts_inputvars() {
     # zmap_trees, zmap_build, ensembl_otter_root : not local
     local sw
@@ -42,6 +40,11 @@ get_opts_inputvars() {
             -h | --help) show_help_exit ;;
             --) shift
                 break ;;
+            --show-path)
+                # this is here to assist debugging of problems-finding-self
+                printf "PATH is now\n    %s\n" \
+                    "$( echo $PATH | sed -e 's/:/\n    /g' )"
+                exit 0 ;;
         esac
         shift
     done
@@ -103,9 +106,11 @@ show_help_exit() {
 }
 
 
-# Set some environment variables, global variables for the script,
-# umask...
-setup_globals() {
+# Set environment variables about self, umask.  These don't take
+# parameters and are needed early (during get_opts_inputvars)
+setup_self_globals() {
+    # shared config and functions
+    . "$( dirname "$0" )/_otterlace.sh" || exit 1
 
     osname="$( uname -s )"
 
@@ -125,7 +130,10 @@ setup_globals() {
 
     export LD_LIBRARY_PATH=
     umask 002 # NB: running over ssh can set a surprising umask
+}
 
+# Set some environment variables, global variables for the script
+setup_globals() {
 
     config_get version_major
     config_get version_minor
@@ -461,6 +469,7 @@ write_build_log_entry() {
 
 
 
+setup_self_globals
 get_opts_inputvars "$@"
 setup_globals
 # echo "otter_home = '${otter_home}'" ; exit # uncomment to test
