@@ -94,7 +94,11 @@ show_help_exit() {
 
     --help | -h		Show this help
 
-" "$( basename "$0" )" "$thisprog" >&2
+ Currently configured build hosts:
+
+%s
+
+" "$( basename "$0" )" "$thisprog" "$( _otterlace_build_config.pl -list 2>&1 )" >&2
     exit 1
 }
 
