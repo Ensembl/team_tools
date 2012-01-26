@@ -32,7 +32,7 @@
 # Process commandline args & optional variables passed in environment.
 # May chdir un-scoped, or exit or exec
 get_opts_inputvars() {
-    # zmap_trees, zmap_build, ensembl_otter_root : not local
+    # zmap_trees, zmap_build, ensembl_otter_root, client_build_hosts : not local
     local sw
 
     while [[ $# > 0 ]]; do
@@ -48,6 +48,10 @@ get_opts_inputvars() {
             --hosts | -H)
                 # this is a convenience option, so _otterlace_build_config.pl can remain "internal"
                 exec _otterlace_build_config.pl -list ;;
+            --server-only | -S)
+                [ -n "$client_build_hosts" ] && bail "Was about to overwrite client_build_hosts='$client_build_hosts'"
+                client_build_hosts=' '
+                ;;
         esac
         shift
     done
@@ -71,7 +75,7 @@ get_opts_inputvars() {
             sleep 1
         fi
 
-        [ -z "$zmap_trees" ] && show_help_exit
+        [ -n "$zmap_trees" ] || [ "$client_build_hosts" = ' ' ] || show_help_exit
     fi
 
 
@@ -98,9 +102,10 @@ show_help_exit() {
 
  Options:
 
-    --help | -h		Show this help
+    --help | -h		Show this help (and stop)
+    --hosts | -H	Show build hosts list (and stop)
 
-    --hosts | -H	Show build hosts list
+    --server-only	Build Otter Server, but no clients
 
 " "$( basename "$0" )" "$thisprog" >&2
     exit 1
@@ -419,7 +424,11 @@ otterlace_client_install() {
 otterlace_install_all() {
     local env_cmd ssh_cmd
 
-    if [ -n "$client_build_hosts" ]; then
+    if [ "$client_build_hosts" = ' ' ]; then
+        # This value started off as a quick hack to persuade existing
+        # code...  could do better
+        echo Building no clients
+    elif [ -n "$client_build_hosts" ]; then
         echo ' [W] $client_build_hosts override can (currently) restrict the set of build hosts, but not replace them' >&2
         sleep 1
         # else we would have a local variable
