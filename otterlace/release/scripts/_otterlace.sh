@@ -116,8 +116,8 @@ git_listrefs_maybe() {
 _whatami() {
     local ciid upstream
     upstream="$( cd "$dist_scripts" && git config --get remote.origin.url || echo '??' )"
-    ciid="$(     cd "$dist_scripts" && git log -1 --format=%h             || echo '??' )"
-    echo "$0 ($ciid from $upstream)"
+    descr="$(    cd "$dist_scripts" && git describe --tags --long --match 'otter/*' || echo '??' )"
+    echo "$0 ($descr from $upstream)"
 }
 
 # Control of where the build is put - use it instead of hardwired
