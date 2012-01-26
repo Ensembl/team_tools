@@ -113,6 +113,7 @@ sub main {
     if (!defined $op) {
         print join '', map {"$_\n"} @ohost;
     } elsif ($op eq '-list') {
+        print " Current build hosts are configured in\n $cfg_fn\n\n";
         print "    ZMap build host     Otterlace build host\n";
         my $z2o = $CONFIG{zhost2ohost};
         print map {

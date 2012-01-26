@@ -30,7 +30,7 @@
 
 
 # Process commandline args & optional variables passed in environment.
-# May chdir un-scoped, or exit
+# May chdir un-scoped, or exit or exec
 get_opts_inputvars() {
     # zmap_trees, zmap_build, ensembl_otter_root : not local
     local sw
@@ -45,6 +45,9 @@ get_opts_inputvars() {
                 printf "PATH is now\n    %s\n" \
                     "$( echo $PATH | sed -e 's/:/\n    /g' )"
                 exit 0 ;;
+            --hosts | -H)
+                # this is a convenience option, so _otterlace_build_config.pl can remain "internal"
+                exec _otterlace_build_config.pl -list ;;
         esac
         shift
     done
@@ -97,11 +100,9 @@ show_help_exit() {
 
     --help | -h		Show this help
 
- Currently configured build hosts:
+    --hosts | -H	Show build hosts list
 
-%s
-
-" "$( basename "$0" )" "$thisprog" "$( _otterlace_build_config.pl -list 2>&1 )" >&2
+" "$( basename "$0" )" "$thisprog" >&2
     exit 1
 }
 
