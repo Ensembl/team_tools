@@ -107,10 +107,21 @@ show_help_exit() {
 # umask...
 setup_globals() {
 
-    export PATH=/software/perl-5.12.2/bin:/bin:/usr/bin:/usr/local/bin:$dist_scripts
-    # XXX: insertion of a Perl build in PATH should probably be under control of something like otter_ipath_get,
-    # and should from there be replicated to the otterlace wrapperfile (and any other built component running under Perl, probably via $PATH),
-    # t/swac_stopwords.t will be failing while this is here...
+    osname="$( uname -s )"
+
+    case "$osname" in
+        Darwin)
+            # Assume for now that PATH already contains the correct container, inc. perl
+            export PATH=$PATH:$dist_scripts
+            ;;
+
+        *)
+            export PATH=/software/perl-5.12.2/bin:/bin:/usr/bin:/usr/local/bin:$dist_scripts
+            # XXX: insertion of a Perl build in PATH should probably be under control of something like otter_ipath_get,
+            # and should from there be replicated to the otterlace wrapperfile (and any other built component running under Perl, probably via $PATH),
+            # t/swac_stopwords.t will be failing while this is here...
+            ;;
+    esac
 
     export LD_LIBRARY_PATH=
     umask 002 # NB: running over ssh can set a surprising umask
