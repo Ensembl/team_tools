@@ -35,7 +35,16 @@
 # May chdir un-scoped.
 get_opts_inputvars() {
     # zmap_trees, zmap_build, ensembl_otter_root : not local
+    local sw
 
+    while [[ $# > 0 ]]; do
+        case "$1" in
+            -h | --help) show_help_exit ;;
+            --) shift
+                break ;;
+        esac
+        shift
+    done
 
     # Inner otterlace_client_install() runs needs one build directory,
     # passed in by otterlace_install_all .  Already in $zmap_build.
@@ -56,7 +65,7 @@ get_opts_inputvars() {
             sleep 1
         fi
 
-        [ -z "$zmap_trees" ] && bail "usage: $( basename "$0" ) <zmap_build> [ <zmap_build_for_another_distro> ]*"
+        [ -z "$zmap_trees" ] && show_help_exit
     fi
 
 
@@ -66,6 +75,27 @@ get_opts_inputvars() {
     else
         ensembl_otter_root="$( pwd )"
     fi
+}
+
+show_help_exit() {
+    printf "Usage: %s [ options ] <zmap_build_dir>*
+
+ This is %s
+
+ Default is to build the Otter Server, and the internal Linux clients
+ to /software/anacode .  This requires one ZMap build directory, from
+ which the correct Otterlace build host(s) are looked up in
+ build-config.yaml .
+
+ Multiple ZMap builds may be given, normally during OS transition.
+ Doing this adds extra build hosts.
+
+ Options:
+
+    --help | -h		Show this help
+
+" "$( basename "$0" )" "$thisprog" >&2
+    exit 1
 }
 
 
