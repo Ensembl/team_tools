@@ -10,6 +10,10 @@ use FindBin '$RealBin';
 
 _otterlace_build_config.pl - calculate config for otterlace_build
 
+=head1 SYNOPSIS
+
+ _otterlace_build_config [ options ] <ZMap_build_tree>*
+
 =head1 DESCRIPTION
 
 Otterlace builds require a zmap build directory, a build host, maybe
@@ -36,19 +40,25 @@ can produce either
 
 =over 4
 
-=item *
+=item (with no option flags)
 
-The set of Otterlace build hosts
+Output the set of Otterlace build hosts, for the given ZMap build
+tree(s).
 
-=item *
+=item -host <otterlace_buildhost>
 
-The one build directory (chosen from the set of inputs) for a
+Output the one ZMap build tree (chosen from the set of inputs) for a
 particular Otterlace build host.
 
 This program is called to reproduce the main calculation multiple
 times, in order to answer these queries; but that is easier than
 passing structured data back to the calling shell, or taking control
 of the build as another wrapper on the outside.
+
+=item -list
+
+Output the list of build host combinations.  Used for inclusion in
+help text.
 
 =back
 
@@ -61,6 +71,8 @@ sub main {
     my ($op, $for_host);
     if (@ARGV > 2 && $ARGV[0] eq '-host') {
         ($op, $for_host) = splice @ARGV, 0, 2;
+    } elsif (@ARGV == 1 && $ARGV[0] eq '-list') {
+        $op = shift @ARGV;
     }
     my @zmapdirs = @ARGV;
 
@@ -68,8 +80,9 @@ sub main {
     if (my @bad = grep { ! -d $_ || ! -d "$_/ZMap" || ! -d "$_/Dist" } @zmapdirs) {
         die "$0: not ZMap build directories: @bad\n";
     }
-    if (!@zmapdirs) {
-        die "Syntax: $0 [ -host <buildhost> ] <ZMap_build_tree>*\n
+    if (!@zmapdirs && !$op) {
+        die "Syntax: $0 [ -host <otterlace_buildhost> ] <ZMap_build_tree>*
+\t$0 -list\n
   Without -host flag, output the set of Otterlace build hosts for
   these ZMap trees.\n
   When given a buildhost (which must be from that set), return the one
@@ -99,11 +112,21 @@ sub main {
     my @ohost = sort keys %ohost2dir;
     if (!defined $op) {
         print join '', map {"$_\n"} @ohost;
-    } else {
+    } elsif ($op eq '-list') {
+        print " Current build hosts are configured in\n $cfg_fn\n\n";
+        print "    ZMap build host     Otterlace build host\n";
+        my $z2o = $CONFIG{zhost2ohost};
+        print map {
+            my $ohost = $$z2o{$_};
+            sprintf("      %-16s    %s\n", $_, defined $ohost ? $ohost : '(no build)');
+        } sort keys %$z2o;
+    } elsif ($op eq '-host') {
         my $dir = $ohost2dir{$for_host};
         die "$0: $for_host is not an Otterlace build host\n".
           "  Valid hosts are (@ohost)\n" unless defined $dir;
         printf("%s\n", $dir);
+    } else {
+        die "$0: Confused. op=$op";
     }
 
     return 0;

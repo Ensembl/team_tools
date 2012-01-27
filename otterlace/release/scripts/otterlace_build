@@ -28,14 +28,33 @@
 # / NB
 
 
-. "$( dirname "$0" )/_otterlace.sh" || exit 1
-
 
 # Process commandline args & optional variables passed in environment.
-# May chdir un-scoped.
+# May chdir un-scoped, or exit or exec
 get_opts_inputvars() {
-    # zmap_trees, zmap_build, ensembl_otter_root : not local
+    # zmap_trees, zmap_build, ensembl_otter_root, client_build_hosts : not local
+    local sw
 
+    while [[ $# > 0 ]]; do
+        case "$1" in
+            -h | --help) show_help_exit ;;
+            --) shift
+                break ;;
+            --show-path)
+                # this is here to assist debugging of problems-finding-self
+                printf "PATH is now\n    %s\n" \
+                    "$( echo $PATH | sed -e 's/:/\n    /g' )"
+                exit 0 ;;
+            --hosts | -H)
+                # this is a convenience option, so _otterlace_build_config.pl can remain "internal"
+                exec _otterlace_build_config.pl -list ;;
+            --server-only | -S)
+                [ -n "$client_build_hosts" ] && bail "Was about to overwrite client_build_hosts='$client_build_hosts'"
+                client_build_hosts=' '
+                ;;
+        esac
+        shift
+    done
 
     # Inner otterlace_client_install() runs needs one build directory,
     # passed in by otterlace_install_all .  Already in $zmap_build.
@@ -56,7 +75,7 @@ get_opts_inputvars() {
             sleep 1
         fi
 
-        [ -z "$zmap_trees" ] && bail "usage: $( basename "$0" ) <zmap_build> [ <zmap_build_for_another_distro> ]*"
+        [ -n "$zmap_trees" ] || [ "$client_build_hosts" = ' ' ] || show_help_exit
     fi
 
 
@@ -68,19 +87,59 @@ get_opts_inputvars() {
     fi
 }
 
+show_help_exit() {
+    printf "Usage: %s [ options ] <zmap_build_dir>*
 
-# Set some environment variables, global variables for the script,
-# umask...
-setup_globals() {
+ This is %s
 
-    export PATH=/software/perl-5.12.2/bin:/bin:/usr/bin:/usr/local/bin:$dist_scripts
-    # XXX: insertion of a Perl build in PATH should probably be under control of something like otter_ipath_get,
-    # and should from there be replicated to the otterlace wrapperfile (and any other built component running under Perl, probably via $PATH),
-    # t/swac_stopwords.t will be failing while this is here...
+ Default is to build the Otter Server, and the internal Linux clients
+ to /software/anacode .  This requires one ZMap build directory, from
+ which the correct Otterlace build host(s) are looked up in
+ build-config.yaml .
+
+ Multiple ZMap builds may be given, normally during OS transition.
+ Doing this adds extra build hosts.
+
+ Options:
+
+    --help | -h		Show this help (and stop)
+    --hosts | -H	Show build hosts list (and stop)
+
+    --server-only	Build Otter Server, but no clients
+
+" "$( basename "$0" )" "$thisprog" >&2
+    exit 1
+}
+
+
+# Set environment variables about self, umask.  These don't take
+# parameters and are needed early (during get_opts_inputvars)
+setup_self_globals() {
+    # shared config and functions
+    . "$( dirname "$0" )/_otterlace.sh" || exit 1
+
+    osname="$( uname -s )"
+
+    case "$osname" in
+        Darwin)
+            # Assume for now that PATH already contains the correct container, inc. perl
+            export PATH=$PATH:$dist_scripts
+            ;;
+
+        *)
+            export PATH=/software/perl-5.12.2/bin:/bin:/usr/bin:/usr/local/bin:$dist_scripts
+            # XXX: insertion of a Perl build in PATH should probably be under control of something like otter_ipath_get,
+            # and should from there be replicated to the otterlace wrapperfile (and any other built component running under Perl, probably via $PATH),
+            # t/swac_stopwords.t will be failing while this is here...
+            ;;
+    esac
 
     export LD_LIBRARY_PATH=
     umask 002 # NB: running over ssh can set a surprising umask
+}
 
+# Set some environment variables, global variables for the script
+setup_globals() {
 
     config_get version_major
     config_get version_minor
@@ -365,7 +424,11 @@ otterlace_client_install() {
 otterlace_install_all() {
     local env_cmd ssh_cmd
 
-    if [ -n "$client_build_hosts" ]; then
+    if [ "$client_build_hosts" = ' ' ]; then
+        # This value started off as a quick hack to persuade existing
+        # code...  could do better
+        echo Building no clients
+    elif [ -n "$client_build_hosts" ]; then
         echo ' [W] $client_build_hosts override can (currently) restrict the set of build hosts, but not replace them' >&2
         sleep 1
         # else we would have a local variable
@@ -416,6 +479,7 @@ write_build_log_entry() {
 
 
 
+setup_self_globals
 get_opts_inputvars "$@"
 setup_globals
 # echo "otter_home = '${otter_home}'" ; exit # uncomment to test
