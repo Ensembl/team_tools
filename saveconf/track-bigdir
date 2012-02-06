@@ -143,10 +143,7 @@ git add -A $SAVE_REPO/meta.{ls-l,err}
 dotlockfile -c -p $ULOCKFILE
 
 COMMENT=$( echo -e "auto-update $TRACK_DIRS from $TRACK_ROOT/\n\nby $0; add took $[ $TIME1 - $TIME0 ] sec" )
-git commit -q --author 'unknown <unknown>' --date "$LATEST" -m "$COMMENT" \
-    > $SAVE_REPO/dbg.lastcommit
-# | \
-#    (grep -Ev '^# On branch master|^nothing to commit'; true)
+$TT_S/saveconf/git-qcommit --author 'unknown <unknown>' --date "$LATEST" -m "$COMMENT"
 
 git branch -v -M _put $SAVE_BRANCH
 git checkout -q -f meta
