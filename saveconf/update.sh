@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 set -e
 
@@ -13,7 +13,7 @@ set -e
 
 
 SAVEREPO=$PWD
-if [ -d "$SAVEREPO/.git" ] && [ $( basename $SAVEREPO ) == "server-config-trail.saveconf" ]; then
+if [ -d "$SAVEREPO/.git" ] && [ $( basename $SAVEREPO ) = "server-config-trail.saveconf" ]; then
     :
     # Happy with PWD being our SAVEREPO
     #
@@ -87,7 +87,7 @@ git add -A $SAVEREPO/{meta,derived}
 
 dotlockfile -c -p $LOCKFN
 
-git commit -m "updated by $0, fetch took $[ $TIME1 - $TIME0 ] sec" | \
+git commit -m "updated by $0, fetch took $(( $TIME1 - $TIME0 )) sec" | \
     (grep -Ev '^# On branch master|^nothing to commit'; true)
 
 git push -q origin

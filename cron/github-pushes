@@ -14,6 +14,10 @@
 #     branches will be updated
 #
 # This script is young and probably fragile, sorry.
+#
+# Conservatism rationale: we cannot reliably unpublish to Github.  If
+# we don't know what something is, put the brakes on and let cron2rss
+# draw someone's attention.
 
 
 setup_vars() {
@@ -36,12 +40,24 @@ setup_vars() {
 }
 
 all_repos() {
-    REFS_WHITE='refs/tags/(humpub-release-.*|initial_empty_commit|cvs_MAIN_final)|origin/humpub-branch-.*'
+    REFS_WHITE='refs/tags/(humpub-release-.*|initial_empty_commit|cvs_MAIN_final|info/.*)|origin/humpub-branch-.*'
     REFS_BLACK='origin/master|origin/(feature|jgrg|jh13|mca|mg13)/.*|refs/tags/cvs/.*'
     FROM_REMOTE='origin'
     REPO="$HOME/gitwk-anacode/ensembl-otter"
     TO_REMOTE='git@github.com:Anacode/ensembl-otter.git'
     do_push
+    # Blacklist rationale:
+    #
+    # We decided not to publish master, so we can do coordinated
+    # internal unpublishing of disasters.
+    #
+    # Feature branches' commits will be published when the code is
+    # merged and released (cf. master).
+    #
+    # CVS-related stuff was published to a separate repo
+    # (ensembl-otter-CVSbranches) so we can ignore those.
+    #
+    # Developer branches and tags are all private, may be rebased etc.
 
 
     REFS_WHITE='origin/anacode|origin/master'
