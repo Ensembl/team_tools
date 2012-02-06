@@ -1,0 +1,12 @@
+#! /bin/sh
+
+# "Quiet commit" for auto-commit scripts
+#
+# Syntax: git-qcommit <git-commit-args>
+
+if git diff --cached --quiet --exit-code; then
+    :
+    # nothing to do
+else
+    git commit -q "$@"
+fi
