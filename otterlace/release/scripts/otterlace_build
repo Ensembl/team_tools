@@ -171,10 +171,14 @@ setup_globals() {
     fi
 
     # EXTERNAL PARAMETERS
-    : ${build_log:=/nfs/anacode/otterlace/ensembl_otter_build_log.txt}
+    : ${build_log:=/nfs/anacode/otterlace/ensembl_otter_build_log}
     anacode_cvsroot=:ext:cvs.internal.sanger.ac.uk:/repos/cvs/anacode
     ensembl_cvsroot=:ext:cvs.sanger.ac.uk:/cvsroot/ensembl
     # / EXTERNAL PARAMETERS
+
+    # check early, else it will be too late
+    [ -d "$build_log" ] && [ -w "$build_log" ] || \
+        bail "build_log=$build_log: should be a writable directory (was a create/append-forever file, see RT#223520)"
 
     otter_ipath_get otter_home
 
@@ -466,6 +470,7 @@ write_build_log_entry() {
     fi
 
     otterlace_build_log_entry \
+        -v -l "$build_log" -- \
         --date     "$date"     \
         --version  "$version"  \
         --track    "$track"    \
@@ -473,8 +478,7 @@ write_build_log_entry() {
         --builder  "$thisprog" \
         --user     "$( whoami )"      \
         --host     "$( hostname -s )" \
-        "$@"                   \
-        | tee --append -- "$build_log" | sed -e 's/^/\tL:/'
+        "$@"
 }
 
 

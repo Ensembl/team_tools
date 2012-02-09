@@ -11,17 +11,17 @@ assume
 
 build to home directory & local Apache,
 
-  mkdir ~/_swac
+  mkdir -p ~/_swac/build_log
   ln -snvf /software/anacode/lib ~/_swac/
 
-  otter_nfswub=~/_httpd/OTTER otter_swac=~/_swac build_log=~/_swac/build_log.yaml otter_suffix=arch:distro  otterlace_build ~zmap/BUILD.DEVELOPMENT.{lenny,lucid}
+  otter_nfswub=~/_httpd/OTTER otter_swac=~/_swac build_log=~/_swac/build_log otter_suffix=arch:distro  otterlace_build ~zmap/BUILD.DEVELOPMENT.{lenny,lucid}
 
 
 build only client to home directory (mg13, as of 2011-12-12):
 
   otterlace_client_host=deskpro18925   \
   otter_swac=~/Work/swac               \
-  build_log=~/Work/swac/build_log.yaml \
+  build_log=~/Work/swac/build_log      \
   zmap_build=~zmap/BUILD.DEVELOPMENT   \
   otterlace_build
 
@@ -67,8 +67,8 @@ Rebuilding just the server
 
   (to a disposable non-live copy)
 
-    mkdir -p /tmp/junk/srv
-    otter_nfswub=/tmp/junk/srv build_log=/tmp/junk/build_log.yaml \
+    mkdir -p /tmp/junk/{srv,build_log}
+    otter_nfswub=/tmp/junk/srv build_log=/tmp/junk/build_log \
       /nfs/users/nfs_m/mca/gitwk-anacode/team_tools.stable/otterlace/release/scripts/otterlace_build --server-only
 
     diff -ru /tmp/junk/srv/cgi-bin/otter/57 /nfs/WWWdev/SANGER_docs/cgi-bin/otter/57
