@@ -1,4 +1,5 @@
 #! /software/bin/perl -T
+# just to pick up modules from /software
 
 use strict;
 use warnings;
