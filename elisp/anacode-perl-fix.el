@@ -44,6 +44,17 @@ Commands:
    )
   "A pattern that matches a commma and its surrounding whitespace.")
 
+(defvar anacode-perl-fix-count)
+
+(defmacro anacode-perl-fix-count-report (&rest body)
+  `(let ((anacode-perl-fix-count 0))
+     ,@body
+     (message (format "fixes: %d" anacode-perl-fix-count))))
+
+(defun anacode-perl-fix-count-increment ()
+  (setq anacode-perl-fix-count
+        (+ anacode-perl-fix-count 1)))
+
 (defvar anacode-perl-fix-match-index)
 
 (defun anacode-perl-fix-match-string ()
@@ -95,9 +106,11 @@ Commands:
   (let ((match-string (anacode-perl-fix-match-string)))
     (if (not (string-equal match-string string))
         (anacode-perl-fix-excursion-to-match
-         (if (y-or-n-p (format "%s? " query))
-             (replace-match string t t nil
-              anacode-perl-fix-match-index)))))
+         (when (y-or-n-p (format "%s? " query))
+           (replace-match
+            string t t nil
+            anacode-perl-fix-match-index)
+           (anacode-perl-fix-count-increment)))))
   (anacode-perl-fix-match-next))
 
 (defun anacode-perl-fix-no-space ()
@@ -121,21 +134,22 @@ It tidies up the whitespace in the declarations of subroutine
 arguments."
   (interactive "r")
   (anacode-perl-require-major-mode-is-perl
-   (anacode-perl-fix-search
-    anacode-perl-fix-sub-args-pattern
-    start end
-    (anacode-perl-fix-single-space)  ; "my ("
-    (anacode-perl-fix-no-space)      ; "($foo"
-    (anacode-perl-fix-search-match
-     anacode-perl-fix-comma-pattern
-     (anacode-perl-fix-no-space)     ; "$foo,"
-     (anacode-perl-fix-single-space) ; ", $bar"
-     )
-    (anacode-perl-fix-no-space)      ; "$bar)"
-    (anacode-perl-fix-single-space)  ; ") ="
-    (anacode-perl-fix-single-space)  ; "= @_"
-    (anacode-perl-fix-no-space)      ; "@_;"
-    )))
+   (anacode-perl-fix-count-report
+    (anacode-perl-fix-search
+     anacode-perl-fix-sub-args-pattern
+     start end
+     (anacode-perl-fix-single-space)  ; "my ("
+     (anacode-perl-fix-no-space)      ; "($foo"
+     (anacode-perl-fix-search-match
+      anacode-perl-fix-comma-pattern
+      (anacode-perl-fix-no-space)     ; "$foo,"
+      (anacode-perl-fix-single-space) ; ", $bar"
+      )
+     (anacode-perl-fix-no-space)      ; "$bar)"
+     (anacode-perl-fix-single-space)  ; ") ="
+     (anacode-perl-fix-single-space)  ; "= @_"
+     (anacode-perl-fix-no-space)      ; "@_;"
+     ))))
 
 (defun anacode-perl-fix-perl-mode-hook ()
   "The anacode\\=-perl-fix hook function for Perl mode."
