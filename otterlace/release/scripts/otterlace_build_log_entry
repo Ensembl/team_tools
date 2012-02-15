@@ -4,14 +4,95 @@ use strict;
 use warnings;
 
 use YAML();
+use Getopt::Long 'GetOptions';
+use Time::HiRes 'gettimeofday';
 
-my $log_entry = { };
+our %opt;
 
-while (my ($k, $v) = splice @ARGV, 0, 2) {
-    $k =~ s/^--?//;
-    $log_entry->{$k} = $v;
+sub main {
+    %opt =
+      (logdir => '',
+       verbose => 0);
+
+    if (@ARGV % 2 or grep { $_ eq '--' } @ARGV) {
+        $opt{help}++ unless
+          GetOptions \%opt, 'verbose|v!', 'help|h!', 'logdir|l=s';
+    }
+
+    syntax() if $opt{help};
+
+    die 'No log destination set - use --logdir' unless $opt{logdir};
+    die "Bad log destination '$opt{logdir}'" unless -d $opt{logdir} && -w _;
+
+    my $out = args2yaml(@ARGV);
+
+    if ($opt{verbose}) {
+        my $dented = $out;
+        $dented =~ s/^/\tL:/mg;
+        print $dented;
+    }
+
+    putfile($opt{logdir}, $out);
+
+    return 0;
 }
-die "Syntax: $0 [ <--key> <value> ]+\n"
-  if !%$log_entry || grep { !defined } values %$log_entry;
 
-print YAML::Dump($log_entry);
+
+sub args2yaml {
+    my @in = @_;
+    my $log_entry = { };
+
+    while (my ($k, $v) = splice @in, 0, 2) {
+        $k =~ s/^--?//;
+        $log_entry->{$k} = $v;
+    }
+    die "Need an even set of <key> <value> pairs"
+      if !%$log_entry || grep { !defined } values %$log_entry;
+
+    return YAML::Dump($log_entry);
+}
+
+
+sub syntax {
+    die "Syntax: $0 [ <options> -- ] [ <--key> <value> ]+\n
+Option:
+
+  --help | -h
+
+  --verbose | -v		Echo an indented copy to STDOUT.
+
+  --logdir | -l <logdir>	Directory into which we write.
+	Required option - default is supplied by otterlace_build
+
+The '--' on keys is optional, and will be removed.
+
+Logs will be written to '$opt{logdir}'\n";
+}
+
+
+# We want to put a new file in the directory, avoiding collisions for
+# NFS safety.  There will often be processes on other hosts, currently
+# serialised by the main build script, but later... maybe not.
+sub putfile {
+    my ($dir, $txt) = @_;
+
+    my $tok = int(rand(1E7));
+    my $now = [ gettimeofday() ];
+    my @now = localtime();
+
+    my $fn = sprintf
+      ("%s/%04d%02d%02d.%02d%02d%02d.%06s_%s.yaml",
+       $dir, $now[5]+1900, $now[4]+1, @now[3,2,1,0], $now->[1], $tok);
+
+    # This will strew the directory with small files.  We can cat them
+    # together later, hence the usec timestamp.
+
+    open my $fh, ">", $fn
+      or die "open $fn: $!";
+    # assume no collisions in $leaf
+
+    print {$fh} $txt or die "writing $fn: $!";
+    close $fh or die "closing $fn: $!";
+}
+
+exit main();

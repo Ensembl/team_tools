@@ -87,8 +87,7 @@ git add -A $SAVEREPO/{meta,derived}
 
 dotlockfile -c -p $LOCKFN
 
-git commit -m "updated by $0, fetch took $(( $TIME1 - $TIME0 )) sec" | \
-    (grep -Ev '^# On branch master|^nothing to commit'; true)
+$SAVECONFDIR/git-qcommit -m "updated by $0, fetch took $(( $TIME1 - $TIME0 )) sec"
 
 git push -q origin
 
