@@ -23,6 +23,7 @@ otterlace_server_perl="$( cd "$( dirname "$0")/.." && pwd )/perl"
 # echo "\$otterlace_server_perl = '$otterlace_server_perl'" ; exit # uncomment to test
 
 # exec() the real CGI script
+# Newline to test-->printf 'Content-type: text/plain\n\n'; echo \
 exec /software/bin/perl \
     "-I${otterlace_server_perl}" \
     "-I${anacode_prefix}/lib" \
