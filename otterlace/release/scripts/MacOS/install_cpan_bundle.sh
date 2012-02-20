@@ -21,6 +21,13 @@ config_bak="${config_dst}.arm_bak"
 
 cpan_home="${install_base}/var/cpan"
 
+pers_config="${HOME}/.cpan/CPAN/MyConfig.pm"
+if [ -e "${pers_config}" ]; then
+    echo "You have a CPAN config at: ${pers_config}"
+    echo "Please move this out of the way before continuing."
+    exit 4
+fi
+
 [ -e "${config_dst}" ] && mv "${config_dst}" "${config_bak}"
 
 sed -e "s|OTT_REL_MACOS_CPAN_HOME|${cpan_home}|" \
