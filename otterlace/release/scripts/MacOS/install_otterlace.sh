@@ -18,8 +18,8 @@ fi
 hostname="$( hostname -f )"
 
 var_otter="${install_base}/var/otter"
-mkdir -v -p "${var_otter}"
-build_log="${var_otter}/build_log.yaml"
+build_log_dir="${var_otter}/build_logs"
+mkdir -v -p "${build_log_dir}"
 
 set_stage_dir
 
@@ -30,7 +30,7 @@ otterlace_build="${my_dir}/../otterlace_build"
     \
 	otterlace_client_host="${hostname}" \
 	otter_swac="${install_base}" \
-	build_log="${build_log}" \
+	build_log="${build_log_dir}" \
 	zmap_build="${stage_dir}" \
 	"${otterlace_build}"
 )
