@@ -50,6 +50,7 @@ sub import {
 
     # set up the include path
     unshift @INC,
+    ( sprintf '%s/%s', $otter_root, $otter_version ),
     ( map {
         sprintf '%s%s/%s', $ensembl_root, $ensembl_version, $_;
       } qw(
@@ -57,7 +58,6 @@ sub import {
       ensembl/modules
       ensembl-variation/modules
       ), ),
-    ( sprintf '%s/%s', $otter_root, $otter_version ),
     ;
 
     unshift @INC, sprintf('%s/lib/humpub', $otterlace_server_root) if $humpub;
