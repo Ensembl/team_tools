@@ -346,7 +346,7 @@ otterlace_client_install_zmap() {
         cp -r -- "${zmap_build}/ZMap/src/perl/X11-XRemote-0.01" . &&
         cd X11-XRemote-0.01 &&
         perl Makefile.PL \
-            PREFIX=${install_dir} \
+            INSTALL_BASE=${install_dir} \
             CC=gcc \
             LD=gcc \
             --with-zmap-libs "${zmap_prefix}/lib" \

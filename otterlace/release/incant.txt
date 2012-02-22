@@ -25,6 +25,12 @@ build only client to home directory (mg13, as of 2011-12-12):
   zmap_build=~zmap/BUILD.DEVELOPMENT   \
   otterlace_build
 
+  NB: (2012-02-22) the above recipe now depends on having put in place:
+
+  mkdir ~/Work/swac/bin
+  cp /software/anacode/bin/anacode_distro_code ~/Work/swac/bin
+  ln -s /software/anacode/distro ~/Work/swac
+
 
 otterlace_dev build
   otterlace_build ~zmap/BUILD.DEVELOPMENT.{lenny,lucid}

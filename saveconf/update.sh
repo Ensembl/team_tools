@@ -64,26 +64,10 @@ export DIFFDEVLIVE=$SAVECONFDIR/diffdevlive-nag
 $DIFFDEVLIVE $DATADIR > $SAVEREPO/meta/ddl.asc
 $SAVECONFDIR/diffdevlive-fn -0 < $SAVEREPO/meta/ddl.asc | xargs -r0 $SAVECONFDIR/diffdevlive-diff > $SAVEREPO/meta/details.diff
 
-# Build version-to-version differences,
-# for the files which should be the same
-mkdir -p $SAVEREPO/derived
-for leaf in species.dat users.txt; do
-    {
-	diff -Nsu $DATADIR/{52,53}/$leaf || true
-	diff -Nsu $DATADIR/{53,54}/$leaf || true
-	diff -Nsu $DATADIR/{54,55}/$leaf || true
-	diff -Nsu $DATADIR/{55,56}/$leaf || true
-	diff -Nsu $DATADIR/{56,57}/$leaf || true
-	diff -Nsu $DATADIR/{57,58}/$leaf || true
-	diff -Nsu $DATADIR/{59,60}/$leaf || true
-	diff -Nsu $DATADIR/{60,61}/$leaf || true
-    } > $SAVEREPO/derived/$leaf.v2v.diff
-done
-
 
 TIME1=$( date +%s )
 
-git add -A $SAVEREPO/{meta,derived}
+git add -A $SAVEREPO/meta
 
 dotlockfile -c -p $LOCKFN
 
