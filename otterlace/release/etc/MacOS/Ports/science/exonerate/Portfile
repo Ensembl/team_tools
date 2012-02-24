@@ -30,5 +30,8 @@ patchfiles          patch-src-program-Makefile.am.diff \
 depends_lib         port:glib2
 depends_build       port:pkgconfig
 
+# sadly the code generation & compilation is unreliable unless...
+
+use_parallel_build  no
 
 # EOF
