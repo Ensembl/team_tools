@@ -35,5 +35,6 @@ xorg-libXmu
 # misc
 #
 curl
+exonerate
 
 # EOF
