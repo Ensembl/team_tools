@@ -28,5 +28,7 @@ patchfiles          patch-src-program-Makefile.am.diff \
                     patch-src-program-Makefile.in.diff
 
 depends_lib         port:glib2
+depends_build       port:pkgconfig
+
 
 # EOF
