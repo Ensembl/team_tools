@@ -5,7 +5,6 @@ PortSystem          1.0
 
 name                exonerate
 version             2.2.0
-revision            1
 categories          science
 platforms           darwin
 maintainers         sanger.ac.uk:mg13
