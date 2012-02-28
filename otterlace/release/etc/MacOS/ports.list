@@ -25,6 +25,7 @@ p5-tk
 p5-xml-libxml
 p5-xml-simple
 p5-config-inifiles
+p5-mac-propertylist
 
 # graphics
 #
