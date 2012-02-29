@@ -36,6 +36,10 @@ xorg-libXmu
 # misc
 #
 curl
+
+# bioinformatics
+#
 exonerate
+samtools
 
 # EOF
