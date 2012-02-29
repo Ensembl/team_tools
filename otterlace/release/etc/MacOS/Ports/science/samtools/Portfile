@@ -5,7 +5,7 @@ PortSystem              1.0
 
 name                    samtools
 version                 0.1.17
-revision                2
+revision                1
 categories              science
 platforms               darwin
 maintainers             gmail.com:haroldpimentel openmaintainer
