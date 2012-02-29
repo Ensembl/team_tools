@@ -40,6 +40,7 @@ curl
 # bioinformatics
 #
 exonerate
+hmmer
 samtools
 
 # EOF
