@@ -37,6 +37,11 @@ main();
 
 package DbIterate;
 
+use strict;
+use warnings;
+use POSIX 'ceil';
+
+
 sub new {
     bless { }, __PACKAGE__;
 }
@@ -86,10 +91,23 @@ sub iterate_tables {
 sub iterate_table {
     my ($self, $t) = @_;
     my $dbh = $self->dbh;
-    my $q = $dbh->selectcol_arrayref("select count(*) from `$t`");;
 
-    my ($tot) = @$q;
-    $self->total($tot, $t);
+    my $i = $dbh->selectrow_hashref("show table status where name=?", {}, $t);
+# use YAML; warn Dump({ $t => $i });
+
+    my $tot = 0;
+    my $data = sprintf("rows:%.3g (%s, %s)", @{$i}{qw{ Rows Engine Row_format }});
+    foreach my $kl ([ Data_length => $data ],
+                    [ Index_length => 'indices' ],
+                    [ Data_free => 'unused' ]) {
+        my ($k, $label) = @$kl;
+        $tot += $self->total_bytes($i->{$k}, $t, $label);
+    }
+
+### slow and less informative
+#    my $q = $dbh->selectcol_arrayref("select count(*) from `$t`");;
+#    ($tot) = @$q;
+#    $self->total($tot, $t);
 
     return $tot;
 }
@@ -100,6 +118,14 @@ sub total {
     my $T = time() - $^T;
     warn "+${T}s: Done @ele\n" if $T > 15;
     print join '/', "$total\t", @ele, "\n";
+}
+
+# rounds up to integer KiB, to match xdiskusage' assumption
+sub total_bytes {
+    my ($self, $byte, @ele) = @_;
+    my $tot = ceil($byte / 1024);
+    $self->total($tot, @ele);
+    return $tot;
 }
 
 1;
