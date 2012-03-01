@@ -95,8 +95,10 @@ sub iterate_table {
     my $i = $dbh->selectrow_hashref("show table status where name=?", {}, $t);
 # use YAML; warn Dump({ $t => $i });
 
+    my ($N, $eng, $fmt) = @{$i}{qw{ Rows Engine Row_format }};
+    my $data = sprintf("rows:%.3g (%s, %s)", $N || -1, $eng, $fmt);
+
     my $tot = 0;
-    my $data = sprintf("rows:%.3g (%s, %s)", @{$i}{qw{ Rows Engine Row_format }});
     foreach my $kl ([ Data_length => $data ],
                     [ Index_length => 'indices' ],
                     [ Data_free => 'unused' ]) {
