@@ -4,8 +4,7 @@
 PortSystem              1.0
 
 name                    samtools
-version                 0.1.17
-revision                1
+version                 0.1.18
 categories              science
 platforms               darwin
 maintainers             gmail.com:haroldpimentel openmaintainer
@@ -21,8 +20,8 @@ long_description        SAM (Sequence Alignment/Map) Tools provide various \
 homepage                http://samtools.sourceforge.net/
 master_sites            sourceforge
 
-checksums               sha1    4d2ef4273d9f71cd1f504f43c596970845d78718 \
-                        rmd160  0921e733358ccf01d316dff2b797957f4f2cfb7b
+checksums               sha1    77be35df7a90c288a003ff826ba99aef53b2fbe6 \
+                        rmd160  0301de58e31c7529a2535086be0cc7d93778ede8
 
 patchfiles              patch-Makefile.diff
 
