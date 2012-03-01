@@ -24,15 +24,24 @@ master_sites            sourceforge
 checksums               sha1    4d2ef4273d9f71cd1f504f43c596970845d78718 \
                         rmd160  0921e733358ccf01d316dff2b797957f4f2cfb7b
 
+patchfiles              patch-Makefile.diff
+
 use_bzip2               yes
 
 depends_lib             port:zlib
 
-# A hack to get hold of the macports-adjusted compiler flags
-configure.cmd           "echo \$CFLAGS > macports_cflags"
-configure.pre_args      ""
+use_configure           no
 
-build.cmd               cd ${worksrcpath} && make CFLAGS="\$(cat macports_cflags)"
+set archflags           [get_canonical_archflags cc]
+set sdkroot             [portconfigure::configure_get_sdkroot]
+set sdkroot_flags       ""
+
+if {${sdkroot} != ""} {
+    set sdkroot_flags "-isysroot ${sdkroot}"
+}
+
+build.env-append        CC=${configure.cc} \
+                        CFLAGS="${configure.cflags} ${archflags} ${sdkroot_flags}"
 
 destroot {
     xinstall -m 755 ${worksrcpath}/samtools ${destroot}${prefix}/bin
