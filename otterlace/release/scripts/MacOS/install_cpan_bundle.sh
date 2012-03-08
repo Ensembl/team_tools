@@ -40,11 +40,17 @@ sed -e "s|OTT_REL_MACOS_CPAN_HOME|${cpan_home}|" \
 cpan_prefs_src="${etc_macos}/CPAN/prefs"
 cpan_prefs_dst="${cpan_home}/prefs"
 mkdir -v -p "${cpan_prefs_dst}"
-for f in ${cpan_prefs_src}/*.yml; do
-    b=$( basename $f )
-    sed -e "s|OTT_REL_MACOS_INSTALL_BASE|${install_base}|" \
-        "$f" \
-      > "${cpan_prefs_dst}/$b"
+for src in ${cpan_prefs_src}/*.yml; do
+    b=$( basename "${src}" )
+    dest="${cpan_prefs_dst}/$b"
+    if [ "${dest}" -nt "${src}" ]; then
+        echo "Skipping distroptef ${src}"
+    else
+        echo "Installing distropref ${src} -> ${dest}"
+        sed -e "s|OTT_REL_MACOS_INSTALL_BASE|${install_base}|" \
+            "${src}" \
+          > "${dest}"
+    fi
 done
 
 # Copy the bundle file into place
