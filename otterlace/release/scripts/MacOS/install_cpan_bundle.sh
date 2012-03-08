@@ -40,7 +40,12 @@ sed -e "s|OTT_REL_MACOS_CPAN_HOME|${cpan_home}|" \
 cpan_prefs_src="${etc_macos}/CPAN/prefs"
 cpan_prefs_dst="${cpan_home}/prefs"
 mkdir -v -p "${cpan_prefs_dst}"
-cp -v ${cpan_prefs_src}/*.yml "${cpan_prefs_dst}"
+for f in ${cpan_prefs_src}/*.yml; do
+    b=$( basename $f )
+    sed -e "s|OTT_REL_MACOS_INSTALL_BASE|${install_base}|" \
+        "$f" \
+      > "${cpan_prefs_dst}/$b"
+done
 
 # Copy the bundle file into place
 #
