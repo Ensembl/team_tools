@@ -82,7 +82,7 @@ if [ -n "$mailmsg" ]; then
         printf "\n\n\n%s\nFor your convenience, html2text of the versions page at\n %s\n\n" \
             '------------------------------------------------------------------------' "$url"
         echo "Fetching $url" >&2
-        html2text -style pretty -ascii -nobs -width 180 "$url" 2>&1
+        curl -s "$url" | html2text -style pretty -ascii -nobs -width 180 2>&1
     } | mail -s "$mailsubj - $complete" "$mailto" && \
         echo Mail sent >&2
 fi

@@ -4,25 +4,22 @@ mark_start: "# * Automatic: aliases for people's machines"
 mark_end: "#<< automatic"
 map:
   deskpro-aeb: deskpro20629
-  deskpro-af2: deskpro19622
-  deskpro-al1: deskpro20132
-  deskpro-br2: deskpro021045
-  deskpro-ca1: deskpro20121
+  deskpro-af2: deskpro21239
   deskpro-cas: deskpro21242
-  deskpro-clb: deskpro20116
+  deskpro-clb: deskpro20132
+  deskpro-cs10: deskpro20122
   deskpro-dm4: deskpro20103
   deskpro-dml: deskpro20111
   deskpro-edgrif: deskpro16113
-  deskpro-ek1: deskpro20734
   deskpro-gdr: deskpro21729
-  deskpro-gm5: deskpro20127
+  deskpro-gm5: deskpro101281
   deskpro-gs6: deskpro17116
-  deskpro-ib2: deskpro20215
+  deskpro-ib2: deskpro-20111216123429
   deskpro-jel: deskpro20634
   deskpro-jh13: deskpro20622
-  deskpro-jkb: deskpro16133
   deskpro-jla1: deskpro20640
   deskpro-jm12: deskpro20105
+  deskpro-jr4: deskpro20116
   deskpro-lr13: deskpro20633
   deskpro-lw2: deskpro19676
   deskpro-mca: deskpro17119
@@ -31,6 +28,7 @@ map:
   deskpro-mh19: deskpro21727
   deskpro-mpk: deskpro102500
   deskpro-mt4: deskpro20129
+  deskpro-th2: deskpro20121
   deskpro-th2: deskpro20121
   deskpro-vb1: deskpro15567
   mac-gb10: mib103147i

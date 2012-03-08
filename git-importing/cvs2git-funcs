@@ -136,6 +136,14 @@ apply_hackery() {
     else
 	echo $HACKFILE absent, no worries
     fi
+
+    if [ -n "$FETCHREPO_INTERACT" ]; then
+        echo "FETCHREPO_INTERACT=$FETCHREPO_INTERACT : please exit shell after munging the repo copy"
+        (cd $REPOCVS; bash -i)
+        echo "...continuing"
+    else
+        echo 'You could set FETCHREPO_INTERACT to break into a shell here'
+    fi
 }
 
 do_import() {
@@ -148,9 +156,13 @@ do_import() {
 	-q \
 	$REPOCVS
 
-    # Cook up the IEC.  Option to let commitid depend on the input
-    # project name.
-    echo "commit refs/heads/master
+    # Cook up the IEC.  Options to let commitid depend on the input
+    # project name, or provide the entire commit from a file.
+    if [ -f "$IEC_FILE" ]; then
+        [ -n "$IEC_NAME" ] && echo "w: IEC_NAME overridden by IEC_FILE=$IEC_FILE" >&2
+        cat "$IEC_FILE"
+    else
+        echo "commit refs/heads/master
 mark :999999999
 author ${IEC_NAME:-iec} <iec> 1299601200 +0000
 committer ${IEC_NAME:-iec} <iec> 946684800 +0000
@@ -159,7 +171,8 @@ initial empty commit.
 
 this was made just after the cvs2git import process
 
-" > out.iec
+"
+    fi > out.iec
 
     # Make git repo
     git init
