@@ -41,6 +41,7 @@ curl
 #
 exonerate
 hmmer
+jksrc-lib
 samtools
 
 # EOF
