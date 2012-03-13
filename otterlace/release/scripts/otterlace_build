@@ -33,10 +33,12 @@
 # May chdir un-scoped, or exit or exec
 get_opts_inputvars() {
     # zmap_trees, zmap_build, ensembl_otter_root, client_build_hosts : not local
-    local sw
+    local sw opt
 
-    while [[ $# > 0 ]]; do
-        case "$1" in
+    while [[ $# > 0 ]] && [ "${1:0:1}" = "-" ]; do
+        opt="$1"
+        shift
+        case "$opt" in
             -h | --help) show_help_exit "Help requested." ;;
             --) shift
                 break ;;
@@ -53,7 +55,6 @@ get_opts_inputvars() {
                 client_build_hosts=' '
                 ;;
         esac
-        shift
     done
 
     # Inner otterlace_client_install() runs needs one build directory,
