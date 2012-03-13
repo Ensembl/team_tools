@@ -33,11 +33,13 @@
 # May chdir un-scoped, or exit or exec
 get_opts_inputvars() {
     # zmap_trees, zmap_build, ensembl_otter_root, client_build_hosts : not local
-    local sw
+    local sw opt
 
-    while [[ $# > 0 ]]; do
-        case "$1" in
-            -h | --help) show_help_exit ;;
+    while [[ $# > 0 ]] && [ "${1:0:1}" = "-" ]; do
+        opt="$1"
+        shift
+        case "$opt" in
+            -h | --help) show_help_exit "Help requested." ;;
             --) shift
                 break ;;
             --show-path)
@@ -53,7 +55,6 @@ get_opts_inputvars() {
                 client_build_hosts=' '
                 ;;
         esac
-        shift
     done
 
     # Inner otterlace_client_install() runs needs one build directory,
@@ -75,7 +76,7 @@ get_opts_inputvars() {
             sleep 1
         fi
 
-        [ -n "$zmap_trees" ] || [ "$client_build_hosts" = ' ' ] || show_help_exit
+        [ -n "$zmap_trees" ] || [ "$client_build_hosts" = ' ' ] || show_help_exit "Doing client build, but have no zmap_trees."
     fi
 
 
@@ -88,9 +89,14 @@ get_opts_inputvars() {
 }
 
 show_help_exit() {
+    local problem
+    problem="$1"
+
     printf "Usage: %s [ options ] <zmap_build_dir>*
 
  This is %s
+
+ (!) %s
 
  Default is to build the Otter Server, and the internal Linux clients
  to /software/anacode .  This requires one ZMap build directory, from
@@ -107,7 +113,7 @@ show_help_exit() {
 
     --server-only	Build Otter Server, but no clients
 
-" "$( basename "$0" )" "$thisprog" >&2
+" "$( basename "$0" )" "$thisprog" "$problem" >&2
     exit 1
 }
 
