@@ -11,6 +11,11 @@ goto_build_root
 
 echo "In ${PWD}"
 
+# Cleanup
+
+echo "Removing previous zmap and seqtools builds, if any"
+rm -rf zmap-* seqtools-*
+
 # ZMap
 
 zmap_tarball="${zmap_dist_dir}/zmap-*.tar.gz"
