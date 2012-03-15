@@ -14,4 +14,4 @@ path=$1
 
 sed -e '1s/^#!.*$//' "$path" | # nuke the #! line
 perl -c -MBio::Anacode::Perl::Syntax &&
-/bin/true
+true
