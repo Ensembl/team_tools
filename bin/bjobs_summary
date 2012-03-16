@@ -1,0 +1,30 @@
+#! /bin/sh
+
+[ "$#" = 0 ] || echo "($0 ignores parameters)"
+
+bjobs -w | perl -ane '
+ our $FMT = "%5s %-60s %s\n";
+
+ my ($id, $user, $stat, $q, $from, $exec, $name) = @F;
+ ($exec, $name) = ("", $exec) if $name =~ /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/; # bodge
+ my $txt = sprintf("%-7s %-6s %-10s %s", $user, $stat, $q, $name);
+ if ($txt =~ /^USER /) {
+   printf($FMT, "count", $txt, "job ids");
+ } else {
+   push @{ $num{$txt} }, $id;
+ }
+
+ END {
+   my $N = 0;
+   foreach my $txt (sort { @{ $num{$a} } <=> @{ $num{$b} || $a cmp $b } }
+                    keys %num) {
+     my $n = @{ $num{$txt} };
+     $N += $n;
+     my $ids = ($n <= 5
+                ? sprintf("(%s)", join " ", sort {$a <=> $b} @{ $num{$txt} })
+                : "");
+     printf($FMT, scalar @{ $num{$txt} }, $txt, $ids);
+   }
+   printf("%s\n$FMT", "=" x 20, $N, "total");
+ }
+'
