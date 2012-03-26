@@ -42,14 +42,20 @@ setup_vars() {
 all_repos() {
     REFS_WHITE='refs/tags/(humpub-release-.*|initial_empty_commit|cvs_MAIN_final|info/.*)|origin/humpub-branch-.*'
     REFS_BLACK='origin/master|origin/(feature|jgrg|jh13|mca|mg13)/.*|refs/tags/cvs/.*'
+    MAKE_MASTER_RE='tags/humpub-release-(\d+)-dev$'
     FROM_REMOTE='origin'
     REPO="$HOME/gitwk-anacode/ensembl-otter"
     TO_REMOTE='git@github.com:Anacode/ensembl-otter.git'
     do_push
     # Blacklist rationale:
     #
-    # We decided not to publish master, so we can do coordinated
-    # internal unpublishing of disasters.
+    # We decided not to publish (the latest) master, so we can do
+    # coordinated internal unpublishing of disasters.
+    #
+    # However some Github tools expect the master branch to exist, and
+    # treat it as the default branch.  By pushing the latest *-dev tag
+    # to master, we avoid that and also the need to keep updating the
+    # Default Branch setting (manually).
     #
     # Feature branches' commits will be published when the code is
     # merged and released (cf. master).
@@ -62,6 +68,7 @@ all_repos() {
 
     REFS_WHITE='origin/anacode|origin/master'
     REFS_BLACK='nil'
+    MAKE_MASTER_RE=
     FROM_REMOTE='origin'
     REPO="$HOME/_httpd/cgi-bin/cron2rss"
     TO_REMOTE='git@github.com:Anacode/cron2rss.git'
@@ -75,7 +82,7 @@ list_refs() {
 }
 
 munge_refs() {
-    perl -wne '
+    perl -wlne '
  use strict;
  next if /^#/;
  next if / -> /;
@@ -83,6 +90,14 @@ munge_refs() {
  my $bad  = m{^($ENV{REFS_BLACK})$};
  die qq{Good and bad: "$_"}    if $good && $bad;
  die qq{Not good or bad: "$_"} if !$good && !$bad;
+
+ our %make_master;
+ $make_master{$1} = $_ if $good && $ENV{MAKE_MASTER_RE} && m{$ENV{MAKE_MASTER_RE}};
+ END {
+   my @mm = sort { $a <=> $b || $a cmp $b } keys %make_master;
+   print "$make_master{$mm[-1]}:refs/heads/master" if @mm;
+ }
+
  s{^($ENV{FROM_REMOTE}/)(.*)}{$1$2:refs/heads/$2};
  print if $good;'
 }
