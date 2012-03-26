@@ -74,16 +74,8 @@ list_refs() {
     git branch -r | perl -wne 's{^[ *]*}{}; print if m{^$ENV{FROM_REMOTE}/}'
 }
 
-do_push() {
-#    set -x
-    set -e
-
-    cd $REPO
-    git fetch -q $FROM_REMOTE
-
-    export REFS_WHITE REFS_BLACK FROM_REMOTE
-    push_refs=$(
-        list_refs | perl -wne '
+munge_refs() {
+    perl -wne '
  use strict;
  next if /^#/;
  next if / -> /;
@@ -93,7 +85,20 @@ do_push() {
  die qq{Not good or bad: "$_"} if !$good && !$bad;
  s{^($ENV{FROM_REMOTE}/)(.*)}{$1$2:refs/heads/$2};
  print if $good;'
-        )
+}
+
+do_push() {
+#    set -x
+    set -e
+
+    cd $REPO
+    git fetch -q $FROM_REMOTE
+
+    export REFS_WHITE REFS_BLACK FROM_REMOTE MAKE_MASTER_RE
+    push_refs=$( list_refs | munge_refs ) || {
+        echo Munge failed
+        exit 1
+    } >&2
 
     if [ -z "$ECHO" ] || [ -z "$PUSHOPTS" ]; then
         echo Missing some vars, not safe
