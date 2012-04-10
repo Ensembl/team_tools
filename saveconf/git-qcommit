@@ -1,6 +1,11 @@
 #! /bin/sh
 
-# "Quiet commit" for auto-commit scripts
+# "Quiet commit" for auto-commit scripts.
+# Requires git-add first!
+#
+# This script migrated to Github,
+#   https://github.com/mca-wtsi/git-yacontrib
+# and is kept here for saveconf scripts only, to avoid pulling in a dependency.
 #
 # Syntax: git-qcommit <git-commit-args>
 
