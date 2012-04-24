@@ -79,6 +79,9 @@ export http_proxy=http://webcache.sanger.ac.uk:3128
 CVS_RSH=ssh
 export CVS_RSH
 
+ANACODE_PERLCRITICRC="$ANACODE_TEAM_TOOLS/perl/perlcriticrc"
+export ANACODE_PERLCRITICRC
+
 unset \
     anacode_dir \
     anacode_distro_code \
