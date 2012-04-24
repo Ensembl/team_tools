@@ -82,6 +82,8 @@ export CVS_RSH
 ANACODE_PERLCRITICRC="$ANACODE_TEAM_TOOLS/perl/perlcriticrc"
 export ANACODE_PERLCRITICRC
 
+umask 022
+
 unset \
     anacode_dir \
     anacode_distro_code \
