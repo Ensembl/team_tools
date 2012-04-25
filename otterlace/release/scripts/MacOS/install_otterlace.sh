@@ -15,6 +15,14 @@ if [ ! -d "${ensembl_otter_dir}" ]; then
 	exit 4
 fi
 
+# Supporting script
+
+for f in anacode_distro_code; do
+    dest="${install_base}/bin/$f"
+    cp -v "${etc_macos}/$f" "$dest"
+    chmod +x "$dest"
+done
+
 hostname="$( hostname -f )"
 
 var_otter="${install_base}/var/otter"
