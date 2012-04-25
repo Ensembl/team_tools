@@ -1,0 +1,8 @@
+
+#  This defines the Anacode perlcritic policy.
+
+# disable some default policies
+[-RegularExpressions::RequireExtendedFormatting]
+[-ErrorHandling::RequireCarping]
+[-ValuesAndExpressions::ProhibitImplicitNewlines]
+[-InputOutput::RequireBriefOpen]

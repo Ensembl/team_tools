@@ -28,21 +28,19 @@ Commands:
 The initial value is 3, corresponding to --harsh.
 The valid values are 1 to 5 inclusive.")
 
-(defvar anacode-perlcritic-exclusions
-  '(
-    "RegularExpressions::RequireExtendedFormatting"
-    "ErrorHandling::RequireCarping"
-    "ValuesAndExpressions::ProhibitImplicitNewlines"
-    "InputOutput::RequireBriefOpen"
-    )
-  "The list of policies to exclude.")
-
 (defun anacode-perlcritic-arguments (severity)
   "Return a list of arguments for perlcritic."
-  `("--severity" ,(number-to-string severity)
-    ,@(apply 'append
-             (mapcar (lambda (exclude) `("--exclude" ,exclude))
-                     anacode-perlcritic-exclusions))))
+  (let*
+      ((perlcriticrc (getenv "ANACODE_PERLCRITICRC"))
+       (profile-arguments
+        (if perlcriticrc
+            (list "--profile" (getenv "ANACODE_PERLCRITICRC"))
+          (list)))
+       (severity-arguments
+        (list "--severity" (number-to-string severity)))
+       (arguments
+        `( ,@profile-arguments ,@severity-arguments)))
+    arguments))
 
 (defun anacode-perlcritic-run (raw-prefix)
   "Run perlcritic on your Perl source.
