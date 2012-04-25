@@ -23,9 +23,10 @@ sub main {
     my $host = hostname();
     if (@ARGV && $ARGV[0] eq 'remote') {
         # Caller already checked for skipping.  We plan.
-        plan tests => 1;
+        plan tests => 2;
         diag("Running remotely on $host");
         denynonfastforwards_t();
+        public_t();
         return ();
 
     } else {
@@ -55,8 +56,9 @@ sub remote_test {
 
 sub denynonfastforwards_t {
     open my $fh, "-|",
-      "find /repos/git/anacode /repos/git/annotools -type f -name config -print0 | xargs -r0 grep -Li -E '^[^#]*denynonfastforwards = true'"
-        or die "Pipe from find pipeline: $!";
+      'find /repos/git/anacode /repos/git/annotools -type f -name config -print0'.
+        q{ | xargs -r0 grep -Li -E '^[^#]*denynonfastforwards = true'}
+          or die "Pipe from find(config) pipeline: $!";
     my @problem = <$fh>;
     close $fh;
 
@@ -71,6 +73,21 @@ sub denynonfastforwards_t {
         is($got, '', # expect no output
            '*.git/config: should set denyNonFastforwards');
     }
+
+    return ();
+}
+
+sub public_t {
+    open my $fh, "-|", find => qw( /repos/git/anacode /repos/git/annotools ),
+      qw( ! -perm -o+r -ls -o -type d ! -perm -o+rx -ls )
+        or die "Pipe from find(perms) pipeline: $!";
+    my @problem = <$fh>;
+    close $fh;
+
+    my $got = join '', @problem;
+    chomp $got;
+    is($got, '', # expect no output
+       'some files are not public');
 
     return ();
 }
