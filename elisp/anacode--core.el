@@ -24,6 +24,7 @@ alternative buffer)."
         (delete-windows-on (current-buffer))
         (message "%s" (anacode-message)))
        (t
+        (compilation-minor-mode (current-buffer))
         (display-buffer (current-buffer)))))))
 
 (defun anacode-message ()

@@ -28,7 +28,7 @@ Commands:
 The initial value is 3, corresponding to --harsh.
 The valid values are 1 to 5 inclusive.")
 
-(defun anacode-perlcritic-arguments (severity)
+(defun anacode-perlcritic-arguments (severity file)
   "Return a list of arguments for perlcritic."
   (let*
       ((perlcriticrc (getenv "ANACODE_PERLCRITICRC"))
@@ -41,8 +41,9 @@ The valid values are 1 to 5 inclusive.")
        (verbosity-arguments
         (list "--verbose"
               (if (< severity 0) "11" "1")))
+       (filename (file-name-nondirectory file))
        (arguments
-        `( ,@profile-arguments ,@severity-arguments ,@verbosity-arguments)))
+        `( ,@profile-arguments ,@severity-arguments ,@verbosity-arguments ,filename)))
     arguments))
 
 (defun anacode-perlcritic-run (raw-prefix)
@@ -67,13 +68,13 @@ verbosity goes up to 11."
                anacode-perlcritic-severity-default))
             (severity-as-string
              (elt anacode-perlcritic-severity-list (- (abs severity) 1)))
-            (arguments (anacode-perlcritic-arguments severity))
+            (arguments (anacode-perlcritic-arguments severity file))
             (message
              (format "Running perlcritic, severity = %d (%s)..."
                      (abs severity) severity-as-string)))
          (apply 'anacode-call-check
                 "*perlcritic*" message
-                "perlcritic" file t nil arguments))))))
+                "perlcritic" nil t nil arguments))))))
 
 (defun anacode-perlcritic-perl-mode-hook ()
   "The anacode\\=-perlcritic hook function for Perl mode."
