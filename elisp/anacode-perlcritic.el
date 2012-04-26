@@ -41,11 +41,15 @@ The valid values are 1 to 5 inclusive.")
        (verbosity-arguments
         (list "--verbose"
               (if (< severity 0)
-                  "%f:%l:%c: %m, near '%r'.\n\t\t%p (Severity: %s)\n\n%d\n"
-                "%f:%l:%c:%m\t[%s] %p\n")))
+                  "%f:%l:%c: %m, near '%r'.\\n\\t\\t%p (Severity: %s)\\n\\n%d\\n"
+                "%f:%l:%c:%m\\t[%s] %p\\n")))
        (filename (file-name-nondirectory file))
        (arguments
-        `( ,@profile-arguments ,@severity-arguments ,@verbosity-arguments ,filename)))
+        `( "--nocolour"                 ; for recompile
+           ,@profile-arguments
+           ,@severity-arguments
+           ,@verbosity-arguments
+           ,filename)))
     arguments))
 
 (defun anacode-perlcritic-run (raw-prefix)

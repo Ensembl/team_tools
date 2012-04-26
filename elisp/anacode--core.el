@@ -26,7 +26,17 @@ alternative buffer)."
        (t
         (compilation-minor-mode (current-buffer))
         (set (make-local-variable 'truncate-lines) t)
+        (set (make-local-variable 'compile-command) ; for recompile
+             (mapconcat 'shell-quote-argument       ; cannot quote newlines?
+                        (apply 'list command (cdr (cddr args)))
+                        " "))
+        (set (make-local-variable 'compilation-buffer-name-function)
+             'anacode-call-recheck-name)
         (display-buffer (current-buffer)))))))
+
+(defun anacode-call-recheck-name (major-modestr)
+  "Recompile buffer name chooser for `anacode-call-check'."
+  (buffer-name (current-buffer)))
 
 (defun anacode-message ()
   "Generate a message from the current buffer for the message command.
