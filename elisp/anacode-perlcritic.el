@@ -37,9 +37,12 @@ The valid values are 1 to 5 inclusive.")
             (list "--profile" (getenv "ANACODE_PERLCRITICRC"))
           (list)))
        (severity-arguments
-        (list "--severity" (number-to-string severity)))
+        (list "--severity" (number-to-string (abs severity))))
+       (verbosity-arguments
+        (list "--verbose"
+              (if (< severity 0) "11" "1")))
        (arguments
-        `( ,@profile-arguments ,@severity-arguments)))
+        `( ,@profile-arguments ,@severity-arguments ,@verbosity-arguments)))
     arguments))
 
 (defun anacode-perlcritic-run (raw-prefix)
@@ -49,7 +52,9 @@ displays the results in an alternative buffer.
 Unsaved changes are saved first.
 The prefix argument RAW-PREFIX specifies the severity of the criticism.
 If RAW-PREFIX is nil the severity is the value of
-`anacode-perlcritic-severity-default'."
+`anacode-perlcritic-severity-default'.
+When RAW-PREFIX is negative, severity is the absolute value and
+verbosity goes up to 11."
   (interactive "P")
   (anacode-perl-require-major-mode-is-perl
    (let ((file (buffer-file-name)))
@@ -61,11 +66,11 @@ If RAW-PREFIX is nil the severity is the value of
                  (prefix-numeric-value raw-prefix)
                anacode-perlcritic-severity-default))
             (severity-as-string
-             (elt anacode-perlcritic-severity-list (- severity 1)))
+             (elt anacode-perlcritic-severity-list (- (abs severity) 1)))
             (arguments (anacode-perlcritic-arguments severity))
             (message
              (format "Running perlcritic, severity = %d (%s)..."
-                     severity severity-as-string)))
+                     (abs severity) severity-as-string)))
          (apply 'anacode-call-check
                 "*perlcritic*" message
                 "perlcritic" file t nil arguments))))))
