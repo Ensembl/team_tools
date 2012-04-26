@@ -25,6 +25,7 @@ alternative buffer)."
         (message "%s" (anacode-message)))
        (t
         (compilation-minor-mode (current-buffer))
+        (set (make-local-variable 'truncate-lines) t)
         (display-buffer (current-buffer)))))))
 
 (defun anacode-message ()

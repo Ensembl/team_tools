@@ -40,7 +40,9 @@ The valid values are 1 to 5 inclusive.")
         (list "--severity" (number-to-string (abs severity))))
        (verbosity-arguments
         (list "--verbose"
-              (if (< severity 0) "11" "1")))
+              (if (< severity 0)
+                  "%f:%l:%c: %m, near '%r'.\n\t\t%p (Severity: %s)\n\n%d\n"
+                "%f:%l:%c:%m\t[%s] %p\n")))
        (filename (file-name-nondirectory file))
        (arguments
         `( ,@profile-arguments ,@severity-arguments ,@verbosity-arguments ,filename)))
