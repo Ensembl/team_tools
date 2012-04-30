@@ -5,7 +5,7 @@ set -e # bail out on error
 . "$( dirname "$0" )/_macos.sh" || exit 1
 
 macports_url_base="https://distfiles.macports.org/MacPorts"
-macports_ver="2.0.3"
+macports_ver="2.0.4"
 
 macports_name="MacPorts-${macports_ver}"
 macports_tarball="${macports_name}.tar.bz2"
