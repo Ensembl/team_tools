@@ -7,6 +7,7 @@ File::Spec::Link
 Bio::Root::Version - actually bioperl, need this to get actual version :-(
 Bio::DB::BigWig    - actual Bio-BigFile
 Proc::ProcessTable
+MooseX::Log::Log4perl
 
 =cut
 

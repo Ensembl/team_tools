@@ -7,9 +7,8 @@ perl5 +perl5_12
 # required for cpan distroprefs processing
 p5-expect
 p5-yaml
-# although p5-libwww-perl depends on p5.12-libwww-perl, it also seems to conflict with it :-(
-#p5-libwww-perl
-p5.12-libwww-perl
+p5-libwww-perl
+p5-lwp-protocol-https
 
 # perl modules
 #
@@ -43,5 +42,8 @@ exonerate
 hmmer
 jksrc-lib
 samtools
+
+# experimental
+p5-log-log4perl
 
 # EOF
