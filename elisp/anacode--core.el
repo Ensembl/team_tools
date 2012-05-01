@@ -14,8 +14,13 @@ will either succeed and generate a small amount of output (which
 is best displayed in the message area) or fail and generate a
 substantial amount of output (which is best displayed in an
 alternative buffer)."
+  (let ((old (get-buffer buffer)))
+    (unless
+        ;; old may have wrong local vars, pwd, mode, read-only status.
+        ;; We could fix it, but this looks easier.
+        (if old (kill-buffer old) t)
+      (error "Cannot re-use buffer name %s" buffer)))
   (with-current-buffer (get-buffer-create buffer)
-    (erase-buffer)
     (let ((status
            (with-temp-message message
              (apply 'call-process command args))))
