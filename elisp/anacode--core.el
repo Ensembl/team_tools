@@ -14,8 +14,13 @@ will either succeed and generate a small amount of output (which
 is best displayed in the message area) or fail and generate a
 substantial amount of output (which is best displayed in an
 alternative buffer)."
+  (let ((old (get-buffer buffer)))
+    (unless
+        ;; old may have wrong local vars, pwd, mode, read-only status.
+        ;; We could fix it, but this looks easier.
+        (if old (kill-buffer old) t)
+      (error "Cannot re-use buffer name %s" buffer)))
   (with-current-buffer (get-buffer-create buffer)
-    (erase-buffer)
     (let ((status
            (with-temp-message message
              (apply 'call-process command args))))
@@ -24,7 +29,19 @@ alternative buffer)."
         (delete-windows-on (current-buffer))
         (message "%s" (anacode-message)))
        (t
+        (compilation-minor-mode (current-buffer))
+        (set (make-local-variable 'truncate-lines) t)
+        (set (make-local-variable 'compile-command) ; for recompile
+             (mapconcat 'shell-quote-argument       ; cannot quote newlines?
+                        (apply 'list command (cdr (cddr args)))
+                        " "))
+        (set (make-local-variable 'compilation-buffer-name-function)
+             'anacode-call-recheck-name)
         (display-buffer (current-buffer)))))))
+
+(defun anacode-call-recheck-name (major-modestr)
+  "Recompile buffer name chooser for `anacode-call-check'."
+  (buffer-name (current-buffer)))
 
 (defun anacode-message ()
   "Generate a message from the current buffer for the message command.

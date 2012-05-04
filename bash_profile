@@ -69,6 +69,13 @@ $PERL5LIB\
 
 fi
 
+# zircon environment
+if [ -n "$ANACODE_ZIRCON" ] &&
+    [ -f "$ANACODE_ZIRCON/profile.sh" ]
+then
+    . "$ANACODE_ZIRCON/profile.sh"
+fi
+
 PERL5LIB="${PERL5LIB#:}" # in case $PERL5LIB was originally empty
 
 export PATH PERL5LIB
