@@ -25,6 +25,7 @@ p5-xml-libxml
 p5-xml-simple
 p5-config-inifiles
 p5-mac-propertylist
+p5-log-log4perl
 
 # graphics
 #
@@ -42,8 +43,5 @@ exonerate
 hmmer
 jksrc-lib
 samtools
-
-# experimental
-p5-log-log4perl
 
 # EOF
