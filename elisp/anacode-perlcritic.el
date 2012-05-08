@@ -28,7 +28,7 @@ Commands:
 The initial value is 3, corresponding to --harsh.
 The valid values are 1 to 5 inclusive.")
 
-(defun anacode-perlcritic-arguments (severity file)
+(defun anacode-perlcritic-arguments (severity verbose file)
   "Return a list of arguments for perlcritic."
   (let*
       ((perlcriticrc (getenv "ANACODE_PERLCRITICRC"))
@@ -37,10 +37,10 @@ The valid values are 1 to 5 inclusive.")
             (list "--profile" (getenv "ANACODE_PERLCRITICRC"))
           (list)))
        (severity-arguments
-        (list "--severity" (number-to-string (abs severity))))
+        (list "--severity" (number-to-string severity)))
        (verbosity-arguments
         (list "--verbose"
-              (if (< severity 0)
+              (if verbose
                   "%f:%l:%c: %m, near '%r'.\\n\\t\\t%p (Severity: %s)\\n\\n%d\\n"
                 "%f:%l:%c:%m\\t[%s] %p\\n")))
        (filename (file-name-nondirectory file))
@@ -68,16 +68,18 @@ verbosity goes up to 11."
      (when file
        (basic-save-buffer)
        (let*
-           ((severity
+           ((severity-argument
              (if raw-prefix
                  (prefix-numeric-value raw-prefix)
                anacode-perlcritic-severity-default))
+            (severity (abs severity-argument))
+            (verbose (< severity-argument 0))
             (severity-as-string
-             (elt anacode-perlcritic-severity-list (- (abs severity) 1)))
-            (arguments (anacode-perlcritic-arguments severity file))
+             (elt anacode-perlcritic-severity-list (- severity 1)))
+            (arguments (anacode-perlcritic-arguments severity verbose file))
             (message
              (format "Running perlcritic, severity = %d (%s)..."
-                     (abs severity) severity-as-string)))
+                     severity severity-as-string)))
          (apply 'anacode-call-check
                 "*perlcritic*" message
                 "perlcritic" nil t nil arguments))))))
