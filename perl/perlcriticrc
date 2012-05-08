@@ -1,6 +1,9 @@
 
 #  This defines the Anacode perlcritic policy.
 
+# default severity
+severity = harsh
+
 # disable some default policies
 [-RegularExpressions::RequireExtendedFormatting]
 [-ErrorHandling::RequireCarping]
