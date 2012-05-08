@@ -23,11 +23,6 @@ Commands:
     )
   "The list of perlcritic severity levels.")
 
-(defvar anacode-perlcritic-severity-default 3
-  "The default severity for `anacode-perlcritic'.
-The initial value is 3, corresponding to --harsh.
-The valid values are 1 to 5 inclusive.")
-
 (defun anacode-perlcritic-arguments (severity verbose file)
   "Return a list of arguments for perlcritic."
   (let*
@@ -37,7 +32,9 @@ The valid values are 1 to 5 inclusive.")
             (list "--profile" (getenv "ANACODE_PERLCRITICRC"))
           (list)))
        (severity-arguments
-        (list "--severity" (number-to-string severity)))
+        (if severity
+            (list "--severity" (number-to-string severity))
+          (list)))
        (verbosity-arguments
         (list "--verbose"
               (if verbose
@@ -58,8 +55,6 @@ This runs perlcritic on the contents of the buffer and
 displays the results in an alternative buffer.
 Unsaved changes are saved first.
 The prefix argument RAW-PREFIX specifies the severity of the criticism.
-If RAW-PREFIX is nil the severity is the value of
-`anacode-perlcritic-severity-default'.
 When RAW-PREFIX is negative, severity is the absolute value and
 verbosity goes up to 11."
   (interactive "P")
@@ -69,17 +64,19 @@ verbosity goes up to 11."
        (basic-save-buffer)
        (let*
            ((severity-argument
-             (if raw-prefix
-                 (prefix-numeric-value raw-prefix)
-               anacode-perlcritic-severity-default))
-            (severity (abs severity-argument))
-            (verbose (< severity-argument 0))
-            (severity-as-string
-             (elt anacode-perlcritic-severity-list (- severity 1)))
+             (if raw-prefix (prefix-numeric-value raw-prefix) nil))
+            (severity
+             (if severity-argument (abs severity-argument) nil))
+            (verbose
+             (if severity-argument (< severity-argument 0) nil))
             (arguments (anacode-perlcritic-arguments severity verbose file))
             (message
-             (format "Running perlcritic, severity = %d (%s)..."
-                     severity severity-as-string)))
+             (if severity
+                 (let ((severity-as-string
+                        (elt anacode-perlcritic-severity-list (- severity 1))))
+                   (format "Running perlcritic, severity = %d (%s)..."
+                           severity severity-as-string))
+               "Running perlcritic...")))
          (apply 'anacode-call-check
                 "*perlcritic*" message
                 "perlcritic" nil t nil arguments))))))
