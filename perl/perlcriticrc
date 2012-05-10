@@ -9,3 +9,9 @@ severity = harsh
 [-ErrorHandling::RequireCarping]
 [-ValuesAndExpressions::ProhibitImplicitNewlines]
 [-InputOutput::RequireBriefOpen]
+
+# keep webpublish happy
+[Documentation::RequirePodSections]
+severity        = gentle
+lib_sections    = AUTHOR
+script_sections = AUTHOR
