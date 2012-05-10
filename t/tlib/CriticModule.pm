@@ -12,7 +12,13 @@ use Test::Perl::Critic;
 
 sub import {
     my ($self, %args) = @_;
-    Test::Perl::Critic->import(%args);
+
+    my ($tt_rc, %criticrc);
+    if ($tt_rc = $ENV{ANACODE_PERLCRITICRC} and -r $tt_rc) {
+        $criticrc{'-profile'} = $tt_rc;
+    }
+
+    Test::Perl::Critic->import(%criticrc, %args);
     $self->export_to_level( 1, $self, qw(critic_module_ok) );
     return 1;
 }

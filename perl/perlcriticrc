@@ -1,8 +1,17 @@
 
 #  This defines the Anacode perlcritic policy.
 
+# default severity
+severity = harsh
+
 # disable some default policies
 [-RegularExpressions::RequireExtendedFormatting]
 [-ErrorHandling::RequireCarping]
 [-ValuesAndExpressions::ProhibitImplicitNewlines]
 [-InputOutput::RequireBriefOpen]
+
+# keep webpublish happy
+[Documentation::RequirePodSections]
+severity        = gentle
+lib_sections    = AUTHOR
+script_sections = AUTHOR
