@@ -139,7 +139,9 @@ sub be_readonly {
 		     "be_readonly.$0", scalar localtime);
 	    "Inserted";
 	} || "Fail: $@";
-	like($ins, qr{INSERT command denied to user}, "$what: Insert to $dbname.meta");
+	like($ins,
+             qr{INSERT command denied to user|MySQL server is running with the --read-only option},
+             "$what: Insert to $dbname.meta");
 	$dbh->do("rollback");
 
 	my $read = $dbh->selectall_arrayref("SELECT * from meta");
