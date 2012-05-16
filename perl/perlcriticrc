@@ -9,6 +9,8 @@ severity = harsh
 [-ErrorHandling::RequireCarping]
 [-ValuesAndExpressions::ProhibitImplicitNewlines]
 [-InputOutput::RequireBriefOpen]
+[-NamingConventions::ProhibitAmbiguousNames]
+[-Subroutines::ProhibitBuiltinHomonyms]
 
 # keep webpublish happy
 [Documentation::RequirePodSections]
