@@ -87,7 +87,7 @@ sub public_t {
     my $got = join '', @problem;
     chomp $got;
     is($got, '', # expect no output
-       'some files are not public');
+       'should be public (by POSIX modes)');
 
     return ();
 }
