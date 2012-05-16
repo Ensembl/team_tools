@@ -1,0 +1,10 @@
+---
+comment: "By MG13"
+match:
+  distribution: "^CJFIELDS/BioPerl-\d"
+pl:
+  expect:
+    - "Install .a.ll BioPerl scripts, .n.one"
+    - "n\n"
+    - "(likely to cause some failures)"
+    - "n\n"

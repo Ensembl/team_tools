@@ -1,0 +1,64 @@
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
+# $Id$
+
+PortSystem              1.0
+
+name                    jksrc-lib
+version                 130
+revision                1
+categories              science
+platforms               darwin
+maintainers             sanger.ac.uk:mg13 openmaintainer
+
+description             Libraries for Jim Kent / UCSC biological analysis \
+                        suite
+
+long_description        The libraries provided by Jim Kent and the UCSC \
+                        Genome Bioinformatics Group's suite of biological \
+                        analysis and web display programs.
+
+homepage                http://hgdownload.cse.ucsc.edu/downloads.html
+master_sites            http://hgdownload.cse.ucsc.edu/admin/
+distfiles               jksrc.zip
+
+checksums               sha256  5da5760a798e5f5d93cc86aabc87a45ee134760446c4f3d5db517998769795c5 \
+                        rmd160  db0a686b9794c88aa29d4da0d210ef53b94b8c39
+
+use_zip                 yes
+worksrcdir              kent
+
+depends_lib             port:libpng
+
+use_configure           no
+
+set archflags           [get_canonical_archflags cc]
+set sdkroot             [portconfigure::configure_get_sdkroot]
+set sdkroot_flags       ""
+
+if {${sdkroot} != ""} {
+    set sdkroot_flags "-isysroot ${sdkroot}"
+}
+
+build.dir               ${worksrcpath}/src/lib
+build.target            ""
+build.env-append        CC=${configure.cc} \
+                        CFLAGS="${configure.cflags} ${archflags} ${sdkroot_flags}" \
+                        MACHTYPE="macports"
+
+destroot {
+    xinstall -m 644 ${worksrcpath}/src/lib/macports/jkweb.a ${destroot}${prefix}/lib
+
+    xinstall -d ${destroot}${prefix}/include/jksrc
+    eval xinstall -m 644 [glob ${worksrcpath}/src/inc/*.h] ${destroot}${prefix}/include/jksrc
+    
+    xinstall -d ${destroot}${prefix}/share/doc/${name}
+    xinstall -m 644 -W ${worksrcpath}/src \
+        CHANGES README \
+        ${destroot}${prefix}/share/doc/${name}
+    xinstall -m 644 ${worksrcpath}/src/lib/README ${destroot}${prefix}/share/doc/${name}/README.lib
+
+    # Bio-BigFile expects the same layout as the source tree
+    xinstall -d ${destroot}${prefix}/lib/jksrc/lib/macports
+    ln -s ../../include/jksrc ${destroot}${prefix}/lib/jksrc/inc
+    ln -s ../../../jkweb.a ${destroot}${prefix}/lib/jksrc/lib/macports
+}

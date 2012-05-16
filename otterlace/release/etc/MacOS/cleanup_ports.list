@@ -1,0 +1,25 @@
+# Saves loads of space:
+
+# python27 # hard-wired into the script as it needs the force option
+
+# No dependents (once python's gone):
+
+gtk-doc
+gnome-doc-utils
+docbook-xml
+docbook-xsl
+docbook-xml-4.1.2
+docbook-xml-4.2
+docbook-xml-4.3
+docbook-xml-4.4
+docbook-xml-4.5
+docbook-xml-5.0
+python_select
+gnome-common
+db46
+autoconf
+automake
+xmlcatmgr
+rarian
+intltool
+xz

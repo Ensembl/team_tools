@@ -1,0 +1,55 @@
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
+# $Id$
+
+PortSystem              1.0
+
+name                    samtools
+version                 0.1.18
+categories              science
+platforms               darwin
+maintainers             gmail.com:haroldpimentel openmaintainer
+license                 MIT
+
+description             Tools for alignments in the SAM format
+
+long_description        SAM (Sequence Alignment/Map) Tools provide various \
+                        utilities for manipulating alignments in the SAM \
+                        format, including sorting, merging, indexing and \
+                        generating alignments in a per-position format.
+
+homepage                http://samtools.sourceforge.net/
+master_sites            sourceforge
+
+checksums               sha1    77be35df7a90c288a003ff826ba99aef53b2fbe6 \
+                        rmd160  0301de58e31c7529a2535086be0cc7d93778ede8
+
+patchfiles              patch-Makefile.diff
+
+use_bzip2               yes
+
+depends_lib             port:zlib
+
+use_configure           no
+
+set archflags           [get_canonical_archflags cc]
+set sdkroot             [portconfigure::configure_get_sdkroot]
+set sdkroot_flags       ""
+
+if {${sdkroot} != ""} {
+    set sdkroot_flags "-isysroot ${sdkroot}"
+}
+
+build.env-append        CC=${configure.cc} \
+                        CFLAGS="${configure.cflags} ${archflags} ${sdkroot_flags}"
+
+destroot {
+    xinstall -m 755 ${worksrcpath}/samtools ${destroot}${prefix}/bin
+    xinstall -m 644 ${worksrcpath}/libbam.a ${destroot}${prefix}/lib
+    xinstall -d ${destroot}${prefix}/include/bam
+    eval xinstall -m 644 [glob ${worksrcpath}/*.h] ${destroot}${prefix}/include/bam
+    
+    xinstall -d ${destroot}${prefix}/share/doc/${name}
+    xinstall -m 644 -W ${worksrcpath} \
+        AUTHORS COPYING ChangeLog NEWS \
+        ${destroot}${prefix}/share/doc/${name}
+}

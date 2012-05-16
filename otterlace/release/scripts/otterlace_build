@@ -130,6 +130,7 @@ setup_self_globals() {
         Darwin)
             # Assume for now that PATH already contains the correct container, inc. perl
             export PATH=$PATH:$dist_scripts
+            install_group="$( id -g -n )"
             ;;
 
         *)
@@ -137,6 +138,7 @@ setup_self_globals() {
             # XXX: insertion of a Perl build in PATH should probably be under control of something like otter_ipath_get,
             # and should from there be replicated to the otterlace wrapperfile (and any other built component running under Perl, probably via $PATH),
             # t/swac_stopwords.t will be failing while this is here...
+            install_group="anacode"
             ;;
     esac
 
@@ -211,7 +213,7 @@ with_new_directory() {
         fi
     fi &&
     mkdir -v -p -- "$dir" &&
-    chgrp -v anacode "$dir" &&
+    chgrp -v "${install_group}" "$dir" &&
     chmod -v g+s "$dir" &&
     "$command" "$dir" "$@"
     status=$?
@@ -232,7 +234,7 @@ git_cache_create() {
         -e 'Bio::Otter::Git->_create_cache(@ARGV);' "$install_dir" &&
     perl -I"$install_dir" -MBio::Otter::Git \
         -e 'Bio::Otter::Git->dump;' &&
-    /bin/true
+    true
 }
 
 otterlace_script_vars_update() {
@@ -263,7 +265,7 @@ otterlace_server_install_modules() {
     source_dir="${ensembl_otter_root}/modules/Bio"
     cp -r "$source_dir" "$install_dir" &&
     git_cache_create "$install_dir" &&
-    /bin/true
+    true
 }
 
 otterlace_server_install_cgi() {
@@ -271,7 +273,7 @@ otterlace_server_install_cgi() {
     install_dir="$1"
     source_dir="${ensembl_otter_root}/scripts/apache"
     cp -r "$source_dir"/* "$install_dir" &&
-    /bin/true
+    true
 }
 
 otterlace_server_install() {
@@ -288,7 +290,7 @@ otterlace_server_install() {
     write_build_log_entry --level server \
         --lib "$web_lib" \
         --cgi "$web_cgi" &&
-    /bin/true
+    true
 }
 
 
@@ -323,11 +325,11 @@ otterlace_client_install_perl_modules() {
             ${ensembl_otter_root}/{modules,scripts,tk} \
             ensembl-otter &&
 
-        /bin/true ) &&
+        true ) &&
 
     git_cache_create "${install_dir}/ensembl-otter/modules" &&
 
-    /bin/true
+    true
 }
 
 otterlace_client_install_scripts() {
@@ -336,7 +338,7 @@ otterlace_client_install_scripts() {
 
     mkdir -p -- "$install_dir" &&
     cp -- ${ensembl_otter_root}/scripts/client/* "$install_dir" &&
-    /bin/true
+    true
 }
 
 otterlace_client_install_zmap() {
@@ -361,11 +363,11 @@ otterlace_client_install_zmap() {
         make test &&
         make install &&
         rm -rf -- "$build_dir" &&
-        /bin/true ) &&
+        true ) &&
     mkdir -p -- "$bin_dir" &&
     cp -- ${zmap_prefix}/bin/* "$bin_dir" &&
     cp -r -- "${zmap_prefix}/share" "$install_dir" &&
-    /bin/true
+    true
 }
 
 otterlace_client_install_client() {
@@ -374,7 +376,7 @@ otterlace_client_install_client() {
     otterlace_client_install_perl_modules "$install_dir" &&
     otterlace_client_install_scripts      "$install_dir" &&
     otterlace_client_install_zmap         "$install_dir" &&
-    /bin/true
+    true
 }
 
 otterlace_client_install() {
@@ -386,12 +388,13 @@ otterlace_client_install() {
     echo "  client install"
     echo "  intended host: ${otterlace_client_host}"
     echo "  host name: $( hostname )"
+    echo "  os name: ${osname}"
     echo "  arch: ${arch}"
-    echo "  distro version: $( lsb_release -sc || echo 'no release codename' )"
+    echo "  distro version: $( lsb_release -sc 2>/dev/null || echo 'no release codename' )"
 
     # zmap_prefix is only meaningful during a client install
-    zmap_prefix="${zmap_build}/Linux_$arch"
-    [ -d "$zmap_prefix" ] || bail "error: client install for ${arch} aborted: the ZMap directory ${zmap_prefix} is missing or invalid"
+    zmap_prefix="${zmap_build}/${osname}_${arch}"
+    [ -d "$zmap_prefix" ] || bail "error: client install for ${osname}_${arch} aborted: the ZMap directory ${zmap_prefix} is missing or invalid"
 
     echo &&
     echo "removing old otterlace installation" &&
@@ -404,19 +407,21 @@ otterlace_client_install() {
         cp -- "$otterlace_template" "$otterlace_local" &&
         otterlace_script_vars_update "$otterlace_local" &&
         chmod -v 775 "$otterlace_local" &&
-        /bin/true
+        true
     else
         otterlace_script_vars_update "${otter_home}/bin/otterlace_env.sh" &&
-        sed -i \
+        sed -i.bak \
             -e '/^otterlace_installed=/s/=.*$/=true/' \
             "${otter_home}/bin/otterlace" \
             &&
-        /bin/true
+	rm "${otter_home}/bin/otterlace.bak" &&
+        true
     fi &&
     (
         zmap="$(     "${otter_home}/bin/zmap"   --version 2>&1 )"
         seqtools="$( "${otter_home}/bin/blixem" --version 2>&1 )"
-        zmap_prefix_real="$( readlink -e "$zmap_prefix" || echo ?? )"
+        # GNU readlink not available on MacOS, so we use 'cd' and 'pwd -P' instead
+        zmap_prefix_real="$( cd "$zmap_prefix" 2>/dev/null && pwd -P || echo ?? )"
         if [ "$zmap_prefix" = "$zmap_prefix_real" ]; then
             is_ln=""
         else
@@ -428,7 +433,7 @@ otterlace_client_install() {
             --seqtools "$seqtools"
         ) &&
     echo " [i] finished otterlace_client_install for $otterlace_client_host" &&
-    /bin/true
+    true
 }
 
 otterlace_install_all() {

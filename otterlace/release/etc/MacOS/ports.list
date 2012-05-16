@@ -1,0 +1,47 @@
+# list of ports and optional variants
+
+# perl, at specific release
+#
+perl5 +perl5_12
+
+# required for cpan distroprefs processing
+p5-expect
+p5-yaml
+p5-libwww-perl
+p5-lwp-protocol-https
+
+# perl modules
+#
+p5-moosex-classattribute
+p5-readonly-xs
+p5-cache-cache
+p5-data-stag
+p5-dbd-sqlite
+p5-gd
+p5-io-stringy
+p5-lingua-en-inflect
+p5-tk
+p5-xml-libxml
+p5-xml-simple
+p5-config-inifiles
+p5-mac-propertylist
+p5-log-log4perl
+
+# graphics
+#
+g2
+gtk2
+xorg-libXmu
+
+# misc
+#
+curl
+
+# bioinformatics
+#
+exonerate
+hmmer
+jksrc-lib
+samtools
+
+# EOF
