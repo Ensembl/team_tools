@@ -1,0 +1,27 @@
+#! /bin/sh
+
+FOR_USER="${1:---help}"
+
+case "$FOR_USER" in
+    -h | --help)
+        echo "Syntax: $0 <username>
+
+Grep ~user/.otter/otterlace*log for deskpro names.
+Output a flat list.
+" >&2
+        exit 1
+        ;;
+esac
+
+OTDIR=$( eval "echo ~${FOR_USER}/.otter" )
+if [ ! -d $OTDIR ]; then
+    echo $OTDIR/ does not exist >&2
+    exit 2
+fi
+
+FILES=$( eval "echo $OTDIR/otterlace*log" )
+#echo "OTDIR=$OTDIR FILES=$FILES"
+
+perl -ne \
+    'print "$1\n" if m{(deskpro[-0-9]+)} || m{hostname=([-a-z0-9]+)}' \
+    $FILES | sort -u
