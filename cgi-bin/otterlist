@@ -61,10 +61,17 @@ sub main {
     my %ftp =
       (url => 'ftp://ftp.sanger.ac.uk/pub/anacode/otterlace/', # needs last /
        path => homedir('ftp').'/pub/anacode/otterlace');
-    open $ftp{url_fh}, '-|', 'curl', '-qsS', $ftp{url}
-      or die "Cannot pipe from curl: $!";
-    open $ftp{path_fh}, '-|', 'ls', '-l', '--time-style=long-iso', $ftp{path}
-      or die "Cannot pipe from ls -l: $!";
+    open $ftp{url_fh}, '-|',
+      (curl => '-qsS', $ftp{url},
+       # "$ftp{url}/CURRENT/", "$ftp{url}/TEST/", # doesn't work very well
+      ) or die "Cannot pipe from curl: $!";
+    open $ftp{path_fh}, '-|',
+      (find => $ftp{path},
+       -printf => '%M %3n %6u %g %9s %TY-%Tm-%Td %.8TT',
+       -cmin => '-30', -printf => '** ', -o => -printf => '   ',
+       qw{ , -printf ./%P -type l -printf }, ' -> %l',
+       qw{ , -printf \n })
+        or die "Cannot pipe from find: $!";
     # let them get started now, so data should be ready after we do other IO
 
     find_vsns();
