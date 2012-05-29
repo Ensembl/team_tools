@@ -116,8 +116,13 @@ sub dsnify {
 # loss of sync
 sub enslave_pass {
     my ($user, $pass) = @_;
-    return $pass if $user eq 'ottro'; # read-only access to slave is not affected
-    return $pass."!!"; # the magical "we know what we are doing" password suffix
+
+    # 2012-05-28: We no longer keep a difference here, because the
+    # slaves are read-only to our users
+    return $pass;
+
+#    return $pass if $user eq 'ottro'; # read-only access to slave is not affected
+#    return $pass."!!"; # the magical "we know what we are doing" password suffix
 }
 
 
