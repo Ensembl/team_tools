@@ -8,6 +8,9 @@ $PATH\
 # anacode environment
 anacode_dir=/software/anacode
 
+if [ -d "$anacode_dir" ]
+then
+
 # distro-specific directories, appended first so that their contents
 # will override the contents of distro-independent directories
 
@@ -47,6 +50,8 @@ $PERL5LIB\
 :$anacode_dir/lib\
 :$anacode_dir/lib/site_perl\
 "
+
+fi # if [ -d "$anacode_dir" ]
 
 # team_tools environment
 
