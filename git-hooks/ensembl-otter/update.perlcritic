@@ -1,0 +1,75 @@
+#!/bin/sh
+
+
+#  This runs the critical perlcritic checks on all changed files.
+
+
+ref_root=refs/heads
+# test mode: uncomment the next line to check only updates to branches under test/
+# ref_root=refs/heads/test
+
+PATH=${PATH}:/software/perl-5.12.2/bin
+export PATH
+GIT_DIR="$( pwd )" # necessary, but why?
+export GIT_DIR
+
+if [ $# -lt 3 ]; then
+    echo "Usage: $0 <ref> <oldrev> <newrev>" >&2
+    exit 1
+fi
+
+refname="$1"
+oldrev="$2"
+newrev="$3"
+zero="0000000000000000000000000000000000000000"
+
+# ignore references that are not a branch
+case "$refname" in
+    ${ref_root}/*) ;;
+    *) exit ;;
+esac
+
+# ignore deleting a reference
+[ "$newrev" == "$zero" ] &&
+exit
+
+# ignore if it is not a commit
+[ "$(git cat-file -t $newrev)" = 'commit' ] ||
+exit
+
+git_changed_files() {
+    git diff --name-only "$@" |
+    perl -nle 'print if -f'
+}
+
+# compare new branches against master
+[ "$oldrev" == "$zero" ] &&
+oldrev="$( git rev-parse master )"
+
+tmp_dir="$( mktemp -d -t "$( basename "$0" ).XXXXXXXXXX" )" &&
+{
+    ( cd "$tmp_dir" &&
+        # checkout the new commit and test it
+        perlcriticrc=xt/webpublish.perlcriticrc
+        git archive "$newrev" | tar -xf - &&
+        if [ -f "$perlcriticrc" ]
+        then
+            echo "perlcritic: testing..." &&
+            perlcritic \
+                --quiet \
+                --profile "$perlcriticrc" \
+                $( git_changed_files "$oldrev" "$newrev" ) \
+                /dev/null # in case the above list is empty
+        fi
+    )
+    status="$?"
+
+    if ( exit "$status" )
+    then echo "perlcritic: OK"
+    else echo "perlcritic: FAIL: this update is rejected"
+    fi
+
+    # cleanup
+    rm -rf -- "$tmp_dir" &&
+    exit "$status"
+}
