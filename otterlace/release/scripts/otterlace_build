@@ -399,24 +399,12 @@ otterlace_client_install() {
     echo &&
     echo "removing old otterlace installation" &&
     with_new_directory "$otter_home" otterlace_client_install_client &&
-    if wrapperfile_outside_otterdir; then
-        # support versions pre-58 : wrapperfile in /sw/ac/bin
-        otterlace_template=dist/templates/otterlace
-        [ -f "$otterlace_template" ] || bail "For version=$version wrapperfile_outside_otterdir is true; expected $otterlace_template to exist"
-        otter_ipath_get otterlace_local wrapperfile
-        cp -- "$otterlace_template" "$otterlace_local" &&
-        otterlace_script_vars_update "$otterlace_local" &&
-        chmod -v 775 "$otterlace_local" &&
-        true
-    else
-        otterlace_script_vars_update "${otter_home}/bin/otterlace_env.sh" &&
-        sed -i.bak \
-            -e '/^otterlace_installed=/s/=.*$/=true/' \
-            "${otter_home}/bin/otterlace" \
-            &&
-	rm "${otter_home}/bin/otterlace.bak" &&
-        true
-    fi &&
+    otterlace_script_vars_update "${otter_home}/bin/otterlace_env.sh" &&
+    sed -i.bak \
+        -e '/^otterlace_installed=/s/=.*$/=true/' \
+        "${otter_home}/bin/otterlace" \
+        &&
+    rm "${otter_home}/bin/otterlace.bak" &&
     (
         zmap="$(     "${otter_home}/bin/zmap"   --version 2>&1 )"
         seqtools="$( "${otter_home}/bin/blixem" --version 2>&1 )"

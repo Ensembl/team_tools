@@ -164,13 +164,7 @@ otter_ipath_get() {
     printf -v _oig_bin             %s/bin         "$_oig_otter_home"
     printf -v _oig_web_lib        %s/lib/otter/%s "$nfswub" "$version_major"
     printf -v _oig_web_cgi    %s/cgi-bin/otter/%s "$nfswub" "$version_major"
-
-    if wrapperfile_outside_otterdir; then
-        printf -v _oig_wrapperfile %s/bin/otterlace_rel%s "$swac" "$full_version"
-    else
-        # v58+ : wrapper in bin
-        printf -v _oig_wrapperfile %s/otterlace   "$_oig_bin"
-    fi
+    printf -v _oig_wrapperfile     %s/otterlace   "$_oig_bin"
 
     if [[ "$otterhome_suffixing" =~ 'arch' ]]; then
         # When building to non-/software NFS, it is useful to include
@@ -215,59 +209,6 @@ otter_ipath_get() {
     esac
     [ "$__varname" = '__out' ] && printf %s "$__out"
 }
-
-
-# Control of the location of the outermost wrapper script...
-#
-# In "old" releases, $swac/bin/otterlace_rel$VSN
-# in "new" releases, $OTTERHOME/bin/otterlace (with a symlink pointing in)
-#
-# Changing at the same time is the source for the wrapperfile.
-#    In ensembl-otter commit 0fe1ed84
-#    (early after humpub-release-58-dev)
-#       dist/templates/otterlace moved to
-#       scripts/client/otterlace
-#
-# Related is the split of otterlace_env.sh from otterlace (0833c7eb)
-#    "dependence on $0 being the file itself not a symlink to the
-#    file" arises from the sourcing of otterlace_env.sh, which is
-#    commit-atomic with the split...  i.e. no need to consider that
-#    here.
-#
-#    "otterlace_env.sh is available in the same directory as
-#    otterlace" corresponds exactly with installation at
-#    $OTTER_HOME/bin/otterlace .  Installing bin/otterlace outside
-#    $OTTER_HOME would break it; doing it for v58+ is conservatively
-#    safe.
-#
-# In short, where it should be installed was already decoupled from
-# its origin before v57; in v58+ (specifically after 0833c7eb) it MUST
-# be installed in $OTTER_HOME/bin .
-#
-#
-# otterlace/release/scripts/otterlace_build installs it, and uses
-# presence of dist/templates/otterlace in the source to decide where.
-#
-# otterlace/release/scripts/otterlace_symlink_update uses the presence
-# of pre-existing wrapper at $swac/bin/otterlace_rel${version} , which
-# follows on from the decision during otterlace_build .
-#
-# This function prefers not to rely on presence of ensembl-otter
-# source for the decision, for automated test stability.
-wrapperfile_outside_otterdir() {
-    [ "$( config version_major )" -lt 58 ]
-}
-# There are two ways it is to be used.  Consider how it differs from
-# master,
-#
-#    - where should otterlace_build put wrapperfile?
-#      In this, we prefer to put it "inside" even for the earliest v58
-#      (only relevant for rebuilding old)
-#
-#    - what/where should otterlace_symlink_update link?
-#      It's possible an early v58 could be rebuilt using current
-#      master team_tools, putting wrapperfile "outside".  This is
-#      unlikely enough to ignore.
 
 
 # Call with a variable to write and a list of environment variable
