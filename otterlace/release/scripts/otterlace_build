@@ -152,12 +152,7 @@ setup_globals() {
     config_get version_major
     config_get version_minor
     config_get client_ensembl_version
-    config_get track
 
-    case "$track" in
-        live) remove_existing_directories=false ;;
-        *)    remove_existing_directories=true  ;;
-    esac
     check_remove_existing_directories=true
 
     if [ -n "$version_minor" ]
@@ -202,8 +197,7 @@ with_new_directory() {
     command="$2"
     shift 2
     if [ -e "$dir" ] ; then
-        if $check_remove_existing_directories &&
-            ! $remove_existing_directories
+        if $check_remove_existing_directories && [ -n "$version_minor" ]
         then
             echo "error: directory '${dir}' already exists, refusing to remove it" >&2
             return 1
@@ -472,7 +466,6 @@ write_build_log_entry() {
         -v -l "$build_log" -- \
         --date     "$date"     \
         --version  "$version"  \
-        --track    "$track"    \
         --commit   "$commit"   \
         --builder  "$thisprog" \
         --user     "$( whoami )"      \
