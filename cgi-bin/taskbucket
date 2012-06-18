@@ -63,7 +63,10 @@ Content-type: text/html\n
 
 HDR
 
-    my @dir = sort { -M "$dir/$a" <=> -M "$dir/$b" } read_dir($dir);
+    my @dir = sort {
+        my @m = (-M "$dir/$a", -M "$dir/$b");
+        defined $m[0] <=> defined $m[1] || $m[0] <=> $m[1];
+    } read_dir($dir);
     my $hit_re = $Q->param('hi');
     $hit_re = defined $hit_re ? qr{$hit_re} : undef;
 
@@ -139,6 +142,7 @@ sub files_in {
 
 
 sub public {
+    ## no critic (ValuesAndExpressions::ProhibitLeadingZeros ValuesAndExpressions::ProhibitMagicNumbers)
     my ($fn) = @_;
     my @s = stat($fn);
     my $u = ($s[2] & 0500) >> 6;
