@@ -19,9 +19,6 @@ Matthew Astley, team119 (Anacode)
 =cut
 
 
-use SangerPaths qw( core );
-use SangerWeb;
-
 use Sys::Hostname 'hostname';
 use DBI;
 use CGI 'escapeHTML';
@@ -33,20 +30,21 @@ my ($user, $pass) = qw( ottadmin lutralutra ); # ottro cannot see all processes,
 
 my $SHOWPROCS = q{show full processlist};
 
-sub headlinks { <<HTML
+sub headlinks {
+    my $me = (getpwuid($<))[0];
+    $me = "\u$me";
+    return <<HTML;
 <p>
-  [ <a href="/cgi-bin/users/mca/m"> mca index </a>
-  | <a href="http://mediawiki.internal.sanger.ac.uk/wiki/index.php/User:Mca">[[User:Mca]]</a>
+  [ <a href="/"> top index </a>
+  | <a href="http://mediawiki.internal.sanger.ac.uk/wiki/index.php/User:$me">[[User:$me]]</a>
   | <a href="http://ganglia.internal.sanger.ac.uk/gweb-2.2.0/?c=Lutra%20Servers&m=load_one&r=hour&s=by%20name&hc=4&mc=2">lutras on Ganglia</a>
   ]
 </p>
 HTML
 }
 
-sub main {
-    my $sw = SangerWeb->new({});
-    $sw->title("mysql-procs (Anacode)");
-    $sw->style(<<CSS);
+sub css_text {
+    return <<'CSS';
  .null		{ font-family: monospace; font-size:75%; font-style:italic; color: grey }
 
  tt.host	{ white-space: nowrap; font-size: 85% }
@@ -61,10 +59,33 @@ sub main {
  tr.sleep td	{ color: #228 }
  tr.query td	{ color: black }
 CSS
-    print $sw->header(), headlinks();
+}
 
 
-#    my $cgi = $sw->cgi();
+sub main {
+    print <<HDR;
+Content-type: text/html\n
+<head>
+ <title>mysql-procs (Anacode)</title>
+ <style type="text/css">
+@{[ css_text() ]}
+ </style>
+
+ <!-- pasted indiscriminately from SangerWeb -->
+ <link rel="stylesheet" type="text/css" href="http://wwwdev.sanger.ac.uk/css/wtsi.css?2007" />
+ <script type="text/javascript" src="http://jsdev.sanger.ac.uk/prototype.js" ></script>
+ <script type="text/javascript" src="http://jsdev.sanger.ac.uk/scriptaculous/scriptaculous.js" ></script>
+ <script type="text/javascript" src="http://jsdev.sanger.ac.uk/sidebar.js" ></script>
+ <script type="text/javascript" src="http://jsdev.sanger.ac.uk/toggle.js" ></script>
+ <script type="text/javascript" src="http://jsdev.sanger.ac.uk/urchin.js" ></script>
+ <script type="text/javascript" src="http://jsdev.sanger.ac.uk/zebra.js" ></script>
+
+</head><body>
+ <div id="main" class="expanded"><div id="content"><!-- for SangerWeb style -->
+
+@{[ headlinks() ]}
+HDR
+
     print <<'TBL';
 
 <button id='hidesql' onclick="       Effect.multiple( $$('pre.sql'), Effect.SwitchOff, { speed: 0 }); Effect.SwitchOff($('hidesql'))
@@ -89,7 +110,7 @@ TBL
 #
 ###  Turns out the connections held open for hours are from proserver (DAS)
 
-    print $sw->footer();
+    print qq{</div></div></body></html\n};
 }
 
 sub show_databases {
