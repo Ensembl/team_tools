@@ -20,6 +20,12 @@ If the C<SELECT> issued by a CGI script is still running when Apache
 given up and killed the process, continuing to run the query is futile
 and has been a source of snowballing database load.
 
+=head1 CAVEATS
+
+This code is (already!) at the point of needing re-engineering.
+Cooking the "SHOW PROCESSLIST" results into an object per row could
+make things much clearer.
+
 =cut
 
 my %slave = (otterlive => "otlpslave",
@@ -32,27 +38,35 @@ qBaseInsert, tNumInsert, tBaseInsert, strand, qName, qSize, qStart,
 qEnd, tName, tSize, tStart, tEnd, blockCount, blockSizes, qStarts,
 tStarts FROM (\S+) WHERE tName = '(\S+)' AND tEnd >= '(\S+)' AND
 tStart <= '(\S+)' ORDER BY tStart ASC},
+   psl_dna => q{SELECT dna FROM (\S+_psl_dna) WHERE qName = '([^']+)'},
+
+
+   otter_analyses => q{
+   SELECT i.input_id
+     , a.logic_name
+     , i.created
+     , i.db_version
+   FROM analysis a
+     , input_id_analysis i
+   WHERE a.analysis_id = i.analysis_id
+     AND i.input_id IN (\([^()]+\)) },
   );
 
 sub main {
-    my @want = # list of [ host:port, user, pass, \@morechecks ]
-      ([ "otterlive:3324", user_password("ottadmin") ],
-       [ "otterpipe1:3322", user_password("ottadmin") ],
-       [ "otterpipe2:3323", user_password("ottadmin") ],
-      );
+    %known = map {( $_ => sql_to_regexp_hack($known{$_}) )} keys %known;
 
-    foreach my $wantrow (@want) {
-	my ($hostport, $user, $pass, @morechecks) = @$wantrow;
+    foreach my $hostport (qw(  otterlive:3324 otterpipe1:3322 otterpipe2:3323 )) {
+        my ($user, $pass) = user_password("ottadmin");
 
-
-	my $dbh = try_connect($hostport, $user, $pass);
+	my $dbh = try_connect($hostport, $user, $pass, 0);
         my @zap;
-        push @zap, check_stale($hostport, $dbh);
+        push @zap, check_stale([ host_port($hostport, 0) ], $dbh);
 
         $dbh = try_connect($hostport, ottro => '', 1);
-        push @zap, check_stale("$hostport slave", $dbh);
+        push @zap, check_stale([ host_port($hostport, 1) ], $dbh);
 
         zap_maybe(0, @zap);
+#        print Dump(\@zap);
     }
 }
 
@@ -60,10 +74,17 @@ sub main {
 sub zap_maybe {
     my ($yes, @q) = @_;
 
+    my @show;
     foreach my $q (sort { $a->{Time} <=> $b->{Time} } @q) {
-        printf "kill %d; -- %s on %s, %s\n", @{$q}{qw{ Id db Server Age }};
-        diag Dump($q->{What}) if $q->{What};
+        push @show, sprintf "kill %6d -- %-12s since %8s, on %s @ %s:%s\n",
+          @{$q}{qw{ Id What Age db }}, @{ $q->{Server} };
+        unshift @show, sprintf qq{mysql -h%s -P%d -uottro -e 'kill %d' %s\n},
+          @{ $q->{Server} }, @{$q}{qw{ Id db }};
+        # XXX:TODO print a useful ANALYZE TABLE statement to go with the kill
+        diag Dump({ What => $q->{What},
+                    Detail => $q->{Args} || $q->{Info} });
     }
+    print STDERR @show;
 }
 
 
@@ -71,7 +92,7 @@ sub check_stale {
     my ($server, $dbh) = @_;
     my @slow_web_q; # targets for kill
 
-    my $web_timeout = .05 * 60;
+    my $web_timeout = 5 * 60;
 
   SKIP: {
         skip "no connection", 1 unless $dbh; # other tests will have FAILed
@@ -111,13 +132,13 @@ sub check_stale {
         }
 
         my $ok = is(scalar @{ $q{slow_web} || [] }, 0,
-                    "slow_web queries on $server");
+                    "slow_web queries on @$server");
 #        diag Dump(\%q) unless $ok;
 
         push @slow_web_q, @{ $q{slow_web} || [] };
         foreach my $r (@slow_web_q) {
             $r->{dbh} = $dbh;
-            $r->{What} = guess_query($r->{Info});
+            ($r->{What}, $r->{Args}) = guess_query($r->{Info});
         }
     }
 
@@ -142,9 +163,10 @@ sub try_connect { # XXX:DUP changed from otter_databases.t
 
 
 sub host_port { # XXX:DUP otter_databases.t
-    my ($hostport) = @_;
-    if ($hostport =~ /^(.*):(\d+)$/) {
-	return ($1, $2);
+    my ($hostport, $slave) = @_;
+    if (my ($h, $p) = $hostport =~ /^(.*):(\d+)$/) {
+        $h = $slave{$h} if $slave;
+	return ($h, $p);
     } else {
 	die "Incomprehensible hostport $hostport";
     }
@@ -152,8 +174,7 @@ sub host_port { # XXX:DUP otter_databases.t
 
 sub dsnify { # XXX:DUP changed from otter_databases.t
     my ($hostport, $slave) = @_;
-    my ($h, $p) = host_port($hostport);
-    $h = $slave{$h} if $slave;
+    my ($h, $p) = host_port($hostport, $slave);
     return "DBI:mysql:host=$h;port=$p";
 }
 
@@ -173,22 +194,37 @@ sub age { # XXX:DUP mysql-procs.pl
     return join " ", @age, "${sec}s";
 }
 
+sub sql_to_regexp_hack {
+    my ($v) = @_;
+
+    # SQL-specific text->regexp munging; some arbitrary rules
+    # intended to be convenient
+    $v =~ s{(\w)\.(\w)}{$1\\.$2}g; # select table.column
+    $v =~ s{\s*,\s*}{\\s*,\\s*}g; # select foo , bar
+    $v =~ s{\A\s*}{\\A\\s*};
+    $v =~ s{\s*\Z}{\\s*\\z};
+    $v =~ s/\s+/\\s+/g;
+    return qr{$v};
+}
+
 sub guess_query {
     my ($sql) = @_;
     return () unless defined $sql;
 
-    while (my ($k, $v) = each %known) {
-        if (!ref($v)) {
-            $v =~ s{^\s*}{^\\s*};
-            $v =~ s{\s*$}{\\s*\$};
-            $v =~ s/\s+/\\s+/g;
-            $known{$k} = $v;
-        }
-        my @match = $sql =~ $v;
-        return [$k, @match] if @match;
+    while ( $sql =~ s{\A\s*-- .*$}{}m or
+            $sql =~ s{\A\s*/\*.*?\*/}{}s) {
+        # strip leading comments
     }
 
-    return ();
+    () = keys %known; # reset each%
+    # It didn't finish last time!
+    while (my ($k, $v) = each %known) {
+        my @match = $sql =~ $v;
+        return ($k, \@match) if @match;
+    }
+
+    my ($op) = $sql =~ m{^\s*(\S+)};
+    return ($op || 'non-SELECT query');
 }
 
 main();
