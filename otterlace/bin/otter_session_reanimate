@@ -1,0 +1,133 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Try::Tiny;
+use File::Basename;
+use File::Copy;
+
+use Hum::Ace::LocalServer;
+
+sub path_read {
+    my ($description, $path) = @_;
+    open my $handle, '<', $path
+        or die sprintf
+        "failed to open %s '%s' for reading\n"
+        , $description, $path;
+    local $/ = undef;
+    my $content = <$handle>;
+    close $handle
+        or die sprintf
+        "failed to close %s '%s'\n"
+        , $description, $path;
+    return $content;
+}
+
+sub path_write {
+    my ($description, $path, $content) = @_;
+    open my $handle, '>', $path
+        or die sprintf
+        "failed to open %s '%s' for writing\n"
+        , $description, $path;
+    print $handle $content;
+    close $handle
+        or die sprintf
+        "failed to close %s '%s'\n"
+        , $description, $path;
+    return;
+}
+
+sub ace_create {
+    my ($dir) = @_;
+    my $ace = Hum::Ace::LocalServer->new($dir);
+    $ace->server_executable('sgifaceserver');
+    return $ace;
+}
+
+sub ace_start {
+    my ($ace) = @_;
+    $ace->start_server()
+        or die "the ace server failed to start\n";
+    $ace->ace_handle(1)
+        or die "the ace server failed to connect\n";
+    return;
+}
+
+sub zmap_sequence_stanza_new {
+    my ($stanza, $ace_url) = @_;
+    $stanza =~ s/^(url=).*/$1${ace_url}/m;
+    return $stanza;
+}
+
+sub zmap_config_new {
+    my ($config, $ace_url) = @_;
+
+    my ($zmap_stanza) = $config =~ /
+    ^\[ZMap\]$
+    (.*?)
+    (?:^\[|\z)
+    /xms
+    or die "failed to locate the ZMap configuration stanza";
+
+    my ($source_list) =
+        $zmap_stanza =~ /^sources=(.*)$/m
+        or die "failed to locate the source list";
+
+    my ($sequence) = split /[[:blank:]]*;[[:blank:]]*/, $source_list;
+    printf "sequence: %s\n", $sequence;
+
+    $config =~ s/(
+    ^\[${sequence}\]$
+    .*?
+    (?=^\[|\z)
+    )/zmap_sequence_stanza_new $1, $ace_url/xmse;
+
+    return $config;
+}
+
+sub zmap_config_fix {
+    my ($dir, $ace_url) = @_;
+    my $path = "${dir}/ZMap";
+    my $description = 'the ZMap configuration file';
+    my $config = path_read $description, $path;
+    my $config_new = zmap_config_new $config, $ace_url;
+    path_write $description, $path, $config_new;
+    return;
+}
+
+sub zmap_start {
+    my ($dir) = @_;
+    system qw( zmap --conf_dir ), $dir;
+    return;
+}
+
+sub session_reanimate {
+    my ($dir) = @_;
+    my $zmap_dir = "${dir}/ZMap";
+    my $ace = ace_create $dir;
+    my $ace_url = sprintf
+        'acedb://%s:%s@%s:%d'
+        , $ace->user, $ace->pass, $ace->host, $ace->port;
+    zmap_config_fix $zmap_dir, $ace_url;
+    ace_start $ace;
+    zmap_start $zmap_dir;
+    return;
+}
+
+my $program = basename $0;
+
+my ($session_dir_done) = @ARGV
+    or die sprintf
+    "error: usage: %s <session_dir>\n"
+    , $program;
+
+$session_dir_done =~ s|/\z||; # trim trailing slash
+my ($session_dir) =
+    $session_dir_done =~ /\A(.*)\.done\z/
+    or die "the session was not done\n";
+
+move $session_dir_done, $session_dir;
+try     { session_reanimate $session_dir; }
+catch   { die $::_; }
+finally { move $session_dir, $session_dir_done; };
