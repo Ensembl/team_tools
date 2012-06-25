@@ -6,10 +6,14 @@ use warnings;
 
 my $ensembl_root =
     "/nfs/WWWdev/SHARED_docs/lib/ensembl-branch-";
-die sprintf "invalid script path '%s'", $0
-    unless
-    my ($otterlace_server_root) = # NB: untainted by the pattern match
-    $0 =~ m(\A(.*)/cgi-bin/);
+
+my ($otterlace_server_root) = # NB: untainted by the pattern match, first one wins
+  (($ENV{OTTERLACE_SERVER_ROOT}||'') =~ m(\A(.*?)/?$),
+   $0 =~ m(\A(.*)/cgi-bin/));
+
+die sprintf "cannot guess OTTERLACE_SERVER_ROOT from script path '%s'", $0
+  unless defined $otterlace_server_root;
+
 my $otter_root =
     "${otterlace_server_root}/lib/otter";
 
