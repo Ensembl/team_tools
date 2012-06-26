@@ -83,8 +83,8 @@ sub selfwrap {
         exec detaint($want_perl), (map {( -I => detaint($_) )} @libs), -Tw => detaint($0);
         die "$0: Cannot find the correct Perl '$want_perl'";
     } else {
-        warn join "\n  ", "Running under Perl $^X = $] = $^V and \@INC is", @INC;
-#require DBI;
+#        warn join "\n  ", "Running under Perl $^X = $] = $^V and \@INC is", @INC;
+        die "Expected taint mode, something went wrong" unless ${^TAINT};
     }
 }
 
