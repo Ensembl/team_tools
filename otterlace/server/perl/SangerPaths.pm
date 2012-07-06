@@ -11,7 +11,7 @@ my $ensembl_root =
     "/nfs/WWWdev/SHARED_docs/lib/ensembl-branch-";
 
 my ($otterlace_server_root) = # NB: untainted by the pattern match, first one wins
-  (($ENV{OTTERLACE_SERVER_ROOT}||'') =~ m(\A(.*?)/?$),
+  (($ENV{OTTERLACE_SERVER_ROOT}||'') =~ m(\A(.+?)/?$),
    $0 =~ m(\A(.*)/cgi-bin/));
 
 die sprintf "cannot guess OTTERLACE_SERVER_ROOT from script path '%s'", $0
