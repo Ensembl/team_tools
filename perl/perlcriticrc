@@ -15,7 +15,7 @@ severity = harsh
 # tweak some default policies
 
 [Variables::RequireLocalizedPunctuationVars]
-allow = %ENV $|
+allow = %ENV $| @ARGV
 
 # keep webpublish happy
 [Documentation::RequirePodSections]
