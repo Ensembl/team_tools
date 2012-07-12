@@ -12,6 +12,11 @@ severity = harsh
 [-NamingConventions::ProhibitAmbiguousNames]
 [-Subroutines::ProhibitBuiltinHomonyms]
 
+# tweak some default policies
+
+[Variables::RequireLocalizedPunctuationVars]
+allow = %ENV
+
 # keep webpublish happy
 [Documentation::RequirePodSections]
 severity        = gentle
