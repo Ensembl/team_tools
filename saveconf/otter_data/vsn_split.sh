@@ -20,7 +20,10 @@ do_filterbranch() {
     printf "\n** filter-branch for $VSN\n"
     git branch -f --no-track $VSN origin/master
 
-    git filter-branch -f -d $FASTTMP --subdirectory-filter $VSN --prune-empty $VSN
+    git filter-branch -f -d $FASTTMP --prune-empty \
+	--subdirectory-filter $VSN \
+	--msg-filter "$MSGFILTER $VSN" \
+	$VSN
 
     VSN_ROOT=$( git log --format=%H --max-parents=0 $VSN -- )
     case "$VSN_ROOT" in
@@ -42,13 +45,17 @@ main() {
     git diff --quiet --exit-code --cached || die "diff staged"
 
     [ "$( git --version )" \< "git version 1.7.9.5" ] && printf \
-        "[w] git --version: Lucid and Lenny backports are too old\n    I accidentally wired in dependency on Ubuntu Precise, try\n ssh precise-dev64\n\n" >&2
+        "[w] git --version: Lucid and Lenny backports are too old\n    I accidentally wired in dependency on Ubuntu Precise, try\n ssh precise-dev64\n PATH=/software/perl-5.14.2/bin:\$PATH\n\n" >&2
+
+    MSGFILTER="$( dirname $0 )/vsn_split.msg.pl"
+    [ -f "$MSGFILTER" ] || die "Can't find msg-filter at $MSGFILTER"
 
     IEC=$( git log --format=%H --max-parents=0 --all )
     [ "$IEC" = '96971e864e41878425906ee80ac04880db967176' ] || die "Wrong repo (iec=$IEC)"
 
     printf "\n* List Otter versions\n"
-    VSNS=$( git log --format=%H --all | ciids_to_vsns | sort -u | grep -E '^[0-9]+$' )
+    VSNS=$( git log --format=%H --all | ciids_to_vsns | sort -u | grep -E '^[0-9]+$|^meta' )
+#VSNS="52 meta"
     echo Found versions $VSNS
 
     printf "\n* Rewriting branches for versions\n === This will leave lines in .git/info/grafts after annealing them in ===\n"
