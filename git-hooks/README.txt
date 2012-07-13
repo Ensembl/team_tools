@@ -35,6 +35,8 @@ A: bin/server-config-op
 Let's use
   /software/noarch/linux-i386/anacode/team_tools.git-hooks/git-hooks
 
+  Beware, ten minute lag to intcvs1 !
+
 until we have local storage, since /software (netapp6b or another
 nearby) has generally good availability.
 
