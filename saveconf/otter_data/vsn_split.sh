@@ -41,6 +41,9 @@ main() {
     git diff --quiet || die "tracked diffs"
     git diff --quiet --exit-code --cached || die "diff staged"
 
+    [ "$( git --version )" \< "git version 1.7.9.5" ] && printf \
+        "[w] git --version: Lucid and Lenny backports are too old\n    I accidentally wired in dependency on Ubuntu Precise, try\n ssh precise-dev64\n\n" >&2
+
     IEC=$( git log --format=%H --max-parents=0 --all )
     [ "$IEC" = '96971e864e41878425906ee80ac04880db967176' ] || die "Wrong repo (iec=$IEC)"
 
