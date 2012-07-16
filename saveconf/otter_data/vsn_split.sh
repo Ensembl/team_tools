@@ -25,16 +25,16 @@ do_filterbranch() {
 	--msg-filter "$MSGFILTER $VSN" \
 	$VSN
 
-    VSN_ROOT=$( git log --format=%H --max-parents=0 $VSN -- )
-    case "$VSN_ROOT" in
-	"$IEC") echo "Version $VSN : has the IEC\n" ;;
-	'') die "Failed to get root of $VSN" ;;
-	*)  # Need to graft the old IEC onto the top
-	    echo "Version $VSN : root=$VSN_ROOT, grafting"
-	    echo $VSN_ROOT $IEC >> .git/info/grafts
-	    git filter-branch -f -d $FASTTMP $VSN
-	    ;;
-    esac
+    # Need to graft the old IEC onto the top
+    #
+    # Leaving grafts from last time doesn't help, because they aren't
+    # applied by filter-branch's first run.
+    printf "Version %s (%s) : filtered\n" $VSN $( git rev-parse $VSN )
+    printf "%s %s" $( git log --format=%H --max-parents=0 $VSN -- ) $IEC \
+        > .git/info/grafts
+    git filter-branch -f -d $FASTTMP $VSN
+    rm .git/info/grafts
+    printf "Version %s (%s) : annealed\n" $VSN $( git rev-parse $VSN )
 
     rm -rf .git/refs/original $FASTTMP
 }
@@ -58,7 +58,7 @@ main() {
 #VSNS="52 meta"
     echo Found versions $VSNS
 
-    printf "\n* Rewriting branches for versions\n === This will leave lines in .git/info/grafts after annealing them in ===\n"
+    printf "\n* Rewriting branches for versions\n === This will trash .git/info/grafts , and can leave junk there if interrupted ===\n"
     for VSN in $VSNS; do
 	do_filterbranch $VSN
     done
