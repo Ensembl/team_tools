@@ -16,14 +16,26 @@ ciids_to_vsns() {
 
 do_filterbranch() {
     VSN=$1
+    VSNS="$2"
+
+    # it came with newlines; index-filter needs spaces
+    VSNS="$( echo $VSNS )"
+
     FASTTMP=/dev/shm/vsn_split
     printf "\n** filter-branch for $VSN\n"
     git branch -f --no-track $VSN origin/master
 
-    git filter-branch -f -d $FASTTMP --prune-empty \
-	--subdirectory-filter $VSN \
-	--msg-filter "$MSGFILTER $VSN" \
-	$VSN
+    if [ "$VSN" = 'root' ]; then
+        git filter-branch -f -d $FASTTMP --prune-empty \
+            --index-filter "git rm -rq --cached --ignore-unmatch $VSNS derived .gitignore ls.-l" \
+            --msg-filter "$MSGFILTER $VSN" \
+            $VSN
+    else
+        git filter-branch -f -d $FASTTMP --prune-empty \
+            --subdirectory-filter $VSN \
+            --msg-filter "$MSGFILTER $VSN" \
+            $VSN
+    fi
 
     # Need to graft the old IEC onto the top
     #
@@ -59,8 +71,8 @@ main() {
     echo Found versions $VSNS
 
     printf "\n* Rewriting branches for versions\n === This will trash .git/info/grafts , and can leave junk there if interrupted ===\n"
-    for VSN in $VSNS; do
-	do_filterbranch $VSN
+    for VSN in $VSNS root; do
+	do_filterbranch $VSN "$VSNS"
     done
 }
 
