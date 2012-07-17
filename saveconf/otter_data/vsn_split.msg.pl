@@ -56,7 +56,9 @@ sub main {
         @changed = grep { ! m{^\.#|(~|#|\.bak)$} } @changed;
 
         s{^(autocommit.*)}{$1: @changed} if @changed;
+
     }
+    s{\n*\z}{\n};
 
     print;
 }

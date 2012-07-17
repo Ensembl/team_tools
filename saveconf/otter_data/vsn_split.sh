@@ -23,6 +23,7 @@ do_filterbranch() {
 
     FASTTMP=/dev/shm/vsn_split
     printf "\n** filter-branch for $VSN\n"
+    git checkout -q $IEC
     git branch -f --no-track $VSN origin/master
 
     if [ "$VSN" = 'root' ]; then
@@ -62,15 +63,18 @@ main() {
     MSGFILTER="$( dirname $0 )/vsn_split.msg.pl"
     [ -f "$MSGFILTER" ] || die "Can't find msg-filter at $MSGFILTER"
 
+    printf "\n* IEC detection\n === This will trash .git/info/grafts , and can leave junk there if interrupted ===\n"
+    # grafts can break IEC detection
+    rm -fv .git/info/grafts
     IEC=$( git log --format=%H --max-parents=0 --all )
     [ "$IEC" = '96971e864e41878425906ee80ac04880db967176' ] || die "Wrong repo (iec=$IEC)"
 
     printf "\n* List Otter versions\n"
-    VSNS=$( git log --format=%H --all | ciids_to_vsns | sort -u | grep -E '^[0-9]+$|^meta' )
+    VSNS=$( git log --format=%H origin/master | ciids_to_vsns | sort -u | grep -E '^[0-9]+$|^meta' )
 #VSNS="52 meta"
     echo Found versions $VSNS
 
-    printf "\n* Rewriting branches for versions\n === This will trash .git/info/grafts , and can leave junk there if interrupted ===\n"
+    printf "\n* Rewriting branches for versions\n"
     for VSN in $VSNS root; do
 	do_filterbranch $VSN "$VSNS"
     done
