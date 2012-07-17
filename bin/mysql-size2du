@@ -94,6 +94,7 @@ sub iterate_table {
 
     my $i = $dbh->selectrow_hashref("show table status where name=?", {}, $t);
 # use YAML; warn Dump({ $t => $i });
+    return 0 if $i->{Comment} eq 'VIEW';
 
     my ($N, $eng, $fmt) = @{$i}{qw{ Rows Engine Row_format }};
     my $data = sprintf("rows:%.3g (%s, %s)", $N || -1, $eng, $fmt);
