@@ -89,7 +89,6 @@ sub main {
         # do we octopus up some more branches, or start a new merge commit?
         if (defined $until && $until ne $utime) {
             make_merge($until, values %merge_ci);
-            $since{keys %merge_ci} = ($until) x keys %merge_ci;
             %merge_ci = ();
         }
         $until = $utime;
@@ -97,6 +96,7 @@ sub main {
         foreach my $br ($branch eq 'meta' ? @vsn : ($branch)) {
             $merge_ci{$br} ||=
               find_latest($since{$br}, $until, $branch_date_ciid{$br});
+            $since{$br} = $until;
         }
     }
     make_merge($until, values %merge_ci) if %merge_ci;
@@ -163,14 +163,17 @@ sub make_merge {
         next if $br eq 'meta'; # can include meta among merge parents, but not its content
 
         run(replace => qw( git rm -rfq ), "$br/") if -d $br;
+
         my @new_fn = qx( git ls-tree $ciid );
-        if (@new_fn) {
-            run(replace => qw( git archive --format=copy ), "--prefix=$br/", $ciid);
-            # piped into tar.copy.command, outputs (nothing) to our stdout
-            run(add => qw( git add -A ), "$br/");
-        } else {
-            print "Branch $br became empty\n"; # git-archive(1) cannot cope
+        if (!@new_fn) {
+            print "Branch $br became empty\n";
+            next;
+            # git-archive(1) cannot cope
         }
+
+        run(replace => qw( git archive --format=copy ), "--prefix=$br/", $ciid);
+        # piped into tar.copy.command, outputs (nothing) to our stdout
+        run(add => qw( git add -A ), "$br/");
     }
     close $MH or die "close{MH}: $!";
 
@@ -187,7 +190,7 @@ sub make_merge {
         unlink qw( .git/MERGE_HEAD .git/MERGE_MODE );
     }
 
-    if ($DEBUG) {
+    if ($DEBUG > 1) {
         print " ...:";
         my $foo = <STDIN>;
     }
