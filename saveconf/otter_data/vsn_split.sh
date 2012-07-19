@@ -29,25 +29,18 @@ do_filterbranch() {
     if [ "$VSN" = 'root' ]; then
         git filter-branch -f -d $FASTTMP --prune-empty \
             --index-filter "git rm -rq --cached --ignore-unmatch $VSNS derived .gitignore ls.-l" \
+            --parent-filter "$PARFILTER $VSN $IEC" \
             --msg-filter "$MSGFILTER $VSN" \
             $VSN
     else
         git filter-branch -f -d $FASTTMP --prune-empty \
             --subdirectory-filter $VSN \
+            --parent-filter "$PARFILTER $VSN $IEC" \
             --msg-filter "$MSGFILTER $VSN" \
             $VSN
-    fi
+    fi || die "filtering failed"
 
-    # Need to graft the old IEC onto the top
-    #
-    # Leaving grafts from last time doesn't help, because they aren't
-    # applied by filter-branch's first run.
     printf "Version %s (%s) : filtered\n" $VSN $( git rev-parse $VSN )
-    printf "%s %s" $( git log --format=%H --max-parents=0 $VSN -- ) $IEC \
-        > .git/info/grafts
-    git filter-branch -f -d $FASTTMP $VSN
-    rm .git/info/grafts
-    printf "Version %s (%s) : annealed\n" $VSN $( git rev-parse $VSN )
 
     rm -rf .git/refs/original $FASTTMP
 }
@@ -61,6 +54,7 @@ main() {
         "[w] git --version: Lucid and Lenny backports are too old\n    I accidentally wired in dependency on Ubuntu Precise, try\n ssh precise-dev64\n PATH=/software/perl-5.14.2/bin:\$PATH\n\n" >&2
 
     MSGFILTER="$( dirname $0 )/vsn_split.msg.pl"
+    PARFILTER="$( dirname $0 )/vsn_split.par.pl"
     [ -f "$MSGFILTER" ] || die "Can't find msg-filter at $MSGFILTER"
 
     printf "\n* IEC detection\n === This will trash .git/info/grafts , and can leave junk there if interrupted ===\n"
