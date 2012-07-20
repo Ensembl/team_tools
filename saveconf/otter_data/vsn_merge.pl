@@ -35,9 +35,9 @@ sub main {
     $|=1;
 
     # List branches, sanity check repo
-    my @vsn = sort map { /^\*?\s*(\d+|meta)$/ ? ($1) : () } qx( git branch );
+    my @vsn = sort map { /^\*?\s*(\d+|meta|root)$/ ? ($1) : () } qx( git branch );
     die "Expected Otter Data version branches from 52, got (@vsn)"
-      unless "@vsn" =~ /^52 53 .* meta$/;
+      unless "@vsn" =~ /^52 53 .* meta root$/;
     die "Must be at top of clone" unless -d '.git';
 
     run(is_clean => qw( git diff --quiet --exit-code --cached ));
@@ -45,8 +45,8 @@ sub main {
 
     my $IEC = '96971e864e41878425906ee80ac04880db967176';
 
-    run(jump => qw( git checkout meta ));
-    run("fresh branch" => qw( git branch -f live_new ), $IEC);
+    run(jump_away => qw( git checkout meta ));
+    run(fresh_branch => qw( git branch -f live_new ), $IEC);
     # don't tromp branch named "live"!
 
     my @ci; # list of [ unixtime, ciid, comment, branchname ], with ascending time
@@ -77,13 +77,14 @@ sub main {
 
     # build a set of merges
     run(checkout => qw( git checkout live_new ));
+    run(clean => qw( git clean -xdf ));
     run("configure to copy" => qw( git config tar.copy.command ), 'tar xf -');
     my $until; # unixtimes of current merge
     my %since; # key=branch, value=unixtime of last merge from that branch
     my %merge_ci; # key = $branch, value = $ci[n]
     foreach my $ci (@ci) {
         my ($utime, $ciid, $comment, $branch) = @$ci;
-        my @hit = $comment =~ m{^autocommit \((meta|\d+) :synced:(all|\g1)\)};
+        my @hit = $comment =~ m{^autocommit \((\d+|meta|root) :synced:(all|\g1)\)};
         next unless @hit;
 
         # do we octopus up some more branches, or start a new merge commit?
@@ -103,6 +104,7 @@ sub main {
 
 #    print Dump({ zbdc => \%branch_date_ciid, ci => \@ci });
 
+    print "Finished!\n";
     return 0;
 }
 
@@ -157,24 +159,29 @@ sub make_merge {
     # reconstruct the canonical users.txt & species.dat
 
     open my $MH, '>', '.git/MERGE_HEAD' or die "Can't write MERGE_HEAD: $!";
+    my @merged;
     foreach my $ci (sort { $a->[3] cmp $b->[3] } @ci) {
         my ($time, $ciid, $comment, $br) = @$ci;
         print {$MH} "$ciid\n" or die "print{MH}: $!";
+        push @merged, $br;
         next if $br eq 'meta'; # can include meta among merge parents, but not its content
 
-        run(replace => qw( git rm -rfq ), "$br/") if -d $br;
+        run(replace => qw( git rm -rfq --ignore-unmatch ), "$br/") if -d $br;
 
         my @new_fn = qx( git ls-tree $ciid );
         if (!@new_fn) {
             print "Branch $br became empty\n";
+            run(tag_decommission => qw( git tag -f ), "rm/$br",  $ciid);
+            run(branch_decommission => qw( git branch -D ), $br);
             next;
             # git-archive(1) cannot cope
         }
 
-        run(replace => qw( git archive --format=copy ), "--prefix=$br/", $ciid);
+        run(replace => qw( git archive --format=copy ),
+            ($br eq 'root' ? () : "--prefix=$br/"), $ciid);
         # piped into tar.copy.command, outputs (nothing) to our stdout
-        run(add => qw( git add -A ), "$br/");
     }
+    run(add => qw( git add -A ), '.');
     close $MH or die "close{MH}: $!";
 
     open my $MM, '>', '.git/MERGE_MODE' or die "Can't write MERGE_MODE: $!";
@@ -184,7 +191,7 @@ sub make_merge {
     if (system(qw( git diff --quiet --exit-code --cached ))) {
         local @ENV{qw{ GIT_AUTHOR_DATE GIT_COMMITTER_DATE }} = ("$utime +0000") x 2;
         local $ENV{GIT_COMMITTER_NAME} = 'Reconstruction';
-        run(commit => qw( git commit -m ), qq{octo!\n\nreconstruction of webpublished content from dev branches + diffdevlive\n  may contain false positives & false negatives});
+        run(commit => qw( git commit -m ), qq{In sync: merged (@merged)\n\nreconstruction of webpublished content from dev branches + diffdevlive\n  may contain false positives & false negatives});
     } else {
         warn "no diff, skip commit\n";
         unlink qw( .git/MERGE_HEAD .git/MERGE_MODE );
