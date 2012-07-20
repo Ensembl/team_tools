@@ -1,0 +1,185 @@
+#! /usr/bin/env perl
+
+use strict;
+use warnings;
+
+use List::MoreUtils 'uniq';
+use File::Slurp qw( write_file );
+use Cwd 'getcwd';
+
+
+=head1 NAME
+
+server-config-merge - make octopus-like merge of multiple versions
+
+=head1 SYNOPSIS
+
+ git checkout 66 --
+ # edit files
+ git commit -m 'fixed something'
+
+ git checkout 65
+ git cherry-pick -x $( git rev-parse 66 )
+
+ git checkout root
+ # edit files
+ git commit -m 'fixed another thing'
+
+ git checkout dev
+ server-config-merge
+ # changes from branches (65, 66, root) are merged in their subdirectories
+ git push
+
+=head1 DESCRIPTION
+
+This script merges multiple version branches into one multi-directory
+tree by B<overwriting> the current tree with the contents of the
+branch.
+
+It does this for all existing numbered branches, and the one called
+C<root>.
+
+It should work for both bare repositories and working copy clones.
+
+=cut
+
+our $DEBUG = 0;
+our @RM_FILES; # to unlink in END
+our ($GIT_DIR, $BARE);
+
+sub main {
+    $| = 1;
+
+    # Sanity check repo
+    my @vsn = sort map { /^\*?\s*(\d+|root)$/ ? ($1) : () } qx( git branch );
+    die "Expected some numbered Otter Data version branches, got (@vsn)\n".
+      "Are we in the correct clone?" unless @vsn > 3;
+
+    my $pwd = getcwd();
+
+    if (-d '.git') {
+        $GIT_DIR = '.git';
+        $BARE = 0;
+    } elsif ($pwd =~ m{\.git$} && -f 'HEAD') {
+        $GIT_DIR = $pwd;
+        $BARE = 1;
+    } else {
+        die "Must be at top of clone - I am in $pwd";
+    }
+
+    rev_parse('HEAD'); # ensure we have a valid HEAD
+    unless ($BARE) {
+        run(is_clean => qw( git diff --quiet --exit-code --cached ));
+        run(is_clean => qw( git diff --quiet --exit-code ));
+    }
+
+    # Do stuff
+    make_merge(@vsn);
+    apply_commit() unless $BARE;
+
+    return 0;
+}
+
+sub run {
+    my ($what, @cmd) = @_;
+    system(@cmd);
+    die "run: '$what' failed ".
+      ($? == -1 ? $! : sprintf("0x%X", $?)).
+        "\n  (@cmd)\n"
+          if $?;
+    print "ran $what => (@cmd)\n" if $DEBUG;
+}
+
+sub rev_parse {
+    my ($ref) = @_;
+    my $txt = qx( git rev-parse $ref );
+    chomp $txt;
+    die "Ref $ref looks invalid"
+      unless $txt =~ m{\A[a-f0-9]{40}\z};
+    return $txt;
+}
+
+sub pipe_to {
+    my ($cmd, @txt) = @_;
+    open my $fh, '|-', @$cmd
+      or die "Failed to pipe to @$cmd: $!";
+    print {$fh} join '', @txt
+      or die "Failed to send to @$cmd: $!";
+    close $fh
+      or die sprintf("Failed after piping to @$cmd: !=%s ?=0x%X\n", $!, $?);
+    return ();
+}
+
+sub make_merge {
+    my (@br) = @_;
+
+    # Build new commit
+    my @tree; # mode SP sha1 TAB path
+    my %ci; # key = branch, value = ciid
+    foreach my $br (@br) {
+        # Find out what we're merging
+        $ci{$br} = my $ciid = rev_parse($br);
+
+        # Collect what's inside
+        my @obj = split /\x00/, qx( git ls-tree -z -r $ciid );
+        foreach my $obj (@obj) {
+            my ($mode, $sha1, $path) = $obj =~
+              m{^(100644|120000) blob ([a-f0-9]{40})\t(.+)$};
+            die "Refusing merge of object '$obj' from branch $br - ".
+              "expected plain file or symlink" unless defined $path;
+            die "Refusing merge of subdirectory in '$obj' from branch $br"
+              if $path =~ m{/};
+
+            if ($path =~ m{^\.?\#|(~|\.bak|\.swp)$}) {
+                warn "[w] Omitted temporary file $obj from branch $br\n";
+                next;
+            }
+
+            my $dir = ($br eq 'root' ? '' : "$br/");
+            push @tree, sprintf("%s %s\t%s%s\x00", $mode, $sha1, $dir, $path);
+        }
+    }
+
+    # Put new state into a new index
+    local $ENV{GIT_INDEX_FILE} = "$GIT_DIR/server-config-merge.index";
+    run(empty_index => qw( git rm -rfq --ignore-unmatch --cached . ));
+    pipe_to([qw[ git update-index -z --index-info ]], @tree);
+
+    # List branches causing diffs
+    my @diff_fn = split /\x00/, qx( git diff --cached --name-only -z );
+    my @diff_br = uniq sort map { m{^(\d+)/} ? $1 : 'root' } @diff_fn;
+    warn "[i] Diffs seen in directories for (@diff_br)\n";
+    my @lost_br = grep { ! $ci{$_} } @diff_br;
+    die "Refusing merge because I lost branch(es) (@lost_br)" if @lost_br;
+    die "Refusing merge - no diff" unless @diff_br;
+
+    # Build list of merge parents
+    push @RM_FILES, "$GIT_DIR/MERGE_HEAD", "$GIT_DIR/MERGE_MODE";
+    write_file("$GIT_DIR/MERGE_HEAD", { atomic => 1 },
+               join '', map {"$_\n"} @ci{@diff_br});
+    write_file("$GIT_DIR/MERGE_MODE", { atomic => 1 }, 'no-ff'); # \n breaks it
+
+    # Make the commit
+    local $ENV{GIT_WORK_TREE};
+    if ($BARE) {
+        $ENV{GIT_WORK_TREE} = "$GIT_DIR/server-config-merge.tree";
+        mkdir $ENV{GIT_WORK_TREE}; # must exist, but isn't used
+    }
+    run(commit => qw( git commit -q -m ), qq{Merged (@diff_br)\n});
+}
+
+sub apply_commit {
+    # Apply commit to working copy,
+    # outside the influence of local %ENV
+    # Surely there's a better way?
+    my $ci_new = rev_parse('HEAD');
+    run(update_wc => qw( git reset -q --hard HEAD^ ));
+    run(update_wc => qw( git merge --ff-only ), $ci_new);
+}
+
+
+exit main();
+
+END {
+    unlink @RM_FILES; # ignore error
+}
