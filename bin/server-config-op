@@ -14,12 +14,17 @@ server-config-op - operate on Otter Server config repository
 
 =head1 SYNOPSIS
 
+ server-config-op update
+ # fetches from origin, then
+ # rebases any local commits on each local tracking branch
+
  git checkout 66 --
  # edit files
  git commit -m 'fixed something'
 
  git checkout 65
  git cherry-pick -x $( git rev-parse 66 )
+ # XXX: could be a useful subcommand
 
  git checkout root
  # edit files
@@ -51,6 +56,22 @@ forced.
 
 It works with a detached HEAD, but may not produce useful results.
 
+=item server-config-merge update [ <remote> ]
+
+Fetch all the remote tracking branches (with prune option), and tags.
+Then ensure all corresponding local branches exist, rebasing any local
+commits.
+
+The default remote is C<origin>.
+
+Local branches which persist after the remote has been tagged and
+removed are cleanly deleted with a C<git merge --ff> to ensure no
+local commits are discarded; this unlikely event is handled tersely.
+XXX: tag+rm implemented only in team_tools/saveconf/otter_data/vsn_merge.pl
+
+XXX: Newly created local branches are not handled.  This missing
+feature, will be used monthly, workaround by branching on the remote.
+
 =back
 
 =cut
@@ -65,11 +86,9 @@ sub main {
     my $op = shift @ARGV || '(nil)';
 
     # Sanity check repo
-    my @br = qx( git branch );
-    my @vsn = sort map { /^\*?\s*(\d+|root)$/ ? ($1) : () } @br;
-    my ($br) = (join '', @br) =~ m{^\*\s*(.+)$}m;
-    die "Expected some numbered Otter Data version branches, got (@vsn)\n".
-      "Are we in the correct clone?" unless @vsn > 3;
+    my @l_br = qx( git branch );
+    my @r_br = qx( git branch -r );
+    my ($br) = (join '', @l_br) =~ m{^\*\s*(.+)$}m;
 
     my $pwd = getcwd();
     if (-d '.git') {
@@ -90,6 +109,9 @@ sub main {
 
     # Do stuff
     if ($op eq 'merge') {
+        my @vsn = sort map { /^\*?\s*(\d+|root)$/ ? ($1) : () } @l_br;
+        die "Expected some numbered Otter Data version local branches, got (@vsn)\n".
+          " Are we in the correct clone?\n Would '$0 update' give me the local branches?" unless @vsn > 3;
         die "Abort: merge on non-central repo is risky"
           unless $BARE || (@ARGV && '--force' eq shift @ARGV);
         die "Abort: expect to merge to a non-version branch, but we are on '$br'\n"
@@ -97,8 +119,37 @@ sub main {
         make_merge(@vsn);
         apply_commit() unless $BARE;
 
+    } elsif ($op eq 'update') {
+        my $remote = @ARGV ? shift @ARGV : 'origin';
+        @r_br = map { m{^\*?\s+$remote/(\S+)$} ? ($1) : () } @r_br;
+        @l_br = map { m{^\*?\s+(\S+)$}         ? ($1) : () } @l_br;
+        my @vsn = sort map { /^(\d+|root)$/ ? ($1) : () } @r_br;
+        die "Expected some numbered Otter Data version remote tracking branches, got (@vsn)\n".
+          " Are we in the correct clone?" unless @vsn > 3;
+        die "Cannot 'update' a bare repository" if $BARE;
+        print "* Fetch\n";
+        run(fetch => qw( git fetch -p -v ), $remote);
+        run(fetch => qw( git fetch --tags -v ), $remote); # could prune local tags with -p, but doesn't seem friendly
+        die "Found no remote tracking branches from $remote" unless @r_br;
+        print "\n* Update local branches\n";
+        update_local($remote, [ sort @l_br ], [ sort @r_br ]);
+        print "\n* Restore checkout branch\n";
+        run(checkout => qw( git checkout ), $br, '--'); # back where we started
+
     } else {
-        die "$0: unknown operation '$op'";
+        $0 =~ s{.*/}{};
+        die <<"HELP";
+Syntax: $0 merge [ --force ]
+        $0 update [ <remote> ]
+
+Merge is probably best done centrally via a hook.
+Let's see how it goes.
+
+Update ensures all local branches exist and are up-to-date with the
+specified remote.  Local changes are rebased forward.  Obsolete
+branches are removed safely.
+
+HELP
     }
 
     return 0;
@@ -199,6 +250,52 @@ sub apply_commit {
     my $ci_new = rev_parse('HEAD');
     run(update_wc => qw( git reset -q --hard HEAD^ ));
     run(update_wc => qw( git merge --ff-only ), $ci_new);
+}
+
+sub update_local {
+    my ($remote, $l_br, $r_br) = @_;
+
+    # sets of local and remote branches to consider
+    my %l_br; @l_br{@$l_br} = ();
+    my %r_br; @r_br{@$r_br} = ();
+
+    my @tag = qx( git tag -l );
+    chomp @tag;
+    my %tag; @tag{@tag} = ();
+
+    foreach my $br (uniq sort (@$l_br, @$r_br)) {
+        my $gone_tag = "rm/$br";
+        if (exists $l_br{$br} && exists $r_br{$br}) {
+            # update the local tracking branch
+            print STDERR "** "; # prefix for git-checkout noise,
+                                # which we keep to explain rebase actions
+            run(checkout => qw( git checkout ), $br, '--');
+            run(ff_rebase => qw( git rebase ), "$remote/$br");
+            delete $l_br{$br};
+            delete $r_br{$br};
+        } elsif (exists $l_br{$br}) {
+            # local branch has no remote
+            if (exists $tag{$gone_tag}) {
+                # remote thinks it's gone
+                run(checkout => qw( git checkout -q ), $br, '--');
+                run(decommissioned_version_ff => qw( git merge --ff ), $gone_tag);
+                # if that fails, user has outstanding commits on a dead version
+                run(decommissioned_version_rm => qw( git branch -D ), $br);
+                delete $l_br{$br};
+            } else {
+                # user thinks it's new
+                warn "[w] Skip local new branch '$br' (sorry)\n";
+# Need to tell what the options are.  This could be a new merged
+# branch or another version.  Versions should be made with $op='next'
+            }
+        } elsif (exists $r_br{$br}) {
+            # new remote
+            run(checkout => qw( git checkout -q -b ), $br, "$remote/$br", '--');
+            # in the unlikely event of a version being reincarnated,
+            # and because we don't "git fetch -p --tags"
+            run(no_rm_tag => qw( git tag -d ), $gone_tag) if exists $tag{$gone_tag};
+        } # else { this didn't happen }
+    }
 }
 
 
