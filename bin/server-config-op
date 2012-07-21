@@ -116,6 +116,7 @@ sub main {
           unless $BARE || (@ARGV && '--force' eq shift @ARGV);
         die "Abort: expect to merge to a non-version branch, but we are on '$br'\n"
           if !defined $br || $br =~ m{^(\d+|root)$};
+        non_merge_warn(HEAD => 10);
         make_merge(@vsn);
         apply_commit() unless $BARE;
 
@@ -182,6 +183,25 @@ sub pipe_to {
       or die "Failed to send to @$cmd: $!";
     close $fh
       or die sprintf("Failed after piping to @$cmd: !=%s ?=0x%X\n", $!, $?);
+    return ();
+}
+
+sub non_merge_warn {
+    my ($ref, $n) = @_;
+    my @ci = qx( git log -n$n --first-parent --format='%h:%p:"%s" by %aN' $ref );
+    chomp @ci;
+    # Assumption: merge commits were made by this program, or equivalent.
+    # Anything else is a misplaced commit and is about to be tromped.
+    for (my $i=0; $i<@ci; $i++) {
+        my ($h, $pp, $info) = split /:/, $ci[$i], 3;
+        my @p = split / /, $pp;
+        next if @p > 1; # skip merge
+        warn sprintf("[w] %s%s (%s) is a non-merge commit %s - edit %s tromped\n",
+                     $ref,
+                     $i ? "~$i" : '',
+                     $h, $info,
+                     $i ? 'has been' : 'about to be');
+    }
     return ();
 }
 
