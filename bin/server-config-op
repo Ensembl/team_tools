@@ -10,7 +10,7 @@ use Cwd 'getcwd';
 
 =head1 NAME
 
-server-config-merge - make octopus-like merge of multiple versions
+server-config-op - operate on Otter Server config repository
 
 =head1 SYNOPSIS
 
@@ -26,20 +26,32 @@ server-config-merge - make octopus-like merge of multiple versions
  git commit -m 'fixed another thing'
 
  git checkout dev
- server-config-merge
+ server-config-op merge
  # changes from branches (65, 66, root) are merged in their subdirectories
  git push
 
 =head1 DESCRIPTION
 
-This script merges multiple version branches into one multi-directory
-tree by B<overwriting> the current tree with the contents of the
-branch.
+=over 4
+
+=item server-config-merge merge [ --force ]
+
+Makes an octopus-like merge of multiple version branches into one
+multi-directory tree by B<overwriting> the current tree with the
+contents of the branch.
 
 It does this for all existing numbered branches, and the one called
 C<root>.
 
-It should work for both bare repositories and working copy clones.
+It works for both bare repositories and working copy clones.  However,
+in a working copy using this without up-to-date local version branches
+will cause confusion (resulting merges could be fast-forwards, but
+still stale).  For this reason it only operates on working copies when
+forced.
+
+It works with a detached HEAD, but may not produce useful results.
+
+=back
 
 =cut
 
@@ -50,13 +62,16 @@ our ($GIT_DIR, $BARE);
 sub main {
     $| = 1;
 
+    my $op = shift @ARGV || '(nil)';
+
     # Sanity check repo
-    my @vsn = sort map { /^\*?\s*(\d+|root)$/ ? ($1) : () } qx( git branch );
+    my @br = qx( git branch );
+    my @vsn = sort map { /^\*?\s*(\d+|root)$/ ? ($1) : () } @br;
+    my ($br) = (join '', @br) =~ m{^\*\s*(.+)$}m;
     die "Expected some numbered Otter Data version branches, got (@vsn)\n".
       "Are we in the correct clone?" unless @vsn > 3;
 
     my $pwd = getcwd();
-
     if (-d '.git') {
         $GIT_DIR = '.git';
         $BARE = 0;
@@ -74,8 +89,17 @@ sub main {
     }
 
     # Do stuff
-    make_merge(@vsn);
-    apply_commit() unless $BARE;
+    if ($op eq 'merge') {
+        die "Abort: merge on non-central repo is risky"
+          unless $BARE || (@ARGV && '--force' eq shift @ARGV);
+        die "Abort: expect to merge to a non-version branch, but we are on '$br'\n"
+          if !defined $br || $br =~ m{^(\d+|root)$};
+        make_merge(@vsn);
+        apply_commit() unless $BARE;
+
+    } else {
+        die "$0: unknown operation '$op'";
+    }
 
     return 0;
 }
