@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# An example hook script for the "post-receive" event.
+#
+# The "post-receive" script is run after receive-pack has accepted a pack
+# and the repository has been updated.  It is passed arguments in through
+# stdin in the form
+#  <oldrev> <newrev> <refname>
+# For example:
+#  aa453216d1b3e49e7f6f98441fa56946ddcd6a20 68f7abf4e6f922807889f52bc043ecd31b79f814 refs/heads/master
+
+
+TT="$( dirname $( readlink -e $0 ))/../.."
+
+UPDATED="$( cat )"
+HEADref="$( git symbolic-ref HEAD )"
+
+pushed_head() {
+    printf '%s' "$UPDATED" | grep -q " $HEADref"
+}
+
+if printf '%s' "$UPDATED" | grep -qE ' refs/heads/([0-9]+|root)$'; then
+     # on HEAD, which is most likely the dev branch
+    printf "Have new content.  Auto-merge to %s:\n" "$HEADref"
+    "$TT/bin/server-config-op" merge 2>&1 || \
+        printf "\nMerge failed, but refs were still pushed.\nPlease mail anacode@ the transcript if this is bad.\n"
+
+    if pushed_head; then
+        echo "*** Your push to $HEADref was most likely covered up - push it alone to avoid this"
+    fi
+else
+    echo '[i] No auto-merge unless you push to ([0-9]+|root)'
+
+    if pushed_head; then
+        echo "Beware, your push to $HEADref may be covered up soon - $0 merges to there"
+    fi
+fi

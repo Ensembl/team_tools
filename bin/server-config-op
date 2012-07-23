@@ -66,19 +66,137 @@ The default remote is C<origin>.
 
 Local branches which persist after the remote has been tagged and
 removed are cleanly deleted with a C<git merge --ff> to ensure no
-local commits are discarded; this unlikely event is handled tersely.
-XXX: tag+rm implemented only in team_tools/saveconf/otter_data/vsn_merge.pl
+local commits are discarded; this unlikely event is handled tersely
+and without cleaning up properly.
 
 XXX: Newly created local branches are not handled.  This missing
 feature, will be used monthly, workaround by branching on the remote.
 
 =back
 
+
+=head1 GIT-HOOKS
+
+This script works in conjunction with I<hooks> on the central server,
+which trigger actions when you push to it and come from
+F<git-hooks/server-config/> in this repository.
+
+=over 4
+
+=item * Pushing to C</^(\d+|root)$/> causes a merge to C<HEAD>
+
+This is normally the C<dev> branch.  The plan is that you assemble
+your commits per version branch, push them, then fetch the merge
+result.
+
+=item * Pushes to C<live> must have been seen on C<dev>.
+
+This should ensure that only valid merges are sent to live servers,
+but can it be circumvented by pushing a non-merge to C<dev> first.
+
+=item * Pushing a new branch is forbidden
+
+This is a feature hole!  The 'update' op has a stub to warn about it.
+
+=item * Pushes which delete a branch are forbidden
+
+This is a feature hole in this script's merge operation.  The plan is
+to
+
+ # detect empty branch during merge - files are thus removed from dev
+ git tag rm/$vsn $vsn
+ git branch -D $vsn
+ 
+ # developers' next "server-config-op update" has "git fetch -p" to
+ # clean up the dead branches
+
+It's not clearly useful to code this up now, nor are the clean
+operation or reversibility of the protocol tested.
+
+There was code in F<saveconf/otter_data/vsn_merge.pl> for this.
+
+=back
+
+Other things which shouldn't happen or are ill-advised,
+
+=over 4
+
+=item * Tag overwrites must be done via delete.
+
+This should not be required, but it's not locked down hard.
+
+=item * Committing or pushing to dev
+
+The merge to HEAD is done by replacing the entire tree with one
+assembled from the constituent branches.  Other changes from previous
+commits are lost.
+
+For this reason, warnings are generated for non-merge commits on HEAD
+before they are covered up by the merge.
+
+=item * Pushing to version branches and dev.
+
+For the special case of pushing both dev and a version branch
+together, the dev commit will be covered up immediately unless the
+merge is a null diff.  Don't do that.
+
+=back
+
+
+=head1 CAVEATS & QUESTIONS
+
+The names root, dev and live are hardwired in various places.
+
+=head2 Do version branches need marker files?
+
+It may be useful to place a marker file (e.g. C<touch 65>) on each
+branch, to avoid confusion if the wires are crossed.
+
+=head2 How to create the next version?
+
+Plan A:
+
+ git checkout -b 69 68
+ git reset --hard HEAD
+ git commit --allow-empty 'Start branch 69'
+ git push
+ # some kind of sanity checking?
+
+Plan B:
+
+ ssh intcvs1
+ cd /repos/mumble.git
+ git branch 69 68
+
+=head2 How to get updates onto webservers?
+
+Not yet implemented - discussion required, but
+
+ cd /nfs/WWWdev/SANGER_docs/data/otter
+ git pull --rebase
+ 
+ # and if necessary
+ git checkout live
+ webpublish -r .
+ # That queues it.  Do we need to wait until it actually happens?
+ git checkout dev
+
+should do it, after setup.
+
+=head2 Automated onward-push to Otter Server instances?
+
+Perfectly feasible for those who have access.
+
+We may need to configure ssh keys to ensure all pushers to the config
+can also pass it on to the relevant servers.  This would mean assuming
+control of access.
+
 =head1 AUTHOR
 
 mca@sanger.ac.uk
 
 =cut
+
 
 our $DEBUG = 0;
 our @RM_FILES; # to unlink in END
@@ -361,7 +479,7 @@ sub update_local {
                 delete $l_br{$br};
             } else {
                 # user thinks it's new
-                warn "[w] Skip local new branch '$br' (sorry)\n";
+                warn "[w] Skip local new branch '$br' (sorry)\n"; # XXX
 # Need to tell what the options are.  This could be a new merged
 # branch or another version.  Versions should be made with $op='next'
             }

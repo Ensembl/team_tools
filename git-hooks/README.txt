@@ -27,6 +27,10 @@ Q: will these hooks work for developer clones?
 A: dunno, might be good to try
 
 
+Q: where are git-hooks/server-config/ documented?
+
+A: bin/server-config-op
+
 
 Let's use
   /software/noarch/linux-i386/anacode/team_tools.git-hooks/git-hooks
