@@ -74,11 +74,16 @@ feature, will be used monthly, workaround by branching on the remote.
 
 =back
 
+=head1 AUTHOR
+
+mca@sanger.ac.uk
+
 =cut
 
 our $DEBUG = 0;
 our @RM_FILES; # to unlink in END
 our ($GIT_DIR, $BARE);
+our $TMPFILE_RE = qr{^\.?\#|(~|\.bak|\.swp)$};
 
 sub main {
     $| = 1;
@@ -86,48 +91,33 @@ sub main {
     my $op = shift @ARGV || '(nil)';
 
     # Sanity check repo
-    my @l_br = qx( git branch );
-    my @r_br = qx( git branch -r );
+    my @l_br = pipe_from(qw( git branch ));
+    my @r_br = pipe_from(qw( git branch -r ));
     my ($br) = (join '', @l_br) =~ m{^\*\s*(.+)$}m;
 
-    my $pwd = getcwd();
-    if (-d '.git') {
-        $GIT_DIR = '.git';
-        $BARE = 0;
-    } elsif ($pwd =~ m{\.git$} && -f 'HEAD') {
-        $GIT_DIR = $pwd;
-        $BARE = 1;
-    } else {
-        die "Must be at top of clone - I am in $pwd";
-    }
-
-    rev_parse('HEAD'); # ensure we have a valid HEAD
-    unless ($BARE) {
-        run(is_clean => qw( git diff --quiet --exit-code --cached ));
-        run(is_clean => qw( git diff --quiet --exit-code ));
-    }
+    set_globals();
 
     # Do stuff
     if ($op eq 'merge') {
         my @vsn = sort map { /^\*?\s*(\d+|root)$/ ? ($1) : () } @l_br;
-        die "Expected some numbered Otter Data version local branches, got (@vsn)\n".
-          " Are we in the correct clone?\n Would '$0 update' give me the local branches?" unless @vsn > 3;
+        sane_repo(local => @vsn);
+
         die "Abort: merge on non-central repo is risky"
           unless $BARE || (@ARGV && '--force' eq shift @ARGV);
         die "Abort: expect to merge to a non-version branch, but we are on '$br'\n"
           if !defined $br || $br =~ m{^(\d+|root)$};
         non_merge_warn(HEAD => 10);
-        make_merge(@vsn);
-        apply_commit() unless $BARE;
+        my $changed = make_merge(@vsn);
+        apply_commit() if !$BARE && $changed;
 
     } elsif ($op eq 'update') {
         my $remote = @ARGV ? shift @ARGV : 'origin';
         @r_br = map { m{^\*?\s+$remote/(\S+)$} ? ($1) : () } @r_br;
         @l_br = map { m{^\*?\s+(\S+)$}         ? ($1) : () } @l_br;
         my @vsn = sort map { /^(\d+|root)$/ ? ($1) : () } @r_br;
-        die "Expected some numbered Otter Data version remote tracking branches, got (@vsn)\n".
-          " Are we in the correct clone?" unless @vsn > 3;
         die "Cannot 'update' a bare repository" if $BARE;
+        sane_repo("remote tracking ($remote)" => @vsn);
+
         print "* Fetch\n";
         run(fetch => qw( git fetch -p -v ), $remote);
         run(fetch => qw( git fetch --tags -v ), $remote); # could prune local tags with -p, but doesn't seem friendly
@@ -138,8 +128,51 @@ sub main {
         run(checkout => qw( git checkout ), $br, '--'); # back where we started
 
     } else {
-        $0 =~ s{.*/}{};
-        die <<"HELP";
+        syntax_msg();
+    }
+
+    return 0;
+}
+
+
+sub set_globals {
+    my $pwd = getcwd();
+    if (-d '.git') {
+        $GIT_DIR = '.git';
+        $BARE = 0;
+    } elsif ($pwd =~ m{\.git$} && -f 'HEAD') {
+        $GIT_DIR = $pwd;
+        $BARE = 1;
+    } else {
+        die "Must be at top of clone - I am in $pwd";
+    }
+    return ();
+}
+
+sub sane_repo {
+    my ($l_r, @vsn) = @_;
+
+    die "init fail?" unless defined $BARE;
+    rev_parse('HEAD'); # ensure we have a valid HEAD
+    unless ($BARE) {
+        run(is_clean => qw( git diff --quiet --exit-code --cached ));
+        run(is_clean => qw( git diff --quiet --exit-code ));
+    }
+
+    my $more =
+      ($l_r eq 'local'
+       ? " Would '$0 update' give me the local branches?"
+       : ' Are we pulling from the correct remote?');
+
+    die "Expected some numbered Otter Data version $l_r branches, got (@vsn)\n".
+      " Are we in the correct clone?\n$more" if @vsn < 4;
+
+    return 1;
+}
+
+sub syntax_msg {
+    $0 =~ s{.*/}{};
+    die <<"HELP";
 Syntax: $0 merge [ --force ]
         $0 update [ <remote> ]
 
@@ -151,10 +184,8 @@ specified remote.  Local changes are rebased forward.  Obsolete
 branches are removed safely.
 
 HELP
-    }
-
-    return 0;
 }
+
 
 sub run {
     my ($what, @cmd) = @_;
@@ -164,15 +195,7 @@ sub run {
         "\n  (@cmd)\n"
           if $?;
     print "ran $what => (@cmd)\n" if $DEBUG;
-}
-
-sub rev_parse {
-    my ($ref) = @_;
-    my $txt = qx( git rev-parse $ref );
-    chomp $txt;
-    die "Ref $ref looks invalid"
-      unless $txt =~ m{\A[a-f0-9]{40}\z};
-    return $txt;
+    return ();
 }
 
 sub pipe_to {
@@ -186,9 +209,34 @@ sub pipe_to {
     return ();
 }
 
+sub pipe_from {
+    my (@cmd) = @_;
+    open my $fh, '-|', @cmd
+      or die "Failed to pipe from @cmd: $!";
+    my @catch;
+    @catch = (wantarray ? <$fh> : scalar <$fh>);
+    $catch[0] = '' unless defined $catch[0]; # for empty & scalar
+    if (!close $fh) {
+        my $msg;
+        $msg = ($!) ? "Failed closing pipe from @cmd: $!"
+          : sprintf('[d] Pipe from %s failed: ?=0x%X', "@cmd", $?);
+        warn "$msg\n"; # previously we used qx()
+    }
+    return wantarray ? @catch : $catch[0];
+}
+
+sub rev_parse {
+    my ($ref) = @_;
+    my $txt = pipe_from(qw( git rev-parse ), $ref);
+    chomp $txt;
+    die "Ref $ref looks invalid"
+      unless $txt =~ m{\A[a-f0-9]{40}\z};
+    return $txt;
+}
+
 sub non_merge_warn {
     my ($ref, $n) = @_;
-    my @ci = qx( git log -n$n --first-parent --format='%h:%p:"%s" by %aN' $ref );
+    my @ci = pipe_from(qw( git log --first-parent ), q(--format=%h:%p:"%s" by %aN), "-n$n", $ref);
     chomp @ci;
     # Assumption: merge commits were made by this program, or equivalent.
     # Anything else is a misplaced commit and is about to be tromped.
@@ -216,7 +264,7 @@ sub make_merge {
         $ci{$br} = my $ciid = rev_parse($br);
 
         # Collect what's inside
-        my @obj = split /\x00/, qx( git ls-tree -z -r $ciid );
+        my @obj = split /\x00/, pipe_from(qw( git ls-tree -z -r ), $ciid);
         foreach my $obj (@obj) {
             my ($mode, $sha1, $path) = $obj =~
               m{^(100644|120000) blob ([a-f0-9]{40})\t(.+)$};
@@ -225,7 +273,7 @@ sub make_merge {
             die "Refusing merge of subdirectory in '$obj' from branch $br"
               if $path =~ m{/};
 
-            if ($path =~ m{^\.?\#|(~|\.bak|\.swp)$}) {
+            if ($path =~ $TMPFILE_RE) {
                 warn "[w] Omitted temporary file $obj from branch $br\n";
                 next;
             }
@@ -241,26 +289,34 @@ sub make_merge {
     pipe_to([qw[ git update-index -z --index-info ]], @tree);
 
     # List branches causing diffs
-    my @diff_fn = split /\x00/, qx( git diff --cached --name-only -z );
+    my @diff_fn = split /\x00/,
+      pipe_from(qw( git diff --cached --name-only -z )); # non-zero exit OK
     my @diff_br = uniq sort map { m{^(\d+)/} ? $1 : 'root' } @diff_fn;
-    warn "[i] Diffs seen in directories for (@diff_br)\n";
+    warn sprintf("[i] Diffs seen in directories for (%s)%s\n",
+                 "@diff_br", (@diff_br ? '' : ' - nothing to do'));
     my @lost_br = grep { ! $ci{$_} } @diff_br;
     die "Refusing merge because I lost branch(es) (@lost_br)" if @lost_br;
-    die "Refusing merge - no diff" unless @diff_br;
 
-    # Build list of merge parents
-    push @RM_FILES, "$GIT_DIR/MERGE_HEAD", "$GIT_DIR/MERGE_MODE";
-    write_file("$GIT_DIR/MERGE_HEAD", { atomic => 1 },
-               join '', map {"$_\n"} @ci{@diff_br});
-    write_file("$GIT_DIR/MERGE_MODE", { atomic => 1 }, 'no-ff'); # \n breaks it
+    if (@diff_br) {
+        # Build list of merge parents
+        push @RM_FILES, "$GIT_DIR/MERGE_HEAD", "$GIT_DIR/MERGE_MODE";
+        write_file("$GIT_DIR/MERGE_HEAD", { atomic => 1 },
+                   join '', map {"$_\n"} @ci{@diff_br});
+        write_file("$GIT_DIR/MERGE_MODE", { atomic => 1 }, 'no-ff'); # \n breaks it
 
-    # Make the commit
-    local $ENV{GIT_WORK_TREE};
-    if ($BARE) {
-        $ENV{GIT_WORK_TREE} = "$GIT_DIR/server-config-merge.tree";
-        mkdir $ENV{GIT_WORK_TREE}; # must exist, but isn't used
+        # Make the commit
+        local $ENV{GIT_WORK_TREE} = undef;
+        if ($BARE) {
+            $ENV{GIT_WORK_TREE} = "$GIT_DIR/server-config-merge.tree";
+            mkdir $ENV{GIT_WORK_TREE}; # must exist, but isn't used
+        }
+        run(commit => qw( git commit -m ), qq{Merged (@diff_br)\n});
+        return 1;
+
+    } else {
+        # nothing to do
+        return 0;
     }
-    run(commit => qw( git commit -q -m ), qq{Merged (@diff_br)\n});
 }
 
 sub apply_commit {
@@ -270,6 +326,7 @@ sub apply_commit {
     my $ci_new = rev_parse('HEAD');
     run(update_wc => qw( git reset -q --hard HEAD^ ));
     run(update_wc => qw( git merge --ff-only ), $ci_new);
+    return ();
 }
 
 sub update_local {
@@ -279,7 +336,7 @@ sub update_local {
     my %l_br; @l_br{@$l_br} = ();
     my %r_br; @r_br{@$r_br} = ();
 
-    my @tag = qx( git tag -l );
+    my @tag = pipe_from(qw( git tag -l ));
     chomp @tag;
     my %tag; @tag{@tag} = ();
 
@@ -316,6 +373,7 @@ sub update_local {
             run(no_rm_tag => qw( git tag -d ), $gone_tag) if exists $tag{$gone_tag};
         } # else { this didn't happen }
     }
+    return ();
 }
 
 
