@@ -2,6 +2,7 @@
 use strict;
 use warnings;
 
+#use Test::More skip_all => 'in failover';
 use Test::More 'no_plan'; # tests => 36; # skipping @morechecks breaks the plan
 use DBI;
 use YAML 'Dump';
@@ -53,9 +54,9 @@ sub main {
 #	 [ \&be_readonly, "mca_loutremouse_schema" ], # test would fail because writable
        ],
       );
-    my %slave = (otterlive => "otlpslave",
+    my %slave = (otterlive => "mcs30",
 		 otterpipe1 => "otp1slave",
-		 otterpipe2 => "otp2slave");
+		 otterpipe2 => "mcs31");
 
     foreach my $wantrow (@want) {
 	my ($hostport, $user, $pass, @morechecks) = @$wantrow;
