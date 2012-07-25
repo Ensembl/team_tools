@@ -39,7 +39,7 @@ server-config-op - operate on Otter Server config repository
 
 =over 4
 
-=item server-config-merge merge [ --force ]
+=item server-config-op merge [ --force ]
 
 Makes an octopus-like merge of multiple version branches into one
 multi-directory tree by B<overwriting> the current tree with the
@@ -56,7 +56,7 @@ forced.
 
 It works with a detached HEAD, but may not produce useful results.
 
-=item server-config-merge update [ <remote> ]
+=item server-config-op update [ <remote> ]
 
 Fetch all the remote tracking branches (with prune option), and tags.
 Then ensure all corresponding local branches exist, rebasing any local
@@ -402,7 +402,7 @@ sub make_merge {
     }
 
     # Put new state into a new index
-    local $ENV{GIT_INDEX_FILE} = "$GIT_DIR/server-config-merge.index";
+    local $ENV{GIT_INDEX_FILE} = "$GIT_DIR/server-config-op.index";
     run(empty_index => qw( git rm -rfq --ignore-unmatch --cached . ));
     pipe_to([qw[ git update-index -z --index-info ]], @tree);
 
@@ -425,7 +425,7 @@ sub make_merge {
         # Make the commit
         local $ENV{GIT_WORK_TREE} = undef;
         if ($BARE) {
-            $ENV{GIT_WORK_TREE} = "$GIT_DIR/server-config-merge.tree";
+            $ENV{GIT_WORK_TREE} = "$GIT_DIR/server-config-op.tree";
             mkdir $ENV{GIT_WORK_TREE}; # must exist, but isn't used
         }
         run(commit => qw( git commit -m ), qq{Merged (@diff_br)\n});
