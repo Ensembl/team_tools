@@ -25,7 +25,7 @@ sed -e "s|OTT_REL_MACOS_INSTALL_BASE|${install_base}|"   \
    "${acedb_wmake_defs_src}" \
  > "${acedb_wmake_defs_dst}"
 
-zmap_acedb_binaries='tace xace sgifaceserver giface makeUserPasswd xremote'
+zmap_acedb_binaries='tace sgifaceserver xremote'
 
 (
     cd "$acedb_src" &&
