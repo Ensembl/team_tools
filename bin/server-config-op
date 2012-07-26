@@ -1,4 +1,7 @@
-#! /usr/bin/env perl
+#! /software/perl-5.12.2/bin/perl
+#
+# Hardwired #! to avoid influence from calling user's environment.
+# Avoiding /usr/bin/perl for lack of File::Slurp.
 
 use strict;
 use warnings;
@@ -205,6 +208,7 @@ our $TMPFILE_RE = qr{^\.?\#|(~|\.bak|\.swp)$};
 
 sub main {
     $| = 1;
+    umask 02;
 
     my $op = shift @ARGV || '(nil)';
 
