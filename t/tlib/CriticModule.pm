@@ -8,6 +8,7 @@ our @EXPORT = qw(critic_module_ok); ## no critic (ProhibitAutomaticExportation)
 
 use File::Spec;
 
+use Test::Builder;
 use Test::Perl::Critic;
 
 sub import {
@@ -32,9 +33,10 @@ sub critic_module_ok {
     my $mod_path = $INC{$mod_rel_path};
 
     unless ($mod_path) {
-        my $ok = fail($test_name || "CriticModule for \"$module\"");
-        diag("Cannot find '$module' in %INC - did you forget to 'use_ok($module)' first?");
-        return $ok;
+        my $tb = Test::Builder->new;
+        $tb->ok(0, $test_name || "CriticModule for \"$module\"");
+        $tb->diag("Cannot find '$module' in %INC - did you forget to 'use_ok($module)' first?");
+        return;
     }
 
     return critic_ok($mod_path, $test_name, @args);
