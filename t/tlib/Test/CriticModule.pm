@@ -1,4 +1,4 @@
-package CriticModule;
+package Test::CriticModule;
 
 use strict;
 use warnings;
@@ -34,7 +34,7 @@ sub critic_module_ok {
 
     unless ($mod_path) {
         my $tb = Test::Builder->new;
-        $tb->ok(0, $test_name || "CriticModule for \"$module\"");
+        $tb->ok(0, $test_name || "Test::CriticModule for \"$module\"");
         $tb->diag("Cannot find '$module' in %INC - did you forget to 'use_ok($module)' first?");
         return;
     }

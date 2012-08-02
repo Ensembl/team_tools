@@ -8,7 +8,7 @@ use Test::More tests => 2;
 my $module;
 
 BEGIN {
-      $module = 'CriticModule';
+      $module = 'Test::CriticModule';
       use_ok($module, -severity => 4);
 }
 
