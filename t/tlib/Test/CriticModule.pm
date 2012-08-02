@@ -43,3 +43,46 @@ sub critic_module_ok {
 }
 
 1;
+
+__END__
+
+=head1 NAME
+
+Test::CriticModule - Run Perl::Critic as a test against a module
+
+=head1 SYNOPSIS
+
+  use lib "${ENV{ANACODE_TEAM_TOOLS}}/t/tlib";
+  use Test::CriticModule;
+
+  my $module = 'Bio::Otter::BAM';
+  BEGIN { use_ok($module); }      # ensures module's path is in %INC
+
+  critic_module_ok($module);
+
+=head1 DESCRIPTION
+
+Test::CriticModule is a convenience wrapper for L<Test::Perl::Critic> which
+finds an already-I<require>'d module and runs L<Perl::Critic> against it.
+
+The C<ANACODE_PERLCRITCRC> environment variable is detected and passed
+through as the Perl::Critic profile if set to a readable file.
+
+Arguments to C<use Test::CriticModule> are passed through to
+Test::Perl::Critic.
+
+=head1 EXPORTS
+
+  critic_module_ok()
+
+=head1 SEE ALSO
+
+L<Test::Perl::Critic>
+
+=head1 AUTHOR
+
+Ana Code B<email> anacode@sanger.ac.uk
+
+=cut
+
+# EOF
