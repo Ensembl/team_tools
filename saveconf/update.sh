@@ -56,6 +56,15 @@ find $DATADIR -printf '%M %2n %-8u %-8g %9s %TY-%Tm-%Td %.8TT %p\n' > $SAVEREPO/
 (
     # Anything in these $DATADIR/??  directories: add, modify, delete
     cd $DATADIR
+
+    # Bodge: don't want to "add -A ." because that would remove
+    # top-level files which don't exist here, but we want in the
+    # tracking repo anyway.  This will allow _named_ files
+    # no-longer-present to disappear from the repo.
+    git rm --cached --ignore-unmatch -- \
+        species.dat~    users.txt~ \
+        '#species.dat#' '#users.txt#'
+
     git add -A *
 )
 
