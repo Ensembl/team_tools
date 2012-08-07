@@ -37,9 +37,9 @@ exit
 [ "$(git cat-file -t $newrev)" = 'commit' ] ||
 exit
 
-git_changed_files() {
+git_changed_perl_files() {
     git diff --name-only "$@" |
-    perl -nle 'print if -f'
+    perl -MPerl::Critic::Utils -nle 'print if -f and Perl::Critic::Utils::all_perl_files($_)'
 }
 
 # compare new branches against master
@@ -58,7 +58,7 @@ tmp_dir="$( mktemp -d -t "$( basename "$0" ).XXXXXXXXXX" )" &&
             perlcritic \
                 --quiet \
                 --profile "$perlcriticrc" \
-                $( git_changed_files "$oldrev" "$newrev" ) \
+                $( git_changed_perl_files "$oldrev" "$newrev" ) \
                 /dev/null # in case the above list is empty
         fi
     )
