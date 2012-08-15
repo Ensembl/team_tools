@@ -1,6 +1,6 @@
---- ./etc/macports/macports.conf.default	2011-11-17 14:08:14.000000000 +0000
-+++ ./etc/macports/macports.conf	2011-11-17 14:12:44.000000000 +0000
-@@ -37,7 +37,7 @@
+--- ./etc/macports/macports.conf.default	2012-08-14 11:08:33.000000000 +0100
++++ ./etc/macports/macports.conf	2012-08-14 11:13:50.000000000 +0100
+@@ -52,7 +52,7 @@
  # CPU architecture to compile for. Defaults to i386 or ppc on Mac OS X 10.5
  # and earlier, depending on the CPU type detected at runtime. On Mac OS X 10.6
  # the default is x86_64 if the CPU supports it, i386 otherwise.
@@ -9,7 +9,7 @@
  
  # CPU architectures to use for Universal Binaries (+universal variant)
  universal_archs		x86_64 i386
-@@ -71,10 +71,10 @@
+@@ -86,10 +86,10 @@
  #destroot_umask 022
  
  # Set whether to automatically execute "clean" after "install" of ports
@@ -22,10 +22,10 @@
  
  # Rsync server to fetch MacPorts sources from. Note that this is only used
  # for selfupdate. The source(s) for the ports tree are set in sources.conf.
-@@ -131,3 +131,7 @@
- # hosts not to go through the proxy (comma-separated, applies to HTTP, HTTPS,
- # and FTP, but not rsync):
- #proxy_skip            internal1, internal2, internal3
+@@ -159,3 +159,7 @@
+ # linking and can rebuild affected ports. Possible values are
+ #'rebuild' (default) or 'report'.
+ #revupgrade_mode rebuild
 +
 +# Target MacOS X 10.5 (Leopard) and above
 +#
