@@ -22,7 +22,7 @@ install_macports.sh
   # files. generates the port_update.sh script and prompts for:
 
 # connect to non-rsync-firewalled network and run:
-./Contents/Resources/sbin/port_update.sh 
+./Contents/Resources/sbin/port_update.sh
 
 # connect back to normal network if necessary.
 
@@ -52,5 +52,36 @@ install_annotools.sh <path to zmap build directory>
   # configures, compiles and installs ZMap, SeqTools and XRemote.
 
 
-TBC: actual otterlace install, via otterlace_build??
- 
+install_otterlace.sh <path to ensembl-otter git checkout>
+
+  # runs otterlace_build with suitable arguments to install
+  # otter client.
+
+
+TBC: set up Contents/MacOS/otterlace script and plist file.
+
+  # copy Contents/MacOS/otterlace from another of my builds
+  #   edit OTTER_HOME to point to correct version
+  #   ensure it sets OTTER_MACOS_RESOURCES
+
+  # copy Contents/Info.plist from another otterlace tree
+  #   open Info.plist and ensure version strings are correct
+
+  # modify:
+  #   Contents/Resources/otter_rel<NN.NN>/bin/otterlace_env.sh
+  #   * comment out OTTER_HOME=
+  #   * set anasoft from $OTTER_MACOS_RESOURCES
+  #   * add to PERL5LIB as per:
+  #     @@ -104,7 +104,10 @@
+  #      $anasoft_distro/lib:\
+  #      $anasoft_distro/lib/site_perl:\
+  #      $anasoft/lib:\
+  #     -$anasoft/lib/site_perl\
+  #     +$anasoft/lib/site_perl:\
+  #     +$anasoft/lib/perl5/site_perl:\
+  #     +$anasoft/lib/perl5/vendor_perl:\
+  #     +$anasoft/lib/perl5\
+  #      "
+  #      
+  #      if [ -n "$ZMAP_LIB" ]
+
