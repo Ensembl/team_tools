@@ -7,7 +7,7 @@
 . "$( dirname "$0" )/_otterlace.sh" || exit 1
 
 DRYRUN=''
-while [ $# -gt 0 ]; do
+while [ $# -gt 0 ] && [ "${1:0:1}" = "-" ]; do
     sw=$1
     shift
     case $sw in
