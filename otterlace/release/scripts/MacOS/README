@@ -68,7 +68,7 @@ TBC: set up Contents/MacOS/otterlace script and plist file.
   #   open Info.plist and ensure version strings are correct
 
   # modify:
-  #   Contents/Resources/otter_rel<NN.NN>/bin/otterlace_env.sh
+  #   Contents/Resources/otter/otter_rel<NN.NN>/bin/otterlace_env.sh
   #   * comment out OTTER_HOME=
   #   * set anasoft from $OTTER_MACOS_RESOURCES
   #   * add to PERL5LIB as per:
@@ -85,3 +85,37 @@ TBC: set up Contents/MacOS/otterlace script and plist file.
   #      
   #      if [ -n "$ZMAP_LIB" ]
 
+
+# Test the build here.
+
+  # mg13 note to self:
+  #   my environment accesses ~/Dist/otterlace.app.
+  #   Put the test app somewhere else for testing, and ensure
+  #   ~/Dist/otterlace.app is empty.
+
+
+TBC: Make unstripped disk image
+
+  # Edit a copy of ensembl-otter/scripts/make_image.sh to set the correct version.
+  # Run it to create sparseimage.
+  # Make sure the new app is called otterlace.app again, then:
+  #   cp -pR otterlace.app /Volumes/otterlace_mac_intel-<MM>-<NN>
+  # Obtain ReadMe.rtfd from previous release, and update it.
+  #   cp -pR ReadMe.rtfd /Volumes/otterlace_mac_intel-<MM>-<NN>
+  # Re-run make_image.sh to create dmg
+  # Save the dmg as a backup.
+
+
+cleanup_ports.sh
+
+  # Removes ports only needed for the build.
+
+
+TBC: Remove static libraries
+
+  find . -name 'lib*.a' | grep -v perl | xargs rm
+
+
+TBC: Rebuild disk image with stripped otterlace
+
+  # Largely as above.
