@@ -3,7 +3,7 @@ file: ~/.ssh/config
 mark_start: "# * Automatic: aliases for people's machines"
 mark_end: "#<< automatic"
 map:
-  deskpro-aeb: deskpro20629
+  deskpro-aeb: deskpro20190
   deskpro-af2: deskpro21239
   deskpro-cas: deskpro21242
   deskpro-clb: deskpro20132
@@ -14,7 +14,7 @@ map:
   deskpro-gdr: deskpro21729
   deskpro-gm5: deskpro101281
   deskpro-gs6: deskpro20623
-  deskpro-ib2: deskpro-20111216123429
+  deskpro-ib2: deskpro-20215
   deskpro-jel: deskpro20634
   deskpro-jh13: deskpro20622
   deskpro-jla1: deskpro20640
