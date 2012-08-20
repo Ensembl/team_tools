@@ -81,6 +81,7 @@ sub main {
     run("configure to copy" => qw( git config tar.copy.command ), 'tar xf -');
     my $until; # unixtimes of current merge
     my %since; # key=branch, value=unixtime of last merge from that branch
+    my %seen_ci; # key=ciid
     my %merge_ci; # key = $branch, value = $ci[n]
     foreach my $ci (@ci) {
         my ($utime, $ciid, $comment, $branch) = @$ci;
@@ -94,9 +95,20 @@ sub main {
         }
         $until = $utime;
 
+        # @vsn sorted ascending
         foreach my $br ($branch eq 'meta' ? @vsn : ($branch)) {
-            $merge_ci{$br} ||=
+            my $latest =
               find_latest($since{$br}, $until, $branch_date_ciid{$br});
+            next unless $latest;
+
+            # When merging "all", skip branches that didn't exist yet.
+            #
+            # They may seem to exist we pretend N+1 branched from N;
+            # thus "oldest commit on branch 69" can really be the
+            # (grafted) history back to branch 54.
+            next if $seen_ci{ $latest->[1] }++;
+
+            $merge_ci{$br} = $latest;
             $since{$br} = $until;
         }
     }
