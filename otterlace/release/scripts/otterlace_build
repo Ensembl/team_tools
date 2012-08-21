@@ -33,6 +33,7 @@
 # May chdir un-scoped, or exit or exec
 get_opts_inputvars() {
     # zmap_trees, zmap_build, ensembl_otter_root, client_build_hosts : not local
+    # local_client_only : not local
     local sw opt
 
     while [[ $# > 0 ]] && [ "${1:0:1}" = "-" ]; do
@@ -54,8 +55,20 @@ get_opts_inputvars() {
                 [ -n "$client_build_hosts" ] && bail "Was about to overwrite client_build_hosts='$client_build_hosts'"
                 client_build_hosts=' '
                 ;;
+            --local-client-only | -L)
+                [ -n "$otterlace_client_host" ] \
+                    && bail "Was abot to overwrite otterlace_client_host='$otterlace_client_host'"
+                otterlace_client_host="$( hostname )"
+                local_client_only=1
+                ;;
+            *)
+                show_help_exit "Unknown option: $opt"
+                ;;
         esac
     done
+
+    [ "$client_build_hosts" = ' ' ] && [ -n "$local_client_only" ] && \
+        show_help_exit "--server-only and --local-client-only are mutually exclusive."
 
     # Inner otterlace_client_install() runs needs one build directory,
     # passed in by otterlace_install_all .  Already in $zmap_build.
@@ -65,9 +78,15 @@ get_opts_inputvars() {
     #
     # Assume it is a space-separated list of directories containing no
     # funnychars.
+
+    if [ -n "$local_client_only" ] && [[ $# > 1 ]]; then
+        show_help_exit "--local-client-only mode takes only a single ZMap build."
+    fi
+
     zmap_trees="$*"
-    if [ -z "$otterlace_client_host" ]; then
-        # we are not doing otterlace_client_install
+
+    if [ -z "$otterlace_client_host" ] || [ -n "$local_client_only" ]; then
+        # we are not doing inner otterlace_client_install() from otterlace_install_all()
 
         if [ -n "$zmap_build" ] && [ -z "$zmap_trees" ]; then
             zmap_trees="$zmap_build"
@@ -79,6 +98,10 @@ get_opts_inputvars() {
         [ -n "$zmap_trees" ] || [ "$client_build_hosts" = ' ' ] || show_help_exit "Doing client build, but have no zmap_trees."
     fi
 
+    if [ -n "$local_client_only" ]; then
+        zmap_build="$zmap_trees"
+        unset zmap_trees
+    fi
 
     if [ -n "$ensembl_otter_root" ]
     then
@@ -108,10 +131,12 @@ show_help_exit() {
 
  Options:
 
-    --help | -h		Show this help (and stop)
-    --hosts | -H	Show build hosts list (and stop)
+    --help | -h			Show this help (and stop)
+    --hosts | -H		Show build hosts list (and stop)
 
-    --server-only	Build Otter Server, but no clients
+    --server-only | -S		Build Otter Server, but no clients
+
+    --local-client-only | -L	Build Otter Client on this host
 
 " "$( basename "$0" )" "$thisprog" "$problem" >&2
     exit 1
