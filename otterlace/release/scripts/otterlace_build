@@ -400,8 +400,8 @@ otterlace_client_install() {
         &&
     rm "${otter_home}/bin/otterlace.bak" &&
     (
-        zmap="$(     "${otter_home}/bin/zmap"   --version 2>&1 )"
-        seqtools="$( "${otter_home}/bin/blixem" --version 2>&1 )"
+        zmap="$(     "${otter_home}/bin/zmap"    --version 2>&1 )"
+        seqtools="$( "${otter_home}/bin/blixemh" --version 2>&1 )"
         # GNU readlink not available on MacOS, so we use 'cd' and 'pwd -P' instead
         zmap_prefix_real="$( cd "$zmap_prefix" 2>/dev/null && pwd -P || echo ?? )"
         if [ "$zmap_prefix" = "$zmap_prefix_real" ]; then
