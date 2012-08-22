@@ -352,11 +352,13 @@ otterlace_client_install_perl_modules() {
 }
 
 otterlace_client_install_scripts() {
-    local install_dir
+    local install_dir src_subdir
     install_dir="${1}/bin"
+    src_subdir="scripts/client"
+    [ -n "${2}" ] && src_subdir="scripts/${2}/client"
 
     mkdir -p -- "$install_dir" &&
-    cp -- ${ensembl_otter_root}/scripts/client/* "$install_dir" &&
+    cp -- ${ensembl_otter_root}/${src_subdir}/* "$install_dir" &&
     true
 }
 
@@ -389,12 +391,28 @@ otterlace_client_install_zmap() {
     true
 }
 
+otterlace_client_install_os() {
+    local install_dir
+    install_dir="$1"
+
+    case "$osname" in
+        Darwin)
+            otterlace_client_install_scripts "$install_dir" "MacOS" &&
+            true
+            ;;
+        *)
+            true
+            ;;
+    esac
+}
+
 otterlace_client_install_client() {
     local install_dir
     install_dir="$1"
     otterlace_client_install_perl_modules "$install_dir" &&
     otterlace_client_install_scripts      "$install_dir" &&
     otterlace_client_install_zmap         "$install_dir" &&
+    otterlace_client_install_os           "$install_dir" &&
     true
 }
 
