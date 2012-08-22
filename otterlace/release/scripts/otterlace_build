@@ -391,6 +391,38 @@ otterlace_client_install_zmap() {
     true
 }
 
+otterlace_client_edit_dist_macos() {
+    local install_dir macos_dist_dir plist_buddy info_plist
+    install_dir="$1"
+
+    macos_dist_dir="${install_dir}/ensembl-otter/scripts/MacOS/dist"
+    plist_buddy="/usr/libexec/PlistBuddy"
+    info_plist="${macos_dist_dir}/Info.plist"
+
+    # These are edited with version information here since we know
+    # what version we are building, but they are copied into place
+    # outside the 'otter_swac' tree by the calling script,
+    # MacOS/install_otterlace.sh, which knows where to put them.
+
+    # MacOS-specific startup script, chains to standard otterlace script
+    otterlace_script_vars_update "${macos_dist_dir}/otterlace" &&
+
+    # Info.plist file contains version number
+    "${plist_buddy}" -c "Set :CFBundleShortVersionString ${version}" "${info_plist}" &&
+    "${plist_buddy}" -c "Set :CFBundleVersion            ${version}" "${info_plist}" &&
+
+    # Copy out setting of OTTER_HOME and modify anasoft
+    # in standard otterlace_env.sh script
+    sed -i.bak \
+        -e '/^OTTER_HOME=/s/^/#/' \
+        -e '/^anasoft=/s/$/"$OTTER_SWAC"/' \
+        "${install_dir}/bin/otterlace_env.sh" \
+        &&
+    rm "${install_dir}/bin/otterlace_env.sh.bak" &&
+
+    true
+}
+
 otterlace_client_install_os() {
     local install_dir
     install_dir="$1"
@@ -398,6 +430,7 @@ otterlace_client_install_os() {
     case "$osname" in
         Darwin)
             otterlace_client_install_scripts "$install_dir" "MacOS" &&
+            otterlace_client_edit_dist_macos "$install_dir"         &&
             true
             ;;
         *)
