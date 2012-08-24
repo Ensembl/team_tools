@@ -1,9 +1,5 @@
 #!/bin/bash
 
-#
-# OTT_REL_MACOS_CREATED_COMMENT
-#
-
 set -e # bail out on error
 
 echo
@@ -12,14 +8,16 @@ echo "a non-firewalled network such as the WGC open"
 echo "wireless network."
 echo
 
+install_base="$( dirname $0 )/.." # we run from <install_base>/sbin
+
 echo "Doing port selfupdate - may take a few minutes..."
-"OTT_REL_MACOS_INSTALL_BASE/bin/port" selfupdate
+"${install_base}/bin/port" selfupdate
 echo "...done"
 echo
 
 echo "Indexing local ports"
-cd "OTT_REL_MACOS_LOCAL_PORTS"
-"OTT_REL_MACOS_INSTALL_BASE/bin/portindex"
+cd "${install_base}/etc/local_ports"
+"../../bin/portindex"
 
 echo
 echo "All done."

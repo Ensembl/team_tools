@@ -4,6 +4,11 @@ set -e # bail out on error
 
 . "$( dirname "$0" )/_macos.sh" || exit 1
 
+if [ ! -d "Contents/Resources" ]; then
+    echo "No ./Contents/Resources directory here - setup_app_skeleton.sh not run?" >&2
+    exit 2
+fi
+
 macports_url_base="https://distfiles.macports.org/MacPorts"
 macports_ver="2.1.2"
 
@@ -55,14 +60,8 @@ echo "Installing local ports files"
 mkdir -v -p "${local_ports_dst}"
 cp -v -a ${local_ports_src}/* "${local_ports_dst}"
 
-port_update_src="${etc_macos}/port_update.sh.template"
 port_update_dst="${install_base}/sbin/port_update.sh"
-created_comment="Created from $( basename ${port_update_src} ) on $( date '+%F %T' )"
-sed -e "s|OTT_REL_MACOS_INSTALL_BASE|${install_base}|"       \
-    -e "s|OTT_REL_MACOS_LOCAL_PORTS|${local_ports_dst}|"     \
-    -e "s|OTT_REL_MACOS_CREATED_COMMENT|${created_comment}|" \
-   "${port_update_src}" \
- > "${port_update_dst}"
+cp -v "${etc_macos}/port_update.sh.template" "${port_update_dst}"
 chmod +x "${port_update_dst}"
 
 echo
