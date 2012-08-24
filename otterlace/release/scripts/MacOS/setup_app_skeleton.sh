@@ -12,6 +12,11 @@ if [ -z "${new_app}" ]; then
     exit 3
 fi
 
+if [ -e "${new_app}" ]; then
+    echo "App directory '${new_app}' already exists" >&2
+    exit 4
+fi
+
 # Rejig to move var/ and share/ out of the tree, and then to share within them
 
 non_dist="_non_dist"
