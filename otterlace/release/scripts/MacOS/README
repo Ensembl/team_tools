@@ -58,34 +58,6 @@ install_otterlace.sh <path to ensembl-otter git checkout>
   # otter client.
 
 
-TBC: set up Contents/MacOS/otterlace script and plist file.
-
-  # copy Contents/MacOS/otterlace from another of my builds
-  #   edit OTTER_HOME to point to correct version
-  #   ensure it sets OTTER_MACOS_RESOURCES
-
-  # copy Contents/Info.plist from another otterlace tree
-  #   open Info.plist and ensure version strings are correct
-
-  # modify:
-  #   Contents/Resources/otter/otter_rel<NN.NN>/bin/otterlace_env.sh
-  #   * comment out OTTER_HOME=
-  #   * set anasoft from $OTTER_MACOS_RESOURCES
-  #   * add to PERL5LIB as per:
-  #     @@ -104,7 +104,10 @@
-  #      $anasoft_distro/lib:\
-  #      $anasoft_distro/lib/site_perl:\
-  #      $anasoft/lib:\
-  #     -$anasoft/lib/site_perl\
-  #     +$anasoft/lib/site_perl:\
-  #     +$anasoft/lib/perl5/site_perl:\
-  #     +$anasoft/lib/perl5/vendor_perl:\
-  #     +$anasoft/lib/perl5\
-  #      "
-  #      
-  #      if [ -n "$ZMAP_LIB" ]
-
-
 # Test the build here.
 
   # mg13 note to self:
@@ -113,6 +85,7 @@ cleanup_ports.sh
 
 TBC: Remove static libraries
 
+  cd Contents/Resources/lib
   find . -name 'lib*.a' | grep -v perl | xargs rm
 
 

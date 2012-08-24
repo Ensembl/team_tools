@@ -154,7 +154,7 @@ otter_ipath_get() {
     nfswub=${otter_nfswub:-/nfs/WWWdev/SANGER_docs}
 
     [ -d "$swac"   ] || echo "W: swac=$swac: not a directory" >&2
-    [ -d "$nfswub" ] || echo "W: nfswub=$nfswub: not a directory" >&2
+    [ -d "$nfswub" ] || [ -n "$local_client_only" ] || echo "W: nfswub=$nfswub: not a directory" >&2
 
 
     # Prepare all relevant paths once, up front...  else we're tempted

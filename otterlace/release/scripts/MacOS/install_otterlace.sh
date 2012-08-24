@@ -31,17 +31,31 @@ mkdir -v -p "${build_log_dir}"
 
 set_stage_dir
 
+generic_script_dir="${my_dir}/.."
 otterlace_build="${my_dir}/../otterlace_build"
-(
-    export PATH=$PATH:/usr/local/git/bin &&
-    cd "${ensembl_otter_dir}" && 
-    \
-	otterlace_client_host="${hostname}" \
-	otter_swac="${install_base}" \
-	build_log="${build_log_dir}" \
-	zmap_build="${stage_dir}" \
-	"${otterlace_build}"
-)
+
+export PATH=$PATH:/usr/local/git/bin
+pushd "${ensembl_otter_dir}"
+
+otter_swac="${install_base}" \
+build_log="${build_log_dir}" \
+    "${generic_script_dir}/otterlace_build" --local-client-only "${stage_dir}"
+
+. "${generic_script_dir}/_otterlace.sh"
+version="$( full_version )"
+
+popd
+
+macos_dist_dir="${install_base}/otter/otter_rel${version}/ensembl-otter/scripts/MacOS/dist"
+
+# App script
+contents_dir="${app_base}/Contents"
+macos_dir="${contents_dir}/MacOS"
+mkdir -v -p "${macos_dir}"
+cp -v "${macos_dist_dir}/otterlace" "${macos_dir}"
+
+# Info.plist file
+cp -v "${macos_dist_dir}/Info.plist" "${contents_dir}"
 
 exit $?
 
