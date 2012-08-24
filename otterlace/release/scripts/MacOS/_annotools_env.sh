@@ -2,14 +2,18 @@
 #
 #   . "$( dirname "$0" )/_annotools_env.sh" || exit 1
 
+if [ -z "${macos_scripts}" ]; then
+    echo "Error: must source _macos.sh before _annotools_env.sh" >&2
+    exit 5
+fi
+
 check_set_zmap_build_dir_from_arg () {
 
     # sets global (but not exported) zmap_build_dir
     # from supplied_arg, then also sets zmap_dist_dir
     zmap_build_dir="$1"
     if [ ! -d "${zmap_build_dir}" ]; then
-	me="$( basename "$0" )"
-	echo "Usage: $me <zmap_build_dir>" >&2
+	echo "Usage: ${script_name} <zmap_build_dir>" >&2
 	exit 3
     fi
 
@@ -44,7 +48,7 @@ goto_build_root () {
 
     /usr/bin/true
 }
-    
+
 # These ensure we build for 10.5, i386.
 
 extra_cflags="-arch i386 -mmacosx-version-min=10.5 -isysroot /Developer/SDKs/MacOSX10.5.sdk"

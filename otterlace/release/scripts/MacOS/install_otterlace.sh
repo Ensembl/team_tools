@@ -10,8 +10,7 @@ perl_sanity_check || exit 3
 
 ensembl_otter_dir="$1"
 if [ ! -d "${ensembl_otter_dir}" ]; then
-	me="$( basename "$0" )"
-	echo "Usage: $me <ensembl_otter_dir>" >&2
+	echo "Usage: ${script_name} <ensembl_otter_dir>" >&2
 	exit 4
 fi
 

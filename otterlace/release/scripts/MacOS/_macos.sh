@@ -2,16 +2,17 @@
 #
 #   . "$( dirname "$0" )/_macos.sh" || exit 1
 
-script_base="$( dirname "$0" )"
+macos_scripts="$( dirname "$0" )"
+script_name="$( basename "$0" )"
 
 # assume we're being run in the top-level app dir, e.g. otterlace.app
 app_base="${PWD}"
 
 # based on this script being in $TT/otterlace/release/scripts/MacOS ...
-etc_macos="${script_base}/../../etc/MacOS"
+etc_macos="${macos_scripts}/../../etc/MacOS"
 
-resource_path="Contents/Resources"
-install_base="${app_base}/${resource_path}"
+_resource_path="Contents/Resources"
+install_base="${app_base}/${_resource_path}"
 
 # ensure we don't pick up any previous MacPorts installation
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
@@ -23,7 +24,7 @@ export ftp_proxy="${http_proxy}"
 # side-effects: sets $unpacked_tarball
 #
 unpack_matching_tarball() {
-    local tarball expected_stem
+    local tarball_pattern real_tarball expected_stem
 
     tarball_pattern="$1"
     expected_stem="$2"
@@ -39,7 +40,7 @@ unpack_matching_tarball() {
 }
 
 check_binary() {
-    local binary
+    local binary binary_path
     binary="$1"
 
     binary_path="${install_base}/bin/${binary}"
@@ -67,5 +68,7 @@ perl_sanity_check() {
     port_sanity_check || return
     check_binary 'perl'
 }
+
+unset _resource_path
 
 # EOF
