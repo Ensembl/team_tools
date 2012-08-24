@@ -20,8 +20,11 @@ shared_non_dist="_shared"
 dist_dir="${PWD}"
 app_base="${dist_dir}/${new_app}"
 
+serial="$(date +%s).$$"
+new_app_versioned="${new_app}.${serial}"
+
 non_dist_path="${dist_dir}/${non_dist}"
-my_non_dist_path="$non_dist_path/${new_app}"
+my_non_dist_path="$non_dist_path/${new_app_versioned}"
 shared_non_dist_path="${non_dist_path}/${shared_non_dist}"
 
 echo "About to make: ${app_base}"
@@ -42,15 +45,21 @@ mkdir -v -p "${my_non_dist_path}/share"
 mkdir -v -p "${my_non_dist_path}/var"
 mkdir -v -p "${my_non_dist_path}/var/macports"
 
+(
+    cd "${app_base}"
+    echo "In ${PWD}:"
+    ln -v -sf "../${non_dist}/${new_app_versioned}" "_my_non_dist"
+)
+
 # $PWD/ <-------------------\
 #   $new_app/ <----------\  |
 #     Contents <------\  |  |
 rel_inst_to_non_dist="../../../${non_dist}"
 (
-    cd "${install_base}" 
+    cd "${install_base}"
     echo "In ${PWD}:"
     for f in var share; do
-	ln -v -sf "${rel_inst_to_non_dist}/${new_app}/$f" .
+	ln -v -sf "${rel_inst_to_non_dist}/${new_app_versioned}/$f" .
     done
 )
 
