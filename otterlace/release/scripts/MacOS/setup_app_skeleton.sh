@@ -17,9 +17,6 @@ fi
 
 # Rejig to move var/ and share/ out of the tree, and then to share within them
 
-non_dist="_non_dist"
-shared_non_dist="_shared"
-
 dist_dir="${PWD}"
 app_base="${dist_dir}/${new_app}"
 
@@ -47,23 +44,7 @@ mkdir -v -p "${my_non_dist_path}/share"
 mkdir -v -p "${my_non_dist_path}/var"
 mkdir -v -p "${my_non_dist_path}/var/macports"
 
-(
-    cd "${app_base}"
-    echo "In ${PWD}:"
-    ln -v -sf "../${non_dist}/${new_app_versioned}" "_my_non_dist"
-)
-
-# $PWD/ <-------------------\
-#   $new_app/ <----------\  |
-#     Contents <------\  |  |
-rel_inst_to_non_dist="../../../${non_dist}"
-(
-    cd "${install_base}"
-    echo "In ${PWD}:"
-    for f in var share; do
-	ln -v -sf "${rel_inst_to_non_dist}/${new_app_versioned}/$f" .
-    done
-)
+make_links "${app_base}" "${new_app_versioned}"
 
 (
     cd "${my_non_dist_path}/var/macports"

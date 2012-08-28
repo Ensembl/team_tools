@@ -12,18 +12,6 @@ if [ -z "${source_app}" ] || [ -z "${target_app}" ]; then
     exit 3
 fi
 
-versioned_non_dist() {
-    local my_non_dist_link my_non_dist_dir
-
-    my_non_dist_link="$1/_my_non_dist"
-    if [ ! -e "${my_non_dist_link}" ]; then echo "Cannot find '${my_non_dist_link}'" >&2; exit 4; fi
-
-    my_non_dist_dir="$( cd "${my_non_dist_link}" 2>/dev/null && pwd -P )"
-    if [ -z "${my_non_dist_dir}" ]; then echo "Cannot resolve link for '${my_non_dist_link}'" >&2; exit 5; fi
-
-    echo "_non_dist/$( basename "${my_non_dist_dir}" )"
-}
-
 save_links() {
     local install_base
     install_base="$1"
