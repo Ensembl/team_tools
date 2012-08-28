@@ -2,8 +2,7 @@
 #
 #   . "$( dirname "$0" )/_macos_in_app.sh" || exit 1
 
-macos_scripts="$( dirname "$0" )"
-script_name="$( basename "$0" )"
+. "$( dirname "$0" )/_macos_common.sh" || exit 9
 
 # assume we're being run in the top-level app dir, e.g. otterlace.app
 app_base="${PWD}"
@@ -13,13 +12,6 @@ etc_macos="${macos_scripts}/../../etc/MacOS"
 
 _resource_path="Contents/Resources"
 install_base="${app_base}/${_resource_path}"
-
-# ensure we don't pick up any previous MacPorts installation
-export PATH=/bin:/sbin:/usr/bin:/usr/sbin
-
-export http_proxy=http://webcache.sanger.ac.uk:3128
-export HTTPS_PROXY="${http_proxy}"
-export ftp_proxy="${http_proxy}"
 
 # side-effects: sets $unpacked_tarball
 #

@@ -2,14 +2,10 @@
 
 set -e # bail out on error
 
-# We don't include _macos.sh as it assumes we're running in the app directory
-# . "$( dirname "$0" )/_macos.sh" || exit 1
+. "$( dirname "$0" )/_macos_above_app.sh" || exit 1
 
 source_app="$1"
 target_app="$2"
-
-macos_scripts="$( dirname "$0" )"
-script_name="$( basename "$0" )"
 
 if [ -z "${source_app}" ] || [ -z "${target_app}" ]; then
     echo "Usage: ${script_name} <source_app> <target_app>" >&2
