@@ -2,7 +2,7 @@
 
 set -e # bail out on error
 
-. "$( dirname "$0" )/_macos.sh" || exit 1
+. "$( dirname "$0" )/_macos_in_app.sh" || exit 1
 perl_sanity_check || exit 3
 
 # Work out which perl lib directory to use

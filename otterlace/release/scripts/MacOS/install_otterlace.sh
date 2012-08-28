@@ -4,7 +4,7 @@ set -e # bail out on error
 
 my_dir="$( dirname "$0" )"
 
-. "${my_dir}/_macos.sh"         || exit 1
+. "${my_dir}/_macos_in_app.sh"  || exit 1
 . "${my_dir}/_annotools_env.sh" || exit 2
 perl_sanity_check || exit 3
 

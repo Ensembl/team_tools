@@ -3,7 +3,7 @@
 #   . "$( dirname "$0" )/_annotools_env.sh" || exit 1
 
 if [ -z "${macos_scripts}" ]; then
-    echo "Error: must source _macos.sh before _annotools_env.sh" >&2
+    echo "Error: must source _macos_in_app.sh before _annotools_env.sh" >&2
     exit 5
 fi
 

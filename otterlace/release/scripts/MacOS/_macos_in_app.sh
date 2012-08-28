@@ -1,6 +1,6 @@
-# Functions for inclusion in sibling scripts, with
+# Functions for inclusion in scripts designed to run in app directory, with
 #
-#   . "$( dirname "$0" )/_macos.sh" || exit 1
+#   . "$( dirname "$0" )/_macos_in_app.sh" || exit 1
 
 macos_scripts="$( dirname "$0" )"
 script_name="$( basename "$0" )"
