@@ -59,9 +59,8 @@ source_non_dist="$( versioned_non_dist "${source_app}" )" || exit $?
 
 target_non_dist="$( versioned_non_dist "${target_app}" )" || exit $?
 
-resource_path="Contents/Resources"
-source_install_base="${source_app}/${resource_path}"
-target_install_base="${target_app}/${resource_path}"
+source_install_base="${source_app}/${resources_path}"
+target_install_base="${target_app}/${resources_path}"
 
 echo "Saving away target links"
 save_links "${target_install_base}"

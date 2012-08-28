@@ -37,8 +37,7 @@ echo "<Ctrl-C> now if that looks wrong"
 echo
 sleep 5
 
-resource_path="Contents/Resources"
-install_base="${app_base}/${resource_path}"
+install_base="${app_base}/${resources_path}"
 
 mkdir -v -p "${install_base}"
 

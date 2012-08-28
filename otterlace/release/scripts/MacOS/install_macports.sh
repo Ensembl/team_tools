@@ -4,8 +4,8 @@ set -e # bail out on error
 
 . "$( dirname "$0" )/_macos_in_app.sh" || exit 1
 
-if [ ! -d "Contents/Resources" ]; then
-    echo "No ./Contents/Resources directory here - setup_app_skeleton.sh not run?" >&2
+if [ ! -d "${resources_path}" ]; then
+    echo "No ./${resources_path} directory here - setup_app_skeleton.sh not run?" >&2
     exit 2
 fi
 

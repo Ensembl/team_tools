@@ -10,8 +10,7 @@ app_base="${PWD}"
 # based on this script being in $TT/otterlace/release/scripts/MacOS ...
 etc_macos="${macos_scripts}/../../etc/MacOS"
 
-_resource_path="Contents/Resources"
-install_base="${app_base}/${_resource_path}"
+install_base="${app_base}/${resources_path}"
 
 # side-effects: sets $unpacked_tarball
 #
@@ -60,7 +59,5 @@ perl_sanity_check() {
     port_sanity_check || return
     check_binary 'perl'
 }
-
-unset _resource_path
 
 # EOF
