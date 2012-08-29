@@ -23,4 +23,6 @@ while read entry; do
 
 done < "${ports_list}"
 
+find "./${resources_path}/lib" -name 'lib*.a' -not -name '*perl*' -print0 | xargs -0 rm -v
+
 exit 0
