@@ -12,12 +12,11 @@ if [ -z "${old_app_name}" ] || [ -z "${new_app_name}" ]; then
     exit 3
 fi
 
-old_non_dist="$( versioned_non_dist "${old_app_name}" )" || exit $?
-new_non_dist="${old_non_dist/${old_app_name}/${new_app_name}}" # retain versioning
-new_non_dist_name="${new_non_dist#${non_dist}/}"               # strip prefixed path
+old_non_dist_name="$( versioned_non_dist "${old_app_name}" )" || exit $?
+new_non_dist_name="${old_non_dist_name/${old_app_name}/${new_app_name}}" # retain versioning
 
 mv -v "${old_app_name}" "${new_app_name}"
-mv -v "${old_non_dist}" "${new_non_dist}"
+mv -v "${non_dist}/${old_non_dist_name}" "${non_dist}/${new_non_dist_name}"
 
 remove_links "${new_app_name}"
 make_links   "${new_app_name}" "${new_non_dist_name}"

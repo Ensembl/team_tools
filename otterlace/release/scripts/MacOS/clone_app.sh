@@ -41,11 +41,11 @@ restore_links() {
     popd > /dev/null
 }
 
-source_non_dist="$( versioned_non_dist "${source_app}" )" || exit $?
+source_non_dist="${non_dist}/$( versioned_non_dist "${source_app}" )" || exit $?
 
 "${macos_scripts}/setup_app_skeleton.sh" "${target_app}"
 
-target_non_dist="$( versioned_non_dist "${target_app}" )" || exit $?
+target_non_dist="${non_dist}/$( versioned_non_dist "${target_app}" )" || exit $?
 
 source_install_base="${source_app}/${resources_path}"
 target_install_base="${target_app}/${resources_path}"
@@ -59,9 +59,7 @@ rm -r ${target_non_dist}/{share,var}
 echo "Copying main contents..."
 cp -a ${source_install_base}/* "${target_install_base}/"
 
-# FIXME: should probably be cleaning macports build dir by default.
-echo "Copying non_dist contents: ${source_non_dist} => ${target_non_dist} ..."
-rsync -a --exclude '/var/macports/build/*' ${source_non_dist}/{share,var} "${target_non_dist}/"
+copy_non_dist "${source_non_dist}" "${target_non_dist}" 'exclude_macports_build'
 
 echo "Restoring target links"
 restore_links "${target_install_base}"

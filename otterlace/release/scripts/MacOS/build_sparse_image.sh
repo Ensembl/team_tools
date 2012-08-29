@@ -25,11 +25,15 @@ usage() {
                                 less '.app' suffix, if any.
 
   -d, --detach                  Detach (unmount) the image afterwards.
+
+  -x, --exclude_build           Exclude var/macports/build/*
+                                (Only permitted with --non_dist)
 ${problem}"
 }
 
 detach=''
 do_non_dist=''
+exclude_build=''
 release=''
 while [ $# -gt 0 ] && [ "${1:0:1}" = "-" ]; do
     sw=$1
@@ -49,13 +53,17 @@ while [ $# -gt 0 ] && [ "${1:0:1}" = "-" ]; do
         -d | --detach)
             detach=1
             ;;
+        -x | --exclude_build)
+            exclude_build=1
+            ;;
         *)
             usage "unknown option $sw"
             ;;
     esac
 done
 
-[ "$#" = 1 ] || bail "Syntax: ${script_name} [ -n | --non_dist ] <app_name>"
+[ -n "${exclude_build}" ] && [ -z "${non_dist}" ] && usage "--exclude_build requires --non_dist"
+[ "$#" = 1 ] || usage "Must provide a single argument: <app_name>"
 
 app_name="$1"
 app_name="${app_name%/}"        # strip trailing slash, if any
@@ -82,10 +90,9 @@ echo "Copying ${app_name} -> ${mount_point}"
 cp -pR "${app_name}" "${mount_point}"
 
 if [ -n "$do_non_dist" ]; then
-    img_non_dist="${mount_point}/_non_dist"
+    img_non_dist="${mount_point}/_non_dist/${non_dist_dir}"
     mkdir -v -p "${img_non_dist}"
-    echo "Copying ${non_dist_dir} -> ${img_non_dist}"
-    cp -pR "${non_dist_dir}" "${img_non_dist}"
+    copy_non_dist "${non_dist}/${non_dist_dir}" "${img_non_dist}" "${exclude_build}"
 fi
 
 echo "Done."

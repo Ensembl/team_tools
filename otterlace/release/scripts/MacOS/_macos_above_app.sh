@@ -16,7 +16,7 @@ versioned_non_dist() {
     my_non_dist_dir="$( cd "${my_non_dist_link}" 2>/dev/null && pwd -P )"
     if [ -z "${my_non_dist_dir}" ]; then echo "Cannot resolve link for '${my_non_dist_link}'" >&2; exit 5; fi
 
-    echo "${non_dist}/$( basename "${my_non_dist_dir}" )"
+    echo "$( basename "${my_non_dist_dir}" )"
 }
 
 remove_links() {
@@ -59,6 +59,22 @@ make_links() {
 
     popd > /dev/null
 
+}
+
+copy_non_dist() {
+    local source dest exclude_build
+    source="$1"
+    dest="$2"
+    exclude_build="$3"
+
+    # FIXME: should probably be cleaning macports build dir by default.
+
+    echo "Copying non_dist contents: ${source} => ${dest} ..."
+    if [ -n "${exclude_build}" ]; then
+        rsync -a --exclude '/var/macports/build/*' ${source}/{share,var} "${dest}/"
+    else
+        rsync -a ${source}/{share,var} "${dest}/"
+    fi
 }
 
 # EOF
