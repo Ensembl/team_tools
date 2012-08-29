@@ -12,4 +12,9 @@ export ftp_proxy="${http_proxy}"
 
 resources_path="Contents/Resources"
 
+bail() {
+    echo -e "$1" >&2
+    exit 1
+}
+
 # EOF
