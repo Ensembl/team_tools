@@ -41,10 +41,19 @@ install_cpan_bundle.sh
   # (which are not available in MacPorts)
 
 
+cleanup_ports.sh
+
+  # Removes ports only needed for the build.
+  # Also removes static libraries (except libperl.a).
+
+
 install_annotools_prereqs.sh <path to zmap build directory>
 
   # compiles and installs ACEDB and libAceConn, which don't need to
   # be reinstalled every time there's a new ZMap.
+
+  # at this point, an image can be saved to use as the basis for
+  # future builds, until such time as ACEDB changes.
 
 
 install_annotools.sh <path to zmap build directory>
@@ -66,29 +75,25 @@ install_otterlace.sh <path to ensembl-otter git checkout>
   #   ~/Dist/otterlace.app is empty.
 
 
-TBC: Make unstripped disk image
-
-  # Edit a copy of ensembl-otter/scripts/make_image.sh to set the correct version.
-  # Run it to create sparseimage.
   # Make sure the new app is called otterlace.app again, then:
-  #   cp -pR otterlace.app /Volumes/otterlace_mac_intel-<MM>-<NN>
+
+cd ..  # back to ~/Dist
+build_sparse_image.sh -r otterlace_mac_intel-<nn>-<mm> otterlace.app
+
+  # builds and populates sparse disk image, except for:
+
   # Obtain ReadMe.rtfd from previous release, and update it.
   #   cp -pR ReadMe.rtfd /Volumes/otterlace_mac_intel-<MM>-<NN>
-  # Re-run make_image.sh to create dmg
+  #   hdiutil eject /Volumes/otterlace_mac_intel-<MM>-<NN>
+
+
+compress_image.sh otterlace_mac_intel-<nn>-<mm>.sparseimage
+
+  # compresses sparse image, producing the .dmg image file.
   # Save the dmg as a backup.
 
 
-cleanup_ports.sh
+# Utility - these are layout-aware:
 
-  # Removes ports only needed for the build.
-
-
-TBC: Remove static libraries
-
-  cd Contents/Resources/lib
-  find . -name 'lib*.a' | grep -v perl | xargs rm
-
-
-TBC: Rebuild disk image with stripped otterlace
-
-  # Largely as above.
+clone_app.sh  - clone an app directory and its _non_dist component
+rename_app.sh - rename an app directory and its _non_dist component
