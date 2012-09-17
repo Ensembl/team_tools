@@ -39,6 +39,7 @@ sub headlinks {
   | <a href="http://mediawiki.internal.sanger.ac.uk/wiki/index.php/User:$me">[[User:$me]]</a>
   | <a href="http://ganglia.internal.sanger.ac.uk/gweb-2.2.0/?c=Lutra%20Servers&m=load_one&r=hour&s=by%20name&hc=4&mc=2">lutras on Ganglia</a>
   | <a href="http://git.internal.sanger.ac.uk/cgi-bin/gitweb.cgi?p=users/mca/local-apache.git;a=history;f=cgi-bin/mysql-procs.pl;hb=HEAD"> this code </a>
+  | <a href="http://mediawiki.internal.sanger.ac.uk/wiki/index.php/Anacode_Databases">[[Anacode Databases]]</a>
   ]
 </p>
 HTML
@@ -119,6 +120,7 @@ sub show_databases {
 #    push @db, qw( otterlive:3324 otterpipe1:3322 otterpipe2:3323 ); # new masters
 #    push @db, qw(  otterslave:3312 otterslave:3313 ); # old slaves - dead hardware
     push @db, qw( lutra6:3322 lutra6:3323 lutra6:3324 ); # new slaves
+    push @db, qw(  mcs30:3322  mcs31:3323  mcs30:3324 ); # Flint Cross slaves
 
     print "<p>[", (join " | ", map { my $h = escapeHTML($_); qq{<a href="#$_">$_</a>} } @db), "]</p>\n";
 
@@ -267,7 +269,7 @@ sub run_with_timeout {
 
     my @ret;
     eval {
-	alarm(5); # seconds before time out
+	alarm(2); # seconds before time out
 	@ret = $code->(@args);
 	alarm(0); # cancel alarm (if connect worked fast)
     };
