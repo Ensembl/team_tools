@@ -291,7 +291,7 @@ sub showversion {
         if (defined $_) {
             my %V = %$_;
             $V{ZMap} = hoik_compiled_version(ZMap => "$V{path}/bin/zmap");
-            $V{SeqTools} = hoik_compiled_version(SeqTools => "$V{path}/bin/blixem");
+            $V{SeqTools} = hoik_compiled_version(SeqTools => "$V{path}/bin/blixemh", "$V{path}/bin/blixem");
             my %hV = quotehash(%V);
             my $out = $hV{vsn};
             $out .= ' (dev)' if $V{vsn} =~ /^\d+$/;
@@ -312,8 +312,10 @@ sub showversion {
 
 sub hoik_compiled_version {
     # this is a nasty hack, but should be safe
-    my ($type, $fn) = @_;
-    return () unless -x $fn && -r _;
+    my ($type, @fn) = @_;
+    my ($fn) = grep { -f && -x _ && -r _ } @fn;
+    return () unless defined $fn;
+
     my $exe = slurp($fn);
     my ($vsn, $compiled);
 
@@ -323,6 +325,8 @@ sub hoik_compiled_version {
     if ($type eq 'ZMap') {
 # e.g.
 #   develop-Release_0_1_136_5-59-gaf8fd3c
+#   develop-0.10.2-24-g56da
+#   ZMap - release_0.11.0-0.10.2-20-g8a906
 #   production-Release_0_1_136_7-1-g7e5a091
 #   production-Release_0_1_138
 #   release_Release_0_1_138-Release_0_1_136_6-115-g6d689c5
@@ -332,13 +336,15 @@ sub hoik_compiled_version {
           m{\b((?:develop|production|release[_a-zA-Z0-9]*)-(?i:Release_)?0_\d+_[-_0-9]+(?:-g[0-9a-f]{4,12})?)[\r\n]*\x00+([ -~]*\d+:\d{2}:\d{2}[ -~]*)?};
 
         my @new = $exe =~
-	  m{\x00(ZMap - \d+\.\d+\.\d+(?:-\d+)?(?:-g[0-9a-f]{4,12})?)[\r\n]*\x00};
+	  m{\x00(ZMap - (?:develop|production|release)?[-_0-9.]+(?:-g[0-9a-f]{4,12})?)[\r\n]*\x00};
 	my @ts = $exe =~
 	  m{\x00($MO3 [ 0-9]\d 20\d{2} \d{2}:\d{2}:\d{2})\x00};
 
-	push @new, @ts if 1 == @new && 1 == @ts;
-
-        ($vsn, $compiled) = @to_v62 || @new;
+        if (@new && @ts) {
+            ($vsn, $compiled) = ($new[0], $ts[0]);
+        } else {
+            ($vsn, $compiled) = @to_v62;
+        }
     } elsif ($type eq 'SeqTools') {
 # e.g.
 #   SeqTools - 4.6-41-g2894\n
