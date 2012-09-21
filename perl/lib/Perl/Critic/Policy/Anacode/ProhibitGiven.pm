@@ -23,6 +23,25 @@ sub violates {
 
 1;
 
+
+=head1 NAME
+
+Perl::Critic::Policy::Anacode::ProhibitGiven - Do not use C<given()>.
+
+
+=head1 DESCRIPTION
+
+Perl's C<given> statement creates a lexical binding for C<$_> which
+can lead to counterintuitive behaviour and bugs.  See "L<Use for()
+instead of given()|http://www.effectiveperlprogramming.com/blog/1333>".
+
+Use C<for()> (with no explicit loop variable) instead of C<given()>.
+This creates a local binding for the global C<$_>.  This plays well
+with standard Perl idioms such as iterators that locally bind C<$_>
+and execute a block.  The C<when()> and C<default> statements work
+inside a C<for()> statement just as they do inside C<given()>.
+
+
 =head1 AUTHOR
 
 Ana Code B<email> anacode@sanger.ac.uk
