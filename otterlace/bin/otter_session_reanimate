@@ -129,5 +129,5 @@ my ($session_dir) =
 
 move $session_dir_done, $session_dir;
 try     { session_reanimate $session_dir; }
-catch   { die $::_; }
+catch   { die $_; }
 finally { move $session_dir, $session_dir_done; };
