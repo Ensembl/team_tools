@@ -386,7 +386,7 @@ otterlace_client_install_zmap() {
         rm -rf -- "$build_dir" &&
         true ) &&
     mkdir -p -- "$bin_dir" &&
-    cp -- ${zmap_prefix}/bin/{zmap,tace,sgifaceserver,blixemh,dotter,xremote} "$bin_dir" &&
+    cp -- ${zmap_prefix}/bin/{zmap,tace,sgifaceserver,blixemh,dotter,belvu,xremote} "$bin_dir" &&
     cp -r -- "${zmap_prefix}/share" "$install_dir" &&
     true
 }
