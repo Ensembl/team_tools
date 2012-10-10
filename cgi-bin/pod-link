@@ -113,6 +113,18 @@ namespaces:
         - !!perl/regexp (?-xism::)
         - _1
   -
+    - !!perl/regexp (?-xism:^AssemblyMapper::)
+    - vc:
+        - http://cvs.sanger.ac.uk/cgi-bin/viewvc.cgi/ensembl-pipeline/scripts/Finished/assembly/%s.pm?root=ensembl&view=log
+        - !!perl/regexp (?-xism:::)
+        - /
+      pod:
+# link to checkout - poor substitute, but Doxygen does not cover scripts/
+        - http://cvs.sanger.ac.uk/cgi-bin/viewvc.cgi/ensembl-pipeline/scripts/Finished/assembly/%s.pm?root=ensembl&content-type=text%2Fplain&view=markup
+        - !!perl/regexp (?-xism:::)
+        - /
+# nb. alt VC at $iRGA/assembly_mapper.git
+  -
     - !!perl/regexp (?-xism:^Bio::(Otter|Vega)::|^(Canvas|Edit|MenuCanvas)Window($|::))
 # not listed: modules/Tk/*
     - vc:
