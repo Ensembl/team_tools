@@ -51,12 +51,13 @@ sub main {
     my @ln = map { link_subst($path, $_->[1]->{$want}) } @hit;
 
     # output result
-    if (1 == @ln && $want ne 'info') {
+    if (@ln && $want ne 'info') {
+        # take first hit
         print $Q->redirect($ln[0]);
 
     } else {
         my $msg = "I don't know where that is.";
-        $msg = "I don't know which link_out you want." if @ln > 1;
+#        $msg = "I don't know which link_out you want." if @ln > 1;
         $msg = "You wanted info:" if $want eq 'info';
 
         print "Content-Type: text/plain\n\n$msg\n\n".
@@ -101,8 +102,8 @@ sub prog_info {
 main();
 
 __DATA__
+# Order does matter - first hit wins.
 ---
-referers: !!perl/regexp (?i-xsm:^http://(mediawiki|scratchy)\.internal\.sanger\.ac\.uk/wiki/)
 namespaces:
   -
     - !!perl/regexp (?-xism:^Bio::EnsEMBL::Pipeline::)
@@ -127,8 +128,7 @@ namespaces:
         - '# nb. alt VC at $iRGA/assembly_mapper.git'
         - '# Doxygen does not cover scripts/'
   -
-    - !!perl/regexp (?-xism:^Bio::(Otter|Vega)::|^(Canvas|Edit|MenuCanvas)Window($|::))
-# not listed: modules/Tk/*
+    - !!perl/regexp (?-xism:^Bio::(Otter|Vega)::|^(Canvas|Edit|MenuCanvas)Window($|::)|^Tk::(ChoiceEditor|ComboBox|DestroyReporter|FBox|HeadedCanvas|HListplusplus|ManualOrder|NoPasteEntry|ObjectPalette|OrderedSelectionFrame|SmartOptionmenu|WrappedOSF|Utils::OnTheFly)$)
     - vc:
         - http://git.internal.sanger.ac.uk/cgi-bin/gitweb.cgi?p=anacode/ensembl-otter.git;a=history;f=modules/%s.pm;hb=HEAD
         - !!perl/regexp (?-xism:::)
@@ -138,6 +138,21 @@ namespaces:
         - http://git.internal.sanger.ac.uk/cgi-bin/gitweb.cgi?p=anacode/ensembl-otter.git;a=blob;f=modules/%s.pm;hb=HEAD
         - !!perl/regexp (?-xism:::)
         - /
+        - '# no POD service, show the text'
+  -
+    - !!perl/regexp (?-xism:^(t::lib::|Test::Otter|OtterTest)(::|$))
+    - vc:
+        - http://git.internal.sanger.ac.uk/cgi-bin/gitweb.cgi?p=anacode/ensembl-otter.git;a=history;f=modules/t/lib/%s.pm;hb=HEAD
+        - !!perl/regexp (?-xism:::)
+        - /
+        - !!perl/regexp (?-xism:^t/lib/)
+        - ''
+      pod:
+        - http://git.internal.sanger.ac.uk/cgi-bin/gitweb.cgi?p=anacode/ensembl-otter.git;a=blob;f=modules/t/lib/%s.pm;hb=HEAD
+        - !!perl/regexp (?-xism:::)
+        - /
+        - !!perl/regexp (?-xism:^t/lib/)
+        - ''
         - '# no POD service, show the text'
   -
     - !!perl/regexp (?-xism:^(Evi|GeneHist|GenomeCanvas|KaryotypeWindow)($|::))
@@ -150,3 +165,14 @@ namespaces:
         - !!perl/regexp (?-xism:::)
         - /
         - '# no POD service, show the text'
+  -
+    - !!perl/regexp (?-xism:^Bio::EnsEMBL::)
+    - vc:
+        - http://cvs.sanger.ac.uk/cgi-bin/viewvc.cgi/ensembl/modules/%s.pm?root=ensembl&view=log
+        - !!perl/regexp (?-xism:::)
+        - /
+      pod:
+        - http://www.ensembl.org/info/docs/Doxygen/core-api/class%s.html
+        - !!perl/regexp (?-xism::)
+        - _1
+referers: !!perl/regexp (?i-xsm:^http://(mediawiki|scratchy)\.internal\.sanger\.ac\.uk/wiki/)
