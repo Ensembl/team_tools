@@ -62,6 +62,7 @@ sub main {
         print "Content-Type: text/plain\n\n$msg\n\n".
           "Here is my inline config, your request and the results.\n\n",
             Dump({ cfg => \%cfg, Q => $Q, hit => \@hit,
+                   referer => $Q->referer,
                    link_out => \@ln, program => prog_info() });
     }
 
@@ -133,9 +134,19 @@ namespaces:
         - !!perl/regexp (?-xism:::)
         - /
         - '# omitting h=<file_blobid>'
+      pod:
+        - http://git.internal.sanger.ac.uk/cgi-bin/gitweb.cgi?p=anacode/ensembl-otter.git;a=blob;f=modules/%s.pm;hb=HEAD
+        - !!perl/regexp (?-xism:::)
+        - /
+        - '# no POD service, show the text'
   -
     - !!perl/regexp (?-xism:^(Evi|GeneHist|GenomeCanvas|KaryotypeWindow)($|::))
     - vc:
         - http://git.internal.sanger.ac.uk/cgi-bin/gitweb.cgi?p=anacode/ensembl-otter.git;a=history;f=tk/%s.pm;hb=HEAD
         - !!perl/regexp (?-xism:::)
         - /
+      pod:
+        - http://git.internal.sanger.ac.uk/cgi-bin/gitweb.cgi?p=anacode/ensembl-otter.git;a=blob;f=tk/%s.pm;hb=HEAD
+        - !!perl/regexp (?-xism:::)
+        - /
+        - '# no POD service, show the text'
