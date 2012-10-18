@@ -1,0 +1,234 @@
+#! /software/bin/perl-5.12.2
+use strict;
+use warnings;
+use File::Slurp 'read_dir';
+use YAML 'Dump';
+
+
+=head1 NAME
+
+otterlace_swac_purge - clean out old Otterlace releases from /software
+
+=head1 SYNOPSIS
+
+ ssh lucid-dev32
+ otterlace_swac_purge
+ # read the output
+ otterlace_swac_purge -Y
+
+
+=head1 DESCRIPTION
+
+Keep the last six major releases.  For each of these, keep only the
+last minor release.
+
+Keep all minor and dev releases for old, live and test.
+
+Bear in mind that sometimes old, live and test are not exactly ($n,
+$n+1, $n+2) because of some oversight.
+
+
+=head1 AUTHOR
+
+mca@sanger.ac.uk
+
+=cut
+
+my @expect_arch = qw( linux-i386 linux-x86_64 );
+
+sub main {
+    my $really = 0;
+    if (1 == @ARGV && "@ARGV" eq '-Y') {
+        $really = 1;
+    } elsif (@ARGV) {
+        die "Syntax: $0 [ -Y ]\n
+Purge old Otterlace releases from /software/anacode .
+Defaults to a dry run.\n";
+    } # else continue, dry run
+
+    my @found_dir = sort glob("/software/noarch/*/anacode/otter");
+    my @expect_dir = map {   "/software/noarch/$_/anacode/otter" } @expect_arch;
+
+    die "Arch change? @found_dir != @expect_dir"
+      unless "@found_dir" eq "@expect_dir";
+
+    # Treat the arches together, so the version designations go in
+    # lockstep.  This isn't necessary, they could be done separately.
+    my @drop = cleanup(@found_dir);
+
+    if ($really) {
+        delete_dir(@drop);
+    } else {
+        print "\nDry run complete, give -Y flag to do it.\n";
+    }
+
+    return 0;
+}
+
+
+sub cleanup {
+    my (@dir) = @_;
+
+    my @fn;
+    foreach my $dir (@dir) {
+        push @fn, map { "$dir/$_" } sort(read_dir($dir));
+    }
+
+    ### first look at the symlinks to find out what we have
+    #
+
+    my @keep; # for reassurance
+    my %desig; # key = old|live|test|dev, value = [ $major, @fn ]
+    foreach my $fn (@fn) {
+        next unless -l $fn;
+        my $to = readlink($fn)
+          or die "readlink $fn: $!";
+
+        die "Designation symlink $fn -> $to: target not a directory\n"
+          unless -d $fn;
+
+        push @keep, "$fn -> $to";
+        my ($leaf) = $fn =~ m{/([^/]+)$}
+          or die "leafless $fn";
+
+        if ($leaf eq 'otter_production_main' && $to eq 'otter_live') {
+            # legacy link, ignore
+        } elsif ($leaf =~ m{^otter_(\w+)(?:-\w+)?$}) {
+            # can deal with the Lenny->Lucid migration scheme, should
+            # that recur, but ignores the suffix part
+            my $desig = $1;
+            my ($major) = $to =~ m{^otter_rel(\d{2,3})(?:\.\d{2})?(?:-\w+)?$}
+              or die "Designation symlink $fn -> $to format incomprehensible";
+
+            # Need the same designation->major version for all arch
+            die "Designation $desig: version conflict (@{$desig{$desig}}) but $fn -> $to"
+              unless !defined $desig{$desig} || $desig{$desig}[0] == $major;
+
+            $desig{$desig} = [ $major ] unless defined $desig{$desig};
+            push @{ $desig{$desig} }, $fn;
+
+        } else {
+            die "Unexpected symlink $fn -> $to";
+        }
+    }
+
+    ### sanity check the symlinks
+    #
+    # first put them in expected order of major version
+    my @desig = sort keys %desig;
+    if ("@desig" eq 'dev live old') {
+        @desig = qw( old live dev );
+    } elsif ("@desig" eq 'live old') {
+        warn "[w] You have no dev release.  I guess you know.\n";
+        @desig = qw( old live );
+    } elsif ("@desig" eq 'dev live old test') {
+        @desig = qw( old live test dev );
+    } else {
+        die "Cannot proceed with unexpected set of designations (@desig)";
+    }
+
+    # then expect a sequence of ints
+    my @desig_vsn = map { $desig{$_}->[0] } @desig;
+    my $n = $desig_vsn[0];
+    my $desig_list = join ', ',
+      map { "$desig[$_] => $desig_vsn[$_]" } (0..$#desig);
+    for (my $i=0; $i<@desig; $i++) {
+        my $want = $n+$i;
+        die "In designations $desig_list, expected $desig[$i] = $want but found $desig_vsn[$i]"
+          unless $desig_vsn[$i] == $want;
+    }
+
+    my $live = $desig{live}->[0];
+    die "n => $n, live => $live ...?" unless $live >= $n;
+
+    # make byebye list
+    my @drop = whittle(\@keep, $desig_vsn[0], $live, @fn);
+    warn "[i] $desig_list.  OK\n";
+
+    # check we're not keeping and dropping (!)
+    my %dup_check;
+    nodup(\%dup_check, keeps => @keep);
+    nodup(\%dup_check, drops => @drop);
+
+    # check it looks like an otterlace
+    my @chk = qw( bin/otterlace ensembl-otter/modules/Bio/Otter/Lace/Client.pm );
+    foreach my $fn (@drop) {
+        my @miss = grep { ! -f "$fn/$_" } @chk;
+        die "$fn is missing files: @miss" if @miss;
+    }
+
+    print join "\n  ", "\n\nKeep", @keep;
+    print join "\n  ", "\n\nDrop", @drop;
+    print "\n";
+
+    return @drop;
+}
+
+
+sub nodup {
+    my ($h, $what, @i) = @_;
+    my @dup = grep { exists $h->{$_} } @i;
+    @{$h}{@i} = ();
+    die "Duplicate items (@dup) in $what" if @dup;
+    return ();
+}
+
+
+sub whittle {
+    my ($keep, $old, $live, @fn) = @_;
+
+    my @drop;
+    my %old; # key = major, value = { $minor => \@fn }
+    foreach my $fn (@fn) {
+        next if -l $fn;
+
+        my ($major, $minor) = $fn =~ m{/otter_rel(\d{2,3})(?:\.(\d{2}))?(?:-\w+)?$};
+        if (!-d $fn || !defined $major) {
+            warn "[w] Skipping incomprehensible $fn\n";
+            push @$keep, $fn;
+        } elsif ($major >= $old) {
+            # has a designation symlink - keep all
+            push @$keep, $fn;
+        } elsif ($major <= $live - 6) {
+            # very old - lose it
+            push @drop, $fn;
+        } elsif (!defined $minor) {
+            # old dev - lose it
+            push @drop, $fn;
+        } else {
+            # old minor version - collect until we know what is last
+            push @{ $old{$major}{$minor} }, $fn;
+        }
+    }
+
+    # minor releases not designated, but not old enough to remove all
+    foreach my $major (sort { $a <=> $b } keys %old) {
+        my $minors = $old{$major};
+        my @m = sort { $a <=> $b } keys %$minors;
+        my $last = pop @m; # the one we keep
+
+        # ensure no missing arches
+        die "Missing arch in @{ $minors->{$last} } for v$major"
+          unless @{ $minors->{$last} } == @expect_arch;
+
+        push @$keep, @{ $minors->{$last} };
+        push @drop,  @{ $minors->{$_}    } foreach @m;
+        warn "[i] for v$major keeping $major.$last\n";
+    }
+
+    return sort @drop;
+}
+
+
+sub delete_dir {
+    my @drop = @_;
+
+    $| = 1;
+    foreach my $fn (@drop) {
+        print "Deleting $fn ...";
+        system("rm", "-rf", $fn);
+        print "\n";
+    }
+}
+
+exit main();
