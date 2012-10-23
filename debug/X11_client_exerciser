@@ -1,6 +1,7 @@
 #! /software/bin/perl-5.12.2
 use strict;
 use warnings;
+use v5.10;
 use YAML 'Dump';
 use Tk;
 
@@ -10,7 +11,7 @@ sub main {
     my %win;
 
     my $mw = MainWindow->new(-title => 'X11 client counter');
-    $mw->Button(-text => 'More', -command => \&new_junk)->pack;
+    $mw->Button(-text => 'More', -command => [ \&new_junk, 50 ])->pack;
     $mw->Button(-text => 'Vape', -command => \&reset_junk)->pack;
     $info = $mw->Text(-border => 2)->pack;
 
@@ -25,22 +26,31 @@ sub main {
 
 
 sub new_junk {
-    for (1..250) {
-        my $w = MainWindow->new
-          (-title => $#junk_windows,
-           -name => 'junk',
-           -class => 'debug');
-        $w->withdraw;
-        push @junk_windows, $w;
+    my ($N) = @_;
+    for (1..$N) {
+        for (fork()) { # per http://blogs.perl.org/users/aristotle/2012/10/concise-fork-idiom.html
+            when(undef) {
+                die "fork failed: $!";
+            }
+            when (0) {
+                exec(q{perl -MTk -e '$w=MainWindow->new->withdraw; MainLoop'});
+                die "exec failed";
+            }
+            default {
+                push @junk_windows, $_;
+            }
+        }
     }
     $info->Contents('Window count = '.@junk_windows);
     return ();
 }
 
+END { reset_junk() }
+
 sub reset_junk {
-    foreach my $w (@junk_windows) { $w->destroy }
+    foreach my $w (@junk_windows) { kill 'INT', $w }
     @junk_windows = ();
-    $info->Contents('Window count = '.@junk_windows);
+    $info->Contents('Window count = '.@junk_windows) if $info && Tk::Exists($info);
     return ();
 }
 
