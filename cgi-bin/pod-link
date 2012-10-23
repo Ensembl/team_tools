@@ -35,7 +35,10 @@ sub main {
     # check link in, for non-proliferation
     my $refrr = $Q->referer;
     if ($cfg{referers} && defined $refrr && $refrr !~ $cfg{referers}) {
-        print "Status: 403\nContent-Type: text/plain\n\nReferred from $refrr.  Not sure that linking directly to this hack is a good idea.\n";
+        print "Status: 403\nContent-Type: text/plain\n\nReferred from $refrr\n
+This is not the referrer I expected.\n
+This referrer-check protection is intended to avoid accidental
+proliferation of links to this transient pod-link URL.\n";
         return ();
     }
 
@@ -175,4 +178,4 @@ namespaces:
         - http://www.ensembl.org/info/docs/Doxygen/core-api/class%s.html
         - !!perl/regexp (?-xism::)
         - _1
-referers: !!perl/regexp (?i-xsm:^http://(mediawiki|scratchy)\.internal\.sanger\.ac\.uk/wiki/)
+referers: !!perl/regexp (?i-xsm:^http://(mediawiki|scratchy)\.internal\.sanger\.ac\.uk/(?:wiki/)?index\.php/)
