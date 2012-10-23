@@ -1,0 +1,81 @@
+#! /software/bin/perl-5.12.2
+use strict;
+use warnings;
+use YAML 'Dump';
+
+sub main {
+    my %win;
+
+    while (1) {
+        my @changes = getwin(\%win);
+        print Dump([ { time => scalar localtime(), count => scalar keys %win },
+                     @changes ]) if @changes;
+        sleep 5;
+    }
+
+}
+
+
+sub getwin {
+    my ($old_win) = @_;
+
+    open my $fh, '-|', qw( xlsclients -m 10000 -al )
+      or die "Pipe from xlsclients failed: $!";
+    my @ln = <$fh>;
+    unless (close $fh) {
+        warn "Piped from xlsclients failed: $!/$? - skip it\n";
+        return ();
+    }
+
+    my ($id, %new, @change);
+    while (@ln) {
+        my $ln = shift @ln;
+        chomp $ln;
+        if ($ln =~ m{^Window (0x[0-9a-f]+):\s*$}) {
+            push @change, putwin($old_win, \%new, $id);
+            $id = $1;
+            die Dump({ "Dup window id" => { id => $id, old => $new{$id} }})
+              if exists $new{$id};
+            $new{$id} = {};
+        } elsif ($ln =~ m{^(?:'')?\s+([a-zA-Z /]+):\s*(.*)$}) {
+            # no idea what the leading /^''/ are doing, assume they are noise
+            my ($k, $v) = ($1, $2);
+            my $win = $new{$id};
+            die Dump({ "Dup key" => { id => $id,
+                                      kv_new => [ $k, $v ],
+                                      old => $win } })
+              if exists $win->{$k};
+            $win->{$k} = $v;
+        } else {
+            die "Failed to parse xlsclients line '$ln'"
+        }
+    }
+    push @change, putwin($old_win, \%new, $id);
+
+    while (my ($id, $data) = each %$old_win) {
+        next if defined $new{$id};
+        push @change, { gone => { id => $id, data => $old_win->{$id} } };
+    }
+
+    %$old_win = %new;
+    return @change;
+}
+
+sub putwin {
+    my ($olds, $new, $id) = @_;
+    return () unless defined $id; # called before input is taken
+
+    if (!defined $olds->{$id}) {
+        return { new => { id => $id,
+                          data => $new->{$id} } };
+    } elsif (Dump($new->{$id}) eq Dump($olds->{$id})) {
+        # no change
+    } else {
+        return { change => { id => $id,
+                             old => $olds->{$id},
+                             data => $new->{$id} } };
+    }
+}
+
+
+main();
