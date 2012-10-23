@@ -18,30 +18,29 @@ sub main {
         my @changes = getwin(\%win);
         print Dump([ { time => scalar localtime(), count => scalar keys %win },
                      @changes ]) if @changes;
-        $info->Contents('Window count = '.@junk_windows);
     });
-
-#    $mw->repeat(250, \&new_junk);
-
-# $w = Tk::MainWindow->new(-title => "window title", -name => "window name", -class => "class_in_a_glass");
 
     MainLoop;
 }
 
 
 sub new_junk {
-    my $w = MainWindow->new
-      (-title => $#junk_windows,
-       -name => 'junk',
-       -class => 'debug');
-    $w->withdraw;
-    push @junk_windows, $w;
+    for (1..250) {
+        my $w = MainWindow->new
+          (-title => $#junk_windows,
+           -name => 'junk',
+           -class => 'debug');
+        $w->withdraw;
+        push @junk_windows, $w;
+    }
+    $info->Contents('Window count = '.@junk_windows);
     return ();
 }
 
 sub reset_junk {
     foreach my $w (@junk_windows) { $w->destroy }
     @junk_windows = ();
+    $info->Contents('Window count = '.@junk_windows);
     return ();
 }
 
