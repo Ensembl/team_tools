@@ -2,17 +2,47 @@
 use strict;
 use warnings;
 use YAML 'Dump';
+use Tk;
 
+my @junk_windows;
+my $info;
 sub main {
     my %win;
 
-    while (1) {
+    my $mw = MainWindow->new(-title => 'X11 client counter');
+    $mw->Button(-text => 'More', -command => \&new_junk)->pack;
+    $mw->Button(-text => 'Vape', -command => \&reset_junk)->pack;
+    $info = $mw->Text(-border => 2)->pack;
+
+    $mw->repeat(5000, sub {
         my @changes = getwin(\%win);
         print Dump([ { time => scalar localtime(), count => scalar keys %win },
                      @changes ]) if @changes;
-        sleep 5;
-    }
+        $info->Contents('Window count = '.@junk_windows);
+    });
 
+#    $mw->repeat(250, \&new_junk);
+
+# $w = Tk::MainWindow->new(-title => "window title", -name => "window name", -class => "class_in_a_glass");
+
+    MainLoop;
+}
+
+
+sub new_junk {
+    my $w = MainWindow->new
+      (-title => $#junk_windows,
+       -name => 'junk',
+       -class => 'debug');
+    $w->withdraw;
+    push @junk_windows, $w;
+    return ();
+}
+
+sub reset_junk {
+    foreach my $w (@junk_windows) { $w->destroy }
+    @junk_windows = ();
+    return ();
 }
 
 
