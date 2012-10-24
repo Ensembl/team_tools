@@ -25,6 +25,8 @@ echo "** xwininfo -root -tree -all"
 xwininfo -root -tree -all 2>&1
 echo "** show-x-sockets.py"
 $CODE/show-x-sockets.py 2>&1
+echo "** netstat -ntxp"
+netstat -ntxp
 echo "** xrestop -b -m 1"
 xrestop -b -m 1 2>&1
 echo "** ps aux"

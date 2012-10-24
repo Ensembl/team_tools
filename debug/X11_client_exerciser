@@ -9,6 +9,7 @@ use Time::HiRes qw( usleep gettimeofday tv_interval );
 
 my %kid; # key = pid
 my $parent = $$;
+my $debug = 0;
 
 =head1 NOTES
 
@@ -32,39 +33,91 @@ proceed.
 
 sub main {
     my %win;
-    $SIG{INT} = sub { die "Boom in $$" };
+    $SIG{INT} = sub { die "Caught SIGINT in $$" };
 
-    new_junk(140);
+    my $debug_prog = $0;
+    $debug_prog =~ s{[^/]+$}{max_X11_clients.sh}
+      or die "Can't make debug_prog from $0";
 
-    my $t_list = [0,0];
+    select STDERR; # stdout is for $debug_prog
+    $|=1;
+
+    # config (in seconds)
+    my $grow_after  = $debug ? 15   : 180;
+    my $test_border = $debug ?  2.5 :   5;
+    my $test_per    = $debug ?  1.5 :  15;
+
+    new_junk(100);
+
+    # state
+    my $t_grow = [ gettimeofday() ];
+    my $t_test = [0,0];
+    my $growing;
     while (1) {
-        if (tv_interval($t_list) >= 2.5) {
-            my @changes = getwin(\%win);
-            $t_list = [ gettimeofday() ];
-            print Dump([ @changes,
-                         { time => scalar localtime(),
-                           count => scalar keys %win } ])
-              if @changes;
+        my $grew_ago = tv_interval($t_grow);
+
+        if ($growing) {
+            new_junk(1);
+        } elsif ($grew_ago >= $grow_after) {
+            $growing = 1;
+        } elsif (tv_interval($t_test) >= $test_per
+                 && $grew_ago > $test_border
+                 && $grew_ago < $grow_after - $test_border) {
+            spawn(0);
+            $t_test = [ gettimeofday() ];
+        } # else just wait
+
+        my $full = do_reap();
+        if ($full) {
+            $growing = 0;
+            system($debug_prog) if $full < 50;
+            $t_grow = [ gettimeofday() ];
         }
 
-        new_junk(1);
+        print ' ' if $debug;
+        my $num = keys %kid;
+        printf('===%s%s', $num, "\x08" x (3+length($num))) if $debug > 1;
 
-        my $gone;
-        while (1) {
-            $gone = waitpid(-1, WNOHANG);
-            my $exit = $?;
-            last unless $gone > 0;
-            printf("kid %d gone 0x%x\n", $gone, $exit);
-            delete $kid{$gone};
-
-            if ($exit == 0x4300) { # 67
-                # connections all used - liberate some
-                kill 'INT', (keys %kid)[0..9];
-            }
-        }
-
-        usleep 0.5E6;
+        usleep 0.25E6;
     }
+}
+
+sub do_reap {
+    my ($full, $zapped, $gone) = (0) x 3;
+
+    while (1) {
+        $gone = waitpid(-1, WNOHANG);
+        my $exit = $?;
+        last unless $gone > 0;
+        delete $kid{$gone};
+
+        if ($exit == 0) { # exit 0
+            # it demonstrated that at least one connection is spare
+        } elsif ($exit == 0x4300) { # exit 67
+            # it proved there are no connections spare
+            $full ++;
+        } elsif ($exit == 0x2) { # sigint
+            $zapped ++;
+        } else {
+            printf("Strange: kid %d gone 0x%x\n", $gone, $exit);
+        }
+    }
+
+    if ($full) {
+        # Connections were all used.  The process which saw this will
+        # have zapped some.  Note how many we have.
+        $full = $zapped + keys %kid;
+        printf("%s full=%d (zapped=%d) est.conn=%d\n",
+               iso8601(time()), $full, $zapped, 245 - $full);
+
+        # Current version of notify-send doesn't require an X11 connection
+        system(qw( notify-send -i /usr/share/app-install/icons/kalarm.png FULL ),
+               sprintf("Full = %d\nHeadroom by zap = %d\nEstimated connections = %d",
+                       $full, $zapped, 245 - $full))
+          if $debug > 1;
+    }
+
+    return $full;
 }
 
 
@@ -73,28 +126,32 @@ sub new_junk {
     for (1..$N) {
         spawn(1);
     }
-    warn 'kids = '.(keys %kid);
 }
 
 sub spawn {
     my ($stay) = @_;
     my $child;
+print '>' if $debug;
     for (fork()) { # per http://blogs.perl.org/users/aristotle/2012/10/concise-fork-idiom.html
         when(undef) {
             die "fork failed: $!";
         }
         when (0) {
             undef $SIG{INT};    # allow zap
+            my @sib = grep { defined $_ && $_ != $$ } (keys %kid)[0..9];
             my $w = eval { MainWindow->new };
             my $err = $@;
             if ($w) {
                 $w->withdraw;
+print $stay ? '+' : '.' if $debug;
                 MainLoop if $stay;
                 exit 0;
             } elsif ($err =~ /couldn't connect to display/) {
                 # 'Maximum number of clients reached' sent to
                 # STDERR by Tk
-                print STDERR "\n";
+
+                kill 'INT', @sib; # make some space promptly
+                print "\n"; # finish the message written already to STDERR
                 exit 67;
             } else {
                 die "New window failed: $@";
@@ -176,6 +233,13 @@ sub putwin {
                              old => $olds->{$id},
                              data => $new->{$id} } };
     }
+}
+
+
+sub iso8601 {
+    my ($utime) = @_;
+    my @t = localtime($utime);
+    return sprintf("%04d-%02d-%02d %02d:%02d:%02d", $t[5]+1900, $t[4]+1, @t[3,2,1,0]);
 }
 
 
