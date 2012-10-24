@@ -45,7 +45,8 @@ sub main {
     # config (in seconds)
     my $grow_after  = $debug ? 15   : 180;
     my $test_border = $debug ?  2.5 :   5;
-    my $test_per    = $debug ?  1.5 :  15;
+    my $test_per    = $debug ?  1.5 :   5;
+    my $conn_warn   = $debug ?  150 :  50;
 
     new_junk(100);
 
@@ -70,7 +71,12 @@ sub main {
         my $full = do_reap();
         if ($full) {
             $growing = 0;
-            system($debug_prog) if $full < 50;
+            if ($full < $conn_warn) {
+                system(qw( notify-send -i /usr/share/app-install/icons/kalarm.png ),
+                       'X11 connections limit',
+                       sprintf("There are about %d connections left before ZMap and Otterlace fall over\nI'm holding %d",
+                               $full, scalar keys %kid));
+            }
             $t_grow = [ gettimeofday() ];
         }
 
@@ -111,7 +117,7 @@ sub do_reap {
                iso8601(time()), $full, $zapped, 245 - $full);
 
         # Current version of notify-send doesn't require an X11 connection
-        system(qw( notify-send -i /usr/share/app-install/icons/kalarm.png FULL ),
+        system(qw( notify-send FULL ),
                sprintf("Full = %d\nHeadroom by zap = %d\nEstimated connections = %d",
                        $full, $zapped, 245 - $full))
           if $debug > 1;
@@ -138,7 +144,7 @@ print '>' if $debug;
         }
         when (0) {
             undef $SIG{INT};    # allow zap
-            my @sib = grep { defined $_ && $_ != $$ } (keys %kid)[0..9];
+            my @sib = grep { defined $_ && $_ != $$ } (keys %kid)[0..19];
             my $w = eval { MainWindow->new };
             my $err = $@;
             if ($w) {
