@@ -4,53 +4,115 @@ use warnings;
 use v5.10;
 use YAML 'Dump';
 use Tk;
+use POSIX ":sys_wait_h";
+use Time::HiRes qw( usleep gettimeofday tv_interval );
 
-my @junk_windows;
-my $info;
+my %kid; # key = pid
+my $parent = $$;
+
+=head1 NOTES
+
+=head2 xrestop
+
+xrestop idle currently reports 80 connections, then I add 166
+separately forked Perl/Tk processes and the last one cannot connect.
+
+=head2 xlsclients
+
+xlsclients does not show clients!
+
+It shows an entry for each of many MainWindows made by one Perl/Tk
+instance.  Xserver will create at least 1000, and they cause slowdown
+not failure.
+
+It shows nothing for xrestop, but that does need a connection to
+proceed.
+
+=cut
+
 sub main {
     my %win;
+    $SIG{INT} = sub { die "Boom in $$" };
 
-    my $mw = MainWindow->new(-title => 'X11 client counter');
-    $mw->Button(-text => 'More', -command => [ \&new_junk, 50 ])->pack;
-    $mw->Button(-text => 'Vape', -command => \&reset_junk)->pack;
-    $info = $mw->Text(-border => 2)->pack;
+    new_junk(140);
 
-    $mw->repeat(5000, sub {
-        my @changes = getwin(\%win);
-        print Dump([ { time => scalar localtime(), count => scalar keys %win },
-                     @changes ]) if @changes;
-    });
+    my $t_list = [0,0];
+    while (1) {
+        if (tv_interval($t_list) >= 2.5) {
+            my @changes = getwin(\%win);
+            $t_list = [ gettimeofday() ];
+            print Dump([ @changes,
+                         { time => scalar localtime(),
+                           count => scalar keys %win } ])
+              if @changes;
+        }
 
-    MainLoop;
+        new_junk(1);
+
+        my $gone;
+        while (1) {
+            $gone = waitpid(-1, WNOHANG);
+            my $exit = $?;
+            last unless $gone > 0;
+            printf("kid %d gone 0x%x\n", $gone, $exit);
+            delete $kid{$gone};
+
+            if ($exit == 0x4300) { # 67
+                # connections all used - liberate some
+                kill 'INT', (keys %kid)[0..9];
+            }
+        }
+
+        usleep 0.5E6;
+    }
 }
 
 
 sub new_junk {
     my ($N) = @_;
     for (1..$N) {
-        for (fork()) { # per http://blogs.perl.org/users/aristotle/2012/10/concise-fork-idiom.html
-            when(undef) {
-                die "fork failed: $!";
-            }
-            when (0) {
-                exec(q{perl -MTk -e '$w=MainWindow->new->withdraw; MainLoop'});
-                die "exec failed";
-            }
-            default {
-                push @junk_windows, $_;
-            }
-        }
+        spawn(1);
     }
-    $info->Contents('Window count = '.@junk_windows);
-    return ();
+    warn 'kids = '.(keys %kid);
 }
 
-END { reset_junk() }
+sub spawn {
+    my ($stay) = @_;
+    my $child;
+    for (fork()) { # per http://blogs.perl.org/users/aristotle/2012/10/concise-fork-idiom.html
+        when(undef) {
+            die "fork failed: $!";
+        }
+        when (0) {
+            undef $SIG{INT};    # allow zap
+            my $w = eval { MainWindow->new };
+            my $err = $@;
+            if ($w) {
+                $w->withdraw;
+                MainLoop if $stay;
+                exit 0;
+            } elsif ($err =~ /couldn't connect to display/) {
+                # 'Maximum number of clients reached' sent to
+                # STDERR by Tk
+                print STDERR "\n";
+                exit 67;
+            } else {
+                die "New window failed: $@";
+            }
+        }
+        default {
+            $child = $_;
+            $kid{$child} = 1;
+        }
+    }
+    return $child;
+}
 
-sub reset_junk {
-    foreach my $w (@junk_windows) { kill 'INT', $w }
-    @junk_windows = ();
-    $info->Contents('Window count = '.@junk_windows) if $info && Tk::Exists($info);
+END { zap() if $$ == $parent }
+
+sub zap {
+    foreach my $p (keys %kid) { kill 'INT', $p }
+    %kid = ();
     return ();
 }
 
