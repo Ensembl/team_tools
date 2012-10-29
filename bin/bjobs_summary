@@ -11,8 +11,9 @@ esac
 
 [ "$#" -gt 1 ] && echo "($0 ignores parameters after the 1st)" >&2
 
+ARGS=" -u all -P $LSB_DEFAULTPROJECT "
 
-bjobs -w | perl -ane '
+bjobs -w $ARGS | perl -ane '
  use strict;
  use warnings;
  our ($FMT, $PTN, %num);
