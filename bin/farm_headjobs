@@ -1,0 +1,41 @@
+#! /bin/sh
+
+TEAM="$( ypmatch anacode-people aliases | tr , ' ' )"
+BOXEN="$( ypcat -k hosts|grep -E 'head[0-9]+ ' | cut -f1 -d' ' | sort )"
+
+case "$*" in
+    -h|--help)
+        printf "Syntax: %s\n
+Show pstree output
+ for all anacode-people (%s),
+ for all farm2 head nodes (%s),
+
+to make it easier to see what other members of the team are doing down
+on the farm.  Works from any internal machine, via ssh.
+
+Lists from from NIS and may be fragile.  Self-filtering steps may also
+be fragile.\n\n" \
+      "$0" "$( echo $TEAM )" "$( echo $BOXEN )" >&2
+        exit 2
+        ;;
+esac
+
+self_filter() {
+    perl -e '#FARM_HEADJOBS
+ use strict; use warnings;
+ undef $/;
+ $_ = <>;
+ s{^sshd\s*\n\s+`-.*printf.*pstree.*done\n\s+`-pstree.*\s+}{}mg; # self on nodes
+ s{^([-|` ]+)(farm_headjobs .*|ssh [-a-z0-9]+ for.*printf.*pstree.*done|perl .*FARM_HEADJOBS.*)}{$1 farm_headjobs}mg;
+ s{^([-|` ]+farm_headjobs)\n([-|` ]+farm_headjobs\n)*}{$1 [...]\n}mg;
+ s{^No processes found\.\n}{}mg;
+ while ( s{^=== \w+\n(==|\z)}{$1}m) {} # nothing found / none left after filtering
+ s{^([^=])}{  $1}mg; # indent pstrees
+ print'
+}
+
+for host in $BOXEN; do
+    printf "== %s\n" $host
+    ssh $host "for u in $TEAM; do printf '=== %s\n' \$u; pstree -aul \$u 2>&1; done"
+done | self_filter
+
