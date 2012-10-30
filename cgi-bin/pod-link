@@ -178,4 +178,14 @@ namespaces:
         - http://www.ensembl.org/info/docs/Doxygen/core-api/class%s.html
         - !!perl/regexp (?-xism::)
         - _1
+  -
+    - !!perl/regexp (?-xism:^Hum::)
+    - vc:
+        - http://intcvs1.internal.sanger.ac.uk/cgi-bin/viewvc.cgi/PerlModules/%s.pm?root=anacode&view=log
+        - !!perl/regexp (?-xism:::)
+        - /
+      pod:
+        - http://intcvs1.internal.sanger.ac.uk/cgi-bin/viewvc.cgi/PerlModules/%s.pm?root=anacode&view=markup
+        - !!perl/regexp (?-xism:::)
+        - /
 referers: !!perl/regexp (?i-xsm:^http://(mediawiki|scratchy)\.internal\.sanger\.ac\.uk/(?:wiki/)?index\.php/)
