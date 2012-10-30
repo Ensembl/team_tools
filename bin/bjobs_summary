@@ -11,7 +11,7 @@ esac
 
 [ "$#" -gt 1 ] && echo "($0 ignores parameters after the 1st)" >&2
 
-ARGS=" -u all -P $LSB_DEFAULTPROJECT "
+ARGS=" -u all -P ${LSB_DEFAULTPROJECT:-vertann} "
 
 bjobs -w $ARGS | perl -ane '
  use strict;
