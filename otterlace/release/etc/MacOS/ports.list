@@ -45,4 +45,8 @@ hmmer
 jksrc-lib
 samtools
 
+# development
+#
+p5-test-perl-critic
+
 # EOF
