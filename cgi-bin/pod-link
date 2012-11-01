@@ -82,7 +82,10 @@ sub link_subst {
         next if !ref($find) && $find =~ /^#/; # comment on tail
         $upath =~ s{$find}{$replace}g;
     }
-    return sprintf($urlfmt, $upath);
+    my $url = $urlfmt;
+    my $n = $url =~ s{%s}{$upath}g;
+    die "Expected one subst in $urlfmt, got $n" unless 1 == $n;
+    return $url;
 }
 
 sub prog_info {
