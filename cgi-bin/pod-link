@@ -119,6 +119,16 @@ namespaces:
         - !!perl/regexp (?-xism::)
         - _1
   -
+    - !!perl/regexp (?-xism:^Bio::EnsEMBL::Analysis::)
+    - vc:
+        - http://cvs.sanger.ac.uk/cgi-bin/viewvc.cgi/ensembl-analysis/modules/%s.pm?root=ensembl&view=log
+        - !!perl/regexp (?-xism:::)
+        - /
+      pod:
+        - http://cvs.sanger.ac.uk/cgi-bin/viewvc.cgi/ensembl-analysis/modules/%s.pm?root=ensembl&content-type=text%2Fplain&view=markup
+        - !!perl/regexp (?-xism:::)
+        - /
+  -
     - !!perl/regexp (?-xism:^AssemblyMapper::)
     - vc:
         - http://cvs.sanger.ac.uk/cgi-bin/viewvc.cgi/ensembl-pipeline/scripts/Finished/assembly/%s.pm?root=ensembl&view=log
