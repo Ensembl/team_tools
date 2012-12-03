@@ -50,6 +50,9 @@ target_non_dist="${non_dist}/$( versioned_non_dist "${target_app}" )" || exit $?
 source_install_base="${source_app}/${resources_path}"
 target_install_base="${target_app}/${resources_path}"
 
+source_macos="${source_app}/${contents_macos_path}"
+target_macos="${target_app}/${contents_macos_path}"
+
 echo "Saving away target links"
 save_links "${target_install_base}"
 
@@ -58,6 +61,10 @@ rm -r ${target_non_dist}/{share,var}
 
 echo "Copying main contents..."
 cp -a ${source_install_base}/* "${target_install_base}/"
+
+echo "Copying ${contents_macos_path}..."
+mkdir -v -p "${target_macos}"
+cp -a ${source_macos}/* "${target_macos}/"
 
 copy_non_dist "${source_non_dist}" "${target_non_dist}" 'exclude_macports_build'
 

@@ -10,6 +10,7 @@ export http_proxy=http://webcache.sanger.ac.uk:3128
 export HTTPS_PROXY="${http_proxy}"
 export ftp_proxy="${http_proxy}"
 
+contents_macos_path="Contents/MacOS"
 resources_path="Contents/Resources"
 
 bail() {
