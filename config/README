@@ -1,0 +1,11 @@
+This subproject is intended to hold configuration-like data which
+doesn't belong in the ensembl-otter tree, for these reasons
+
+ - it makes no sense to make release branches of things describing
+   external data.  e.g. server ensembl version, known-broken columns,
+   loutre_$species which are non-production or for testing
+
+ - such configuration files can usefully be versioned in a linear way
+
+ - I have such a file right here, and there is no clearly better place
+   to put it
