@@ -1,0 +1,134 @@
+#! /usr/bin/env perl
+
+use strict;
+use warnings;
+
+use DBI;
+use Getopt::Long;
+use Getopt::Long 2.24 qw(:config no_ignore_case bundling); # to make -P3323 work
+
+=head1 NAME
+
+mysql-size2du - show size of MySQL database as du(1) output
+
+=head1 SYNOPSIS
+
+ mysql-size2du -h otterpipe2 -P3323 pipe_pig | xdiskusage
+
+=cut
+
+
+sub main {
+    my $it = DbIterate->new;
+
+    %{ $it->opt } =
+      (host => 'otterlive', port => 3324, user => 'ottro');
+
+    GetOptions($it->opt, 'host|h=s', 'port|P=s', 'user|u=s', 'password|p=s')
+      or die
+        "Syntax: $0 [ --host | -h ] <host> [ --port | -P ] <port> [ --user | -u ] <user> [ --pasword | -p ] <pass> [ <database> ... ]\n";
+
+    $it->iterate_db(@ARGV);
+}
+
+
+main();
+
+
+package DbIterate;
+
+use strict;
+use warnings;
+use POSIX 'ceil';
+
+
+sub new {
+    bless { }, __PACKAGE__;
+}
+
+sub opt {
+    my ($self) = @_;
+    return $$self{opt} ||= {};
+}
+
+sub dbh {
+    my ($self) = @_;
+    my $opt = $self->opt;
+    return $$self{dbh} ||= DBI->connect
+      ("dbi:mysql:host=$$opt{host};port=$$opt{port}",
+       @{$opt}{qw{ user password }}, { RaiseError => 1 });
+}
+
+sub iterate_db {
+    my ($self, @db) = @_;
+    my $dbh = $self->dbh;
+    my $q = $dbh->selectcol_arrayref('show databases');
+    @db = @$q unless @db;
+
+    my $tot = 0;
+    foreach my $db (@db) {
+        $dbh->do("use `$db`", {});
+        $tot += $self->iterate_tables($db);
+    }
+    $self->total($tot);
+    return $tot;
+}
+
+sub iterate_tables {
+    my ($self, $db) = @_;
+    my $dbh = $self->dbh;
+    my $q = $dbh->selectcol_arrayref('show tables');
+
+    my $tot = 0;
+    foreach my $t (@$q) {
+        local $$self{path} = [ $db ];
+        $tot += $self->iterate_table($t);
+    }
+    $self->total($tot, $db);
+    return $tot;
+}
+
+sub iterate_table {
+    my ($self, $t) = @_;
+    my $dbh = $self->dbh;
+
+    my $i = $dbh->selectrow_hashref("show table status where name=?", {}, $t);
+# use YAML; warn Dump({ $t => $i });
+    return 0 if $i->{Comment} eq 'VIEW';
+
+    my ($N, $eng, $fmt) = @{$i}{qw{ Rows Engine Row_format }};
+    my $data = sprintf("rows:%.3g (%s, %s)", $N || -1, $eng, $fmt);
+
+    my $tot = 0;
+    foreach my $kl ([ Data_length => $data ],
+                    [ Index_length => 'indices' ],
+                    [ Data_free => 'unused' ]) {
+        my ($k, $label) = @$kl;
+        $tot += $self->total_bytes($i->{$k}, $t, $label);
+    }
+
+### slow and less informative
+#    my $q = $dbh->selectcol_arrayref("select count(*) from `$t`");;
+#    ($tot) = @$q;
+#    $self->total($tot, $t);
+
+    return $tot;
+}
+
+sub total {
+    my ($self, $total, @ele) = @_;
+    unshift @ele, @{ $$self{path} || [] };
+    my $T = time() - $^T;
+    warn "+${T}s: Done @ele\n" if $T > 15;
+    print join '/', "$total\t", @ele, "\n";
+}
+
+# rounds up to integer KiB, to match xdiskusage' assumption
+sub total_bytes {
+    my ($self, $byte, @ele) = @_;
+    my $tot = ceil($byte / 1024);
+    $self->total($tot, @ele);
+    return $tot;
+}
+
+1;
