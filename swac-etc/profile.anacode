@@ -1,0 +1,11 @@
+# -*- shell-script -*-
+
+
+# necessary
+prepend_path PATH /software/anacode/bin
+
+# nb. interaction with $ANACODE_TEAM_TOOLS/bash_profile
+
+
+# useful and Anacode-specific
+alias olog='cd ~/.otter'

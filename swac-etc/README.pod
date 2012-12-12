@@ -1,6 +1,14 @@
 
 =head1 DESCRIPTION
 
+Provides profile setup for HAVANA users to access Anacode software.
+
+Currently supplies only C<bash> profile, leaving C<tcsh> users reliant
+on the legacy and ubiquitous C<~/.cshrc>
+
+
+=head1 DETAILS
+
 =head2 Who is using it?
 
 Consider only havana members,
@@ -8,6 +16,17 @@ Consider only havana members,
   HAVANA_USERS=$( ypmatch havana aliases ),humpub
   SWCFGS=$(  eval ls -1 ~{$HAVANA_USERS}/.softwarerc )
   grep -10 anacode $SWCFGS
+
+  # missed any?
+  VERTANNS=$(ypmatch vertann group | cut -d: -f4)
+  echo $VERTANNS $VERTANNS $HAVANA_USERS | sed -e 's/[, ]/\n/g' | sort | uniq -c | grep -E ' *2 '
+
+=head2 With which shell?
+
+  ypcat passwd | grep -E "^($( echo $HAVANA_USERS | tr , '|' )):" | \
+    cut -d: --output-delimiter="$( printf '\t' )" -f1,7
+
+  grep bash $( eval ls -1 ~{$HAVANA_USERS}/.cshrc )
 
 =head2 Origin
 
