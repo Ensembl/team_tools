@@ -40,10 +40,12 @@ fi
 
 # distro-independent directories
 
-PATH="\
+echo $PATH | sed -e 's/:/\n/g' | grep -qE "^$anacode_dir/bin"'/?$' || \
+    PATH="\
 $PATH\
 :$anacode_dir/bin\
 "
+# May be set in /software/anacode/etc/profile.anacode , see ./swac-etc/
 
 PERL5LIB="\
 $PERL5LIB\
