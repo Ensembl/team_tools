@@ -58,10 +58,10 @@ sed -i ".pre-sed" \
 echo "Installing local ports files"
 
 mkdir -v -p "${local_ports_dst}"
-cp -v -a ${local_ports_src}/* "${local_ports_dst}"
+cp -v -p -R ${local_ports_src}/* "${local_ports_dst}"
 
 port_update_dst="${install_base}/sbin/port_update.sh"
-cp -v "${etc_macos}/port_update.sh.template" "${port_update_dst}"
+cp -v -p "${etc_macos}/port_update.sh.template" "${port_update_dst}"
 chmod +x "${port_update_dst}"
 
 echo
