@@ -29,7 +29,7 @@ if [ -d "${macports_name}" ]; then
    [ -e Makefile ] && make distclean
 else
     echo "Fetching ${macports_download}"
-    curl -L "${macports_url_base}/${macports_tarball}" | tar -xzf -
+    curl -L "${macports_url_base}/${macports_tarball}" | tar -xjf -
     cd "${macports_name}"
 fi
 
