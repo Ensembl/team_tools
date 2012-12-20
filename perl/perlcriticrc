@@ -4,6 +4,9 @@
 # default severity
 severity = harsh
 
+# pattern from team_tools/elisp/anacode-perlcritic.el
+verbose = %f:%l:%c:%m\t[%s] %p\n
+
 # disable some default policies
 [-RegularExpressions::RequireExtendedFormatting]
 [-ErrorHandling::RequireCarping]
