@@ -4,8 +4,7 @@
 PortSystem              1.0
 
 name                    jksrc-lib
-version                 130
-revision                1
+version                 277
 categories              science
 platforms               darwin
 maintainers             sanger.ac.uk:mg13 openmaintainer
@@ -19,10 +18,10 @@ long_description        The libraries provided by Jim Kent and the UCSC \
 
 homepage                http://hgdownload.cse.ucsc.edu/downloads.html
 master_sites            http://hgdownload.cse.ucsc.edu/admin/
-distfiles               jksrc.zip
+distname                jksrc.v${version}
 
-checksums               sha256  5da5760a798e5f5d93cc86aabc87a45ee134760446c4f3d5db517998769795c5 \
-                        rmd160  db0a686b9794c88aa29d4da0d210ef53b94b8c39
+checksums               sha256  2b82880d00fa5613fc96b752171db2e8c227f0e46f34500354a9b248dfaf73d6 \
+                        rmd160  50523cab4c845801a18ec27873c90c9434b7a5b6
 
 use_zip                 yes
 worksrcdir              kent
