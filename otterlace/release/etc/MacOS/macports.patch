@@ -13,8 +13,7 @@
  #destroot_umask 022
  
  # Set whether to automatically execute "clean" after "install" of ports
--#portautoclean		yes
-+portautoclean		no
+ #portautoclean		yes
  
  # Set to yes if you don't want logs to be deleted after successful builds
 -#keeplogs no
