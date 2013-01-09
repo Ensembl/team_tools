@@ -2,6 +2,9 @@ The scripts in this directory and corresponding config files in
 otterlace/release/etc/MacOS should allow an ab-initio build of the Mac
 otterlace environment, and then of annotools and otterlace itself.
 
+See also http://mediawiki.internal.sanger.ac.uk/wiki/index.php/MacPorts
+
+
 Recipe:
 
 cd ~/Dist # or wherever you want to do your app building
@@ -19,13 +22,31 @@ install_macports.sh
 
   # downloads, configures and installs MacPorts for and into the app
   # tree. sets up a local tree for locally-patched port
-  # files. generates the port_update.sh script and prompts for:
+  # files. generates the port_update.sh script and prompts to
+  #
+  #   add .../otterlace.app/Contents/Resources/bin to your PATH
+  #
+  #   run "sudo port -v selfupdate", but this is instead done by
+  #   wrapper (next step)
+  #
+  #   read docs
+  #     man port
+  #     http://guide.macports.org/
+  #     https://trac.macports.org/
+
 
 # connect to non-rsync-firewalled network and run:
 ./Contents/Resources/sbin/port_update.sh
 
+# If you cannot do this, use the WTSI internal mirror (see SangerWiki)
+
 # connect back to normal network if necessary.
 
+
+# Check the value of portautoclean in
+#    otterlace.app/Contents/Resources/etc/macports/macports.conf
+#
+# Do you want to retain build files for debugging?
 
 install_ports.sh
 
