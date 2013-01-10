@@ -1,0 +1,123 @@
+#! /bin/sh
+
+# Assistance to configure user account for Bash and /software/anacode
+
+
+RT=anacode@sanger.ac.uk
+SW=anacode
+HERE="$( dirname "$0" )"
+# you can override HOME and SHELL to test it
+
+
+set -o pipefail
+
+die() {
+    echo "Failed: $*
+Please mail $RT for assistance, including the transcript
+of this command." >&2
+    exit 4
+}
+
+show_inst() {
+    echo
+    install -v -t ~ "$@" | sed -e "s/^/  Installing /" \
+        || die "Oops (exitcode $?) while installing $* ."
+    echo
+}
+
+show_swrc() {
+    echo '  Software you are using is now'
+    sed -e 's/^/    /' ~/.softwarerc
+}
+
+files_same() {
+    (
+        set -e
+        for fn in "$@"; do
+            diff -q "$fn" ~ 2>/dev/null
+        done
+    )
+}
+
+
+main() {
+    printf "\n=== Login updates by %s   %s\n\n" "$0" "$( date )"
+    printf "This tool gives you a new Bash configuration IF you don't have one
+already.
+
+It cannot translate your existing ~/.cshrc so you may find some
+commands are not available or are configured differently.
+
+Please mail $RT for advice or assistance.\n\n\n"
+
+    if ! [ -f ~/.bashrc ] && ! [ -f ~/.bash_profile ]; then
+        echo 'You have no Bash configuration files.  Adding the default ones.'
+        show_inst $HERE/fresh/.bashrc $HERE/fresh/.bash_profile
+    elif files_same $HERE/fresh/.bash_profile $HERE/fresh/.bashrc; then
+        echo 'You already have default Bash configuration files.'
+    else
+        die "You have some Bash configuration files already, I don't want
+to mess with them."
+    fi
+
+    [ -e ~/.no_bashrc ] && die "We don't yet support use of ~/.no_bashrc"
+
+    echo
+    if [ -f ~/.softwarerc ] && grep -qE "^$SW\$" ~/.softwarerc; then
+        echo "Your ~/.softwarerc already includes '$SW'"
+    elif [ -f ~/.softwarerc ]; then
+        echo "I will add '$SW' to your existing ~/.softwarerc"
+        echo
+        {
+            cp -av ~/.softwarerc{,~} | sed -e "s/^/  Backup /" && \
+                echo $SW >> ~/.softwarerc && show_swrc
+        } || die "Problem updating ~/.softwarerc (exit code $?)."
+    else
+        echo "You have no ~/.softwarerc .  I will make a file that includes what
+you had available before."
+        show_inst $HERE/fresh/.softwarerc
+        show_swrc
+    fi
+
+
+    echo
+    YPSHELL="$( ypmatch $USER passwd | cut -d: -f7 )"
+    LHSHELL="$( getent  passwd $USER | cut -d: -f7 )"
+    DIAGSH="$( printf "\n\n  Diagnostics: shell=%s yp=%s libc6=%s\n" \
+                 $SHELL $YPSHELL $LHSHELL )"
+    # ypmatch seems to lag getent after lchsh?  but nss points at ldap now
+    case "$SHELL,$LHSHELL,$YPSHELL" in
+        /bin/bash,/bin/bash,/bin/bash)
+            echo "You are using Bash already."
+            ;;
+        /bin/tcsh,/bin/tcsh,/bin/tcsh)
+            ESC="$( perl -e 'print qq{\x1b}' )"
+            TYP="${ESC}[36m"
+            RST="${ESC}[00m"
+            echo "You are using tcsh.  Please run 'lchsh' now to change it, like this:
+
+ deskpro21743[mca]526:$TYP /software/bin/lchsh$RST
+ Password:$TYP mumble$RST
+ Changing shell for mca.
+ New Shell [/bin/tcsh]:$TYP /bin/bash$RST
+ Changed shell.
+ Run \`getent passwd mca\` to double check, but results may be cached
+ deskpro21743[mca]527: 
+
+then when convenient, log out & log in again."
+            ;;
+        /bin/tcsh,*)
+            echo "You are still using tcsh now, but it looks like you changed that
+recently.  Please wait half an hour, then log out and log in again.$DIAGSH"
+            ;;
+        /bin/bash,*)
+            echo "You are using Bash now, but I'm not sure what you have configured.
+Sorry.  Please run this again in half an hour to check.$DIAGSH"
+            ;;
+        *)
+            die "I am confused about which login shell you are using.$DIAGSH"
+            ;;
+    esac
+}
+
+main 2>&1 | tee -a ~/.softwarerc.log

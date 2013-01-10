@@ -28,6 +28,17 @@ Consider only havana members,
 
   grep bash $( eval ls -1 ~{$HAVANA_USERS}/.cshrc )
 
+=head2 Who doesn't have ~/.softwarerc ?
+
+The problem is that the default (badger, oracle from
+/etc/csh/sanger/softwarerc ) could well interact with current .cshrc
+and there is no way we're going to deal with that automatically.
+
+ NOSWRC_USERS=$( eval ls -1 ~{$HAVANA_USERS}/.softwarerc 2>&1 >/dev/null | cut -d/ -f7 )
+ NOSWRC_CSHRC=$( eval ls -1 ~{$( echo $NOSWRC_USERS | tr ' ' ,)}/.cshrc )
+ tail -n+1 $NOSWRC_CSHRC | less
+ perl -ne 's/^\s+|[ \t]+$//g; s/\\\n/ CONT /; print unless /^#|^ *$/' $NOSWRC_CSHRC | sort | uniq -c | less
+
 =head2 Origin
 
 L<http://git.internal.sanger.ac.uk/cgi-bin/gitweb.cgi?p=anacode/team_tools.git;a=tree;f=swac-etc>
