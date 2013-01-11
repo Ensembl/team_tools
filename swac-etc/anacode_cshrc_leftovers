@@ -1,0 +1,89 @@
+#! /software/bin/perl-5.12.2
+use strict;
+use warnings;
+use File::Slurp 'slurp';
+
+sub main {
+    exec "$0 | less -R" if @ARGV && $ARGV[0] eq '-p';
+
+    my $fn = "$ENV{HOME}/.cshrc";
+    if (! -f $fn) {
+        print "\nYou do not have $fn ,\nso there is nothing to consider migrating.\n\n";
+        return 0;
+    }
+
+    my @ln = slurp($fn);
+
+    my %last;
+    print map { is_dull($_, \%last)
+                  ? qq{\e[36m$_\e[00m} : qq{\e[01m$_\e[00m} } @ln;
+
+    return 0;
+}
+
+my $endkw = qr{^\s*(else|endif|end)\s*$};
+my $boilerplate;
+
+sub is_dull {
+    my ($ln, $last) = @_;
+    return 1 if m{^\s*(#|$)}; # line continuation doesn't happen
+
+    my $keep = $last->{cont} ? 1 : 0;
+    $last->{cont} = m{\\\n} ? 1 : 0;
+
+    $boilerplate ||= mkpat();
+    my $is_bp = $_ =~ $boilerplate;
+
+    my $dull = $is_bp && !$keep;
+    $dull ||= $last->{dull} && $_ =~ $endkw;
+
+    return $last->{dull} = $dull;
+}
+
+sub mkpat {
+    my @txt = grep { /\S/ && $_ !~ $endkw } <DATA>;
+    foreach (@txt) {
+        s/^\s+|\s+$//g;
+        $_ = quotemeta($_);
+        s{\\ }{\\s+}g;
+    }
+
+    my $txt = join '|', @txt;
+    return qr{^\s*(?:$txt)\s*$};
+}
+
+
+exit main();
+
+__DATA__
+source /etc/csh.cshrc
+if ( `id -g` == 701 ) then
+        umask 002
+endif
+if ( $?SYSMANDIR ) then
+        if ( -f $SYSMANDIR/.sysCshrc ) then
+                source $SYSMANDIR/.sysCshrc
+        endif
+else
+        echo "SYSMANDIR environment not set."
+        echo "Please contact Systems Support"
+endif
+
+if ($?prompt) then
+        if ( $SHELL == "/bin/lstcsh" || $SHELL == "/bin/tcsh" ) then
+                set prompt='%m[%n]\!: '
+        else
+                set prompt="`hostname -s`[`id -nu`]\!: "
+        endif
+endif
+
+set lStadenEnv
+
+
+
+setenv ACEDB_NO_BANNER
+set path = ( /software/anacode/bin $path )
+
+        setenv LD_LIBRARY_PATH /usr/apps/lib:${LD_LIBRARY_PATH}
+        setenv LD_LIBRARY_PATH /usr/apps/lib
+unalias rm

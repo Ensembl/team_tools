@@ -48,7 +48,11 @@ already.
 It cannot translate your existing ~/.cshrc so you may find some
 commands are not available or are configured differently.
 
+The command \`anacode_cshrc_leftovers -p\` may help you decide what
+needs keeping.
+
 Please mail $RT for advice or assistance.\n\n\n"
+    sleep 3
 
     if ! [ -f ~/.bashrc ] && ! [ -f ~/.bash_profile ]; then
         echo 'You have no Bash configuration files.  Adding the default ones.'
