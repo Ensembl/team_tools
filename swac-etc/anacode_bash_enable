@@ -56,7 +56,7 @@ Please mail $RT for advice or assistance.\n\n\n"
 
     if ! [ -f ~/.bashrc ] && ! [ -f ~/.bash_profile ]; then
         echo 'You have no Bash configuration files.  Adding the default ones.'
-        show_inst $HERE/fresh/.bashrc $HERE/fresh/.bash_profile
+        show_inst -m 0644 $HERE/fresh/.bashrc $HERE/fresh/.bash_profile
     elif files_same $HERE/fresh/.bash_profile $HERE/fresh/.bashrc; then
         echo 'You already have default Bash configuration files.'
     else
@@ -79,7 +79,7 @@ to mess with them."
     else
         echo "You have no ~/.softwarerc .  I will make a file that includes what
 you had available before."
-        show_inst $HERE/fresh/.softwarerc
+        show_inst -m 0644 $HERE/fresh/.softwarerc
         show_swrc
     fi
 
