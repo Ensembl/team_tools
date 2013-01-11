@@ -12,11 +12,18 @@ sub main {
         return 0;
     }
 
+    print qq{\n
+  \e[34mThis listing is your tcsh setup file, coloured to show
+  \e[36muninteresting boilerplate lines\e[34m with contrasting
+  \e[00;01mlines that may need translating\e[00;34m for Bash.\n\n};
+
     my @ln = slurp($fn);
 
     my %last;
     print map { is_dull($_, \%last)
                   ? qq{\e[36m$_\e[00m} : qq{\e[01m$_\e[00m} } @ln;
+
+    print "\n\n";
 
     return 0;
 }
