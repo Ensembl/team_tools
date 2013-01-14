@@ -49,6 +49,26 @@ Constructors do C<bless>ing.  Other methods calling C<bless> are
 This is considered (by Anacode and Ensembl Core) to be "clever", and
 should be avoided; though finding a neat replacement can be tricky.
 
+ package Foo;
+ use base 'Bar';
+ sub new {
+   ...
+   bless $self, $pkg;   # ok
+   return $self;
+ }
+ 
+ sub _specialise {
+   my ($self, $pkg) = @_;
+   bless $self, $pkg;   # dubious
+   return $self;
+ }
+
+
+ package main;
+ my $f = Foo->new;
+ bless $f, 'Bar';       # bad
+ $f->specialise;        # better (dubiousness is at least delegated)
+
 
 =head1 AUTHOR
 
