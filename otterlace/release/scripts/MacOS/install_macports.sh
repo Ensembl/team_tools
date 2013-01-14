@@ -64,8 +64,13 @@ port_update_dst="${install_base}/sbin/port_update.sh"
 cp -v -p "${etc_macos}/port_update.sh.template" "${port_update_dst}"
 chmod +x "${port_update_dst}"
 
+echo "Updating ports lists"
+${port_update_dst}
+
 echo
-echo "Now connect to non-rsync-firewalled network and run:"
+echo "Ports lists have been updated."
+echo
+echo "To update again later, run:"
 echo "  ${port_update_dst}"
 
 exit $?

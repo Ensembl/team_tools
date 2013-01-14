@@ -2,12 +2,6 @@
 
 set -e # bail out on error
 
-echo
-echo "This script will only work when connected to"
-echo "a non-firewalled network such as the WGC open"
-echo "wireless network."
-echo
-
 install_base="$( dirname $0 )/.." # we run from <install_base>/sbin
 
 echo "Doing port selfupdate - may take a few minutes..."

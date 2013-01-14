@@ -1,5 +1,5 @@
---- ./etc/macports/macports.conf.default	2012-08-14 11:08:33.000000000 +0100
-+++ ./etc/macports/macports.conf	2012-08-14 11:13:50.000000000 +0100
+--- ./etc/macports/macports.conf.default	2013-01-14 10:28:16.000000000 +0000
++++ ./etc/macports/macports.conf	2013-01-14 10:40:08.000000000 +0000
 @@ -52,7 +52,7 @@
  # CPU architecture to compile for. Defaults to i386 or ppc on Mac OS X 10.5
  # and earlier, depending on the CPU type detected at runtime. On Mac OS X 10.6
@@ -9,19 +9,15 @@
  
  # CPU architectures to use for Universal Binaries (+universal variant)
  universal_archs		x86_64 i386
-@@ -86,10 +86,10 @@
- #destroot_umask 022
+@@ -98,6 +98,7 @@
+ #   rsync.macports.org        - California, USA (master)
+ #   trd.no.rsync.macports.org - Trondheim, Norway
+ #rsync_server		rsync.macports.org
++rsync_server            macports.internal.sanger.ac.uk
  
- # Set whether to automatically execute "clean" after "install" of ports
- #portautoclean		yes
- 
- # Set to yes if you don't want logs to be deleted after successful builds
--#keeplogs no
-+keeplogs yes
- 
- # Rsync server to fetch MacPorts sources from. Note that this is only used
- # for selfupdate. The source(s) for the ports tree are set in sources.conf.
-@@ -159,3 +159,7 @@
+ # Rsync directory from which to pull the base/ component (infrastructure) of MacPorts
+ # If this points to a .tar file, a signed .rmd160 must exist next to it
+@@ -159,3 +160,7 @@
  # linking and can rebuild affected ports. Possible values are
  #'rebuild' (default) or 'report'.
  #revupgrade_mode rebuild
@@ -29,11 +25,13 @@
 +# Target MacOS X 10.5 (Leopard) and above
 +#
 +macosx_deployment_target	  10.5
---- ./etc/macports/sources.conf.default	2011-11-22 15:49:19.000000000 +0000
-+++ ./etc/macports/sources.conf	2011-11-23 13:31:11.000000000 +0000
-@@ -28,4 +28,5 @@
+--- ./etc/macports/sources.conf.default	2013-01-14 10:28:16.000000000 +0000
++++ ./etc/macports/sources.conf	2013-01-14 10:41:07.000000000 +0000
+@@ -28,4 +28,6 @@
  # If an rsync URL points to a .tar file, a signed .rmd160 must exist next to
  # it on the server and will be used to verify its integrity.
  
+-rsync://rsync.macports.org/release/tarballs/ports.tar [default]
 +file://OTT_REL_MACOS_LOCAL_PORTS
- rsync://rsync.macports.org/release/tarballs/ports.tar [default]
++#rsync://rsync.macports.org/release/tarballs/ports.tar [default]
++rsync://macports.internal.sanger.ac.uk/release/ports/ [default]

@@ -21,32 +21,25 @@ cd otterlace.app
 install_macports.sh
 
   # downloads, configures and installs MacPorts for and into the app
-  # tree. sets up a local tree for locally-patched port
-  # files. generates the port_update.sh script and prompts to
+  # tree.
+  #  (ignore instructions to run "sudo port -v selfupdate" as this
+  #   is done for you by install_macports.sh.)
   #
-  #   add .../otterlace.app/Contents/Resources/bin to your PATH
+  # configures MacPorts to use the WTSI internal mirror
+  #  (see http://mediawiki.internal.sanger.ac.uk/index.php/MacPorts)
   #
-  #   run "sudo port -v selfupdate", but this is instead done by
-  #   wrapper (next step)
+  # sets up a local tree for locally-patched port files.
   #
-  #   read docs
-  #     man port
-  #     http://guide.macports.org/
-  #     https://trac.macports.org/
+  # creates and runs
+  #  ./Contents/Resources/sbin/port_update.sh
+  # which performs a 'port selfupdate' to get the ports database,
+  # and also indexes the local portfiles.
+  # (port_update.sh can be run again at a future date if required.)
 
-
-# connect to non-rsync-firewalled network and run:
-./Contents/Resources/sbin/port_update.sh
-
-# If you cannot do this, use the WTSI internal mirror (see SangerWiki)
-
-# connect back to normal network if necessary.
-
-
-# Check the value of portautoclean in
+# Check the values of portautoclean and keeplogs in
 #    otterlace.app/Contents/Resources/etc/macports/macports.conf
 #
-# Do you want to retain build files for debugging?
+# Do you want to retain build files and logs for debugging?
 
 install_ports.sh
 
