@@ -5,7 +5,3 @@
 
 # Timestamp files for Test::Sometimes
 .*.test-sometimes
-
-
-# .anacode
-/.anacode/
