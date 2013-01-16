@@ -25,3 +25,7 @@ allow = %ENV %SIG $| @ARGV
 severity        = gentle
 lib_sections    = AUTHOR
 script_sections = AUTHOR
+
+[Anacode::ProhibitRebless]
+excepted_filename = (^|/)[^/]+\.t$
+# tests are excused
