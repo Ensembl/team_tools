@@ -4,6 +4,9 @@
 # default severity
 severity = harsh
 
+# pattern from team_tools/elisp/anacode-perlcritic.el
+verbose = %f:%l:%c:%m\t[%s] %p\n
+
 # disable some default policies
 [-RegularExpressions::RequireExtendedFormatting]
 [-ErrorHandling::RequireCarping]
@@ -22,3 +25,7 @@ allow = %ENV %SIG $| @ARGV
 severity        = gentle
 lib_sections    = AUTHOR
 script_sections = AUTHOR
+
+[Anacode::ProhibitRebless]
+excepted_filename = (^|/)[^/]+\.t$
+# tests are excused

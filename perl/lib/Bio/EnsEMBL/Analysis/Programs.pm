@@ -7,6 +7,10 @@ use warnings;
 Compile-time checking of executables' presence not needed during
 syntax checking.
 
+=head1 AUTHOR
+
+Ana Code B<email> anacode@sanger.ac.uk
+
 =cut
 
 sub import {

@@ -3,13 +3,6 @@
 #  This is a wrapper to run Perl in syntax check mode.  It is used by
 #  anacode-perl-syntax.pl.
 
-#  We remove any #! line because sometimes they specify -T which
-#  causes problems.
-
-#  NB: because we pipe the code to Perl, it always reports the file
-#  name as '-'.  This is not a problem as the Emacs buffer displays
-#  the file name anyway so it is no loss not to see it a second time.
-
 path=$1
 
 if [ -f "$0.env.sh" ]; then
@@ -18,6 +11,24 @@ if [ -f "$0.env.sh" ]; then
     source "$0.env.sh"
 fi
 
-sed -e '1s/^#!.*$//' "$path" | # nuke the #! line
-perl -c -MBio::Anacode::Perl::Syntax &&
-true
+if head -n1 "$path" | grep -qE '^#!'; then
+    # We remove any #! line because sometimes they specify -T which
+    # causes problems.
+    sed -e '1s/^#!.*$//' "$path" | # nuke the #! line
+    perl -c -MBio::Anacode::Perl::Syntax &&
+    true
+
+    #  NB: because we pipe the code to Perl, it always reports the file
+    #  name as '-'.  This is not a problem as the Emacs buffer displays
+    #  the file name anyway so it is no loss not to see it a second time.
+
+else
+    # No #! line (probably a package), so process it direct.
+    # We then get correct warning locations.
+    #
+    # Something causes recursively-use'd packages to give "Subroutine
+    # foo redefined" warnings.  Can't see how to fix it, but we can
+    # filter them out.
+    perl -c -MBio::Anacode::Perl::Syntax "$path" 2>&1 | grep -vE "^Subroutine [^ ]+ redefined at $path line [0-9]" &&
+    true
+fi
