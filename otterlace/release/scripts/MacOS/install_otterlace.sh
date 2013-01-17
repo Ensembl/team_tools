@@ -22,7 +22,7 @@ for f in anacode_distro_code; do
     chmod +x "$dest"
 done
 
-hostname="$( hostname -f )"
+hostname="$( hostname )"
 
 var_otter="${install_base}/var/otter"
 build_log_dir="${var_otter}/build_logs"
