@@ -36,6 +36,10 @@ otterlace_build="${my_dir}/../otterlace_build"
 export PATH=$PATH:/usr/local/git/bin
 pushd "${ensembl_otter_dir}"
 
+
+# should be shared with otterlace.app/Contents/MacOS/otterlace
+DYLD_FALLBACK_LIBRARY_PATH=${install_base}/lib \
+\
 otter_swac="${install_base}" \
 build_log="${build_log_dir}" \
     "${generic_script_dir}/otterlace_build" --local-client-only "${stage_dir}"
