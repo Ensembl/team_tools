@@ -115,6 +115,7 @@ git_listrefs_maybe() {
 
 _whatami() {
     local ciid upstream
+    git --version >/dev/null || bail "Git is broken, cannot continue.  PATH=$PATH"
     upstream="$( cd "$dist_scripts" && git config --get remote.origin.url || echo '??' )"
     descr="$(    cd "$dist_scripts" && git describe --tags --long --match 'otter/*' || echo '??' )"
     echo "$0 ($descr from $upstream)"

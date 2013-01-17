@@ -33,7 +33,6 @@ set_stage_dir
 generic_script_dir="${my_dir}/.."
 otterlace_build="${my_dir}/../otterlace_build"
 
-export PATH=$PATH:/usr/local/git/bin
 pushd "${ensembl_otter_dir}"
 
 
