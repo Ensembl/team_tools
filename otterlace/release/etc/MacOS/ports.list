@@ -12,6 +12,7 @@ p5-lwp-protocol-https
 
 # perl modules
 #
+p5-try-tiny
 p5-moosex-classattribute
 p5-readonly-xs
 p5-cache-cache
