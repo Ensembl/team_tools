@@ -174,6 +174,8 @@ setup_self_globals() {
 # Set some environment variables, global variables for the script
 setup_globals() {
 
+    perl -M5.12.2 -e 1 || bail "Think I have the wrong Perl"
+
     config_get version_major
     config_get version_minor
     config_get client_ensembl_version
