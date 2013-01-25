@@ -10,13 +10,15 @@ Features:
   `anacode-perlcritic'  - run perlcritic on your Perl code.
   `anacode-perldoc'     - run perldoc on your Perl code.
   `anacode-perltidy'    - run perltidy on the region.
-  `anacode-perl-fix'    - fix your Perl code.")
+  `anacode-perl-fix'    - fix your Perl code.
+  `anacode-perl-attribute' - insert an attribute method.")
 
 (require 'anacode-perl-syntax)
 (require 'anacode-perlcritic)
 (require 'anacode-perldoc)
 (require 'anacode-perltidy)
 (require 'anacode-perl-fix)
+(require 'anacode-perl-attribute)
 
 (provide 'anacode)
 
