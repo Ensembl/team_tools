@@ -20,6 +20,9 @@ verbose = %f:%l:%c:%m\t[%s] %p\n
 [Variables::RequireLocalizedPunctuationVars]
 allow = %ENV %SIG $| @ARGV
 
+[Variables::ProhibitEvilVariables]
+variables = $[ $^S $SIG{__DIE__}
+
 # keep webpublish happy
 [Documentation::RequirePodSections]
 severity        = gentle
