@@ -30,8 +30,8 @@ are also listed, with exclusions for Git/CVS/SVN.
 =cut
 
 sub main {
-    my $dir = $0;
-    $dir =~ s{/cgi-bin/taskbucket}{/htdocs};
+    my $dir = homedir().'/public_html/RT';
+    my $href = homehref();
 
     my $Q = new CGI;
 
@@ -77,13 +77,13 @@ HDR
 
         my $hleaf = escapeHTML($leaf);
         my $hfn = escapeHTML($fn);
-        my ($age, @item) = files_in($fn, "../$hleaf", $hit_re);
+        my ($age, @item) = files_in($fn, "$href/$hleaf", $hit_re);
 
         print <<"ITEM";
 <div id="$rt_id" class="taskbucket">
   <div class="title"> $hleaf </div>
   <div class="detail">
-    Files under <a href="../$hleaf"> $hfn </a>, <br />
+    Files under <a href="$href/$hleaf"> $hfn </a>, <br />
     for <a href="https://rt.sanger.ac.uk/Ticket/Display.html?id=$rt_id"> RT ticket $rt_id </a>
   </div>
   <ul> @item </ul>
@@ -94,6 +94,15 @@ ITEM
     print <<"FTR" unless $Q->param('include');
 </body></html>
 FTR
+}
+
+sub homedir {
+    return (getpwuid($<))[7];
+}
+
+sub homehref {
+    my $uid = (getpwuid($<))[0];
+    return "/~$uid/RT";
 }
 
 sub files_in {
