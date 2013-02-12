@@ -39,8 +39,11 @@ sub main {
  div.eek       { color: darkred }
 </style>
 </head><body>
- <p> <a href="/">Served from developer local Apache</a> </p>
  <h1> Otterlace versions </h1>
+ <p>
+  Served from <a href="/">developer local Apache</a>.
+  Please bookmark via <a href="http://mediawiki.internal.sanger.ac.uk/wiki/index.php/Otterlace#Current_versions">the wiki page</a>.
+ </p>
  <h2> Internal Linux releases </h2>
   <p>
     [ <a href="otterlist"> view from a deskpro </a>
