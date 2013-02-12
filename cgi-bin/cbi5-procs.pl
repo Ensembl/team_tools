@@ -174,7 +174,8 @@ sub show_conn {
 	my $h = int($up /  3600); $up -= $h *  3600;
 	$RO .= ' <span class="mode">slave</span>' if $status{'Slave_running'} eq 'ON';
 	$hstatus = join ", ", sprintf('Up %dd %dh %dm', $d, $h, int($up / 60)),
-	  map {escapeHTML("$_ = $status{$_}")} qw( Slave_running );
+	  map {escapeHTML("$_ = $status{$_}")}
+            qw( Slave_running Threads_connected Threads_running );
     }
 
     my $hdr = qq{ <tr><th colspan="3"> $RO <a name="$hdbinst"> <h2>$hdbinst</h2> </a></th><td colspan="4">$hvars</td><td>$hstatus</td></tr>\n};
