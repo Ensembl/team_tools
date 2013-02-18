@@ -62,9 +62,14 @@ find $DATADIR -printf '%M %2n %-8u %-8g %9s %TY-%Tm-%Td %.8TT %p\n' > $SAVEREPO/
     # tracking repo anyway.  This will allow _named_ files
     # no-longer-present to disappear from the repo.
     git rm --cached --ignore-unmatch -- \
-        species.dat~    users.txt~ \
-        '#species.dat#' '#users.txt#'
+        species.dat~    users.txt~    designations.txt~ \
+        '#species.dat#' '#users.txt#' '#designations.txt#'
 
+    # Unstage all versions in HEAD
+    git rm --cached --ignore-unmatch -qrf -- \
+        $( git ls-tree --name-only HEAD | grep -E '^[0-9]+$' )
+
+    # Add back anything still present
     git add -A *
 )
 
