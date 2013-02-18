@@ -41,7 +41,7 @@ setup_vars() {
 
 all_repos() {
     REFS_WHITE='refs/tags/(humpub-release-.*|initial_empty_commit|cvs_MAIN_final|info/.*)|origin/humpub-branch-.*'
-    REFS_BLACK='origin/master|origin/(feature|jgrg|jh13|mca|mg13)/.*|refs/tags/cvs/.*'
+    REFS_BLACK='origin/master|origin/(feature|jgrg|jh13|mca|mg13|tmp)/.*|refs/tags/cvs/.*'
     MAKE_MASTER_RE='tags/humpub-release-(\d+)-dev$'
     FROM_REMOTE='origin'
     REPO="$HOME/gitwk-anacode/ensembl-otter"
