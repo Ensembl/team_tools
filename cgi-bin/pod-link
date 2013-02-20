@@ -44,6 +44,8 @@ proliferation of links to this transient pod-link URL.\n";
 
     # find relevant links out
     my ($path, $want) = map { $Q->param($_) } qw{ path want };
+    $path =~ s{/}{::}g;
+    $path =~ s{\.pm$}{};
     my @hit;
     foreach my $ns (@{ $cfg{namespaces} }) {
         my ($nsre, $places) = @$ns;
