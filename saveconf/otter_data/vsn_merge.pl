@@ -178,7 +178,13 @@ sub make_merge {
         push @merged, $br;
         next if $br eq 'meta'; # can include meta among merge parents, but not its content
 
-        run(replace => qw( git rm -rfq --ignore-unmatch ), "$br/") if -d $br;
+        if (-d $br) {
+            run(replace => qw( git rm -rfq --ignore-unmatch ), "$br/");
+        } elsif ($br eq 'root') {
+            my @file = grep { -f $_ } read_dir('.');
+            run(replace_root => qw( git rm -rfq --ignore-unmatch ), @file)
+              if @file;
+        }
 
         my @new_fn = qx( git ls-tree $ciid );
         if (!@new_fn) {
@@ -226,6 +232,15 @@ sub iso8601 {
     my ($utime) = @_;
     my @t = localtime($utime);
     return sprintf("%04d-%02d-%02d %02d:%02d:%02d", $t[5]+1900, $t[4]+1, @t[3,2,1,0]);
+}
+
+sub read_dir {
+    my ($dir) = @_;
+    $dir =~ s{/*$}{};
+    opendir my $dh, $dir or die "opendir($dir) failed: $!";
+    my @out = grep { $_ !~ m{^\.{1,2}$} } readdir $dh;
+    closedir $dh;
+    return map {"$dir/$_"} @out;
 }
 
 exit main();
