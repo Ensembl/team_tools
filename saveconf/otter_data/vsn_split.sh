@@ -29,14 +29,14 @@ do_filterbranch() {
     if [ "$VSN" = 'root' ]; then
         git filter-branch -f -d $FASTTMP --prune-empty \
             --index-filter "git rm -rq --cached --ignore-unmatch $VSNS derived .gitignore ls.-l" \
-            --parent-filter "$PARFILTER $VSN $IEC" \
-            --msg-filter "$MSGFILTER $VSN" \
+            --parent-filter "perl $PARFILTER $VSN $IEC" \
+            --msg-filter "perl $MSGFILTER $VSN" \
             $VSN
     else
         git filter-branch -f -d $FASTTMP --prune-empty \
             --subdirectory-filter $VSN \
-            --parent-filter "$PARFILTER $VSN $IEC" \
-            --msg-filter "$MSGFILTER $VSN" \
+            --parent-filter "perl $PARFILTER $VSN $IEC" \
+            --msg-filter "perl $MSGFILTER $VSN" \
             $VSN
     fi || die "filtering failed"
 
@@ -56,6 +56,7 @@ main() {
     MSGFILTER="$( dirname $0 )/vsn_split.msg.pl"
     PARFILTER="$( dirname $0 )/vsn_split.par.pl"
     [ -f "$MSGFILTER" ] || die "Can't find msg-filter at $MSGFILTER"
+    [ -f "$PARFILTER" ] || die "Can't find par-filter at $PARFILTER"
 
     printf "\n* IEC detection\n === This will trash .git/info/grafts , and can leave junk there if interrupted ===\n"
     # grafts can break IEC detection
@@ -72,6 +73,9 @@ main() {
     for VSN in $VSNS root; do
 	do_filterbranch $VSN "$VSNS"
     done
+
+    printf "\n* Merging\n"
+    perl "$( dirname $0 )/vsn_merge.pl"
 }
 
 main

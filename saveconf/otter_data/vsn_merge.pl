@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use YAML::XS 'Dump';
+#use YAML::XS 'Dump';
 
 =head1 NAME
 
