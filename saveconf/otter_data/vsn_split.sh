@@ -71,11 +71,26 @@ main() {
 
     printf "\n* Rewriting branches for versions\n"
     for VSN in $VSNS root; do
-	do_filterbranch $VSN "$VSNS"
+	do_filterbranch $VSN "$VSNS" || die "filterbranch fail on $VSN"
     done
 
     printf "\n* Merging\n"
-    perl "$( dirname $0 )/vsn_merge.pl"
+    perl "$( dirname $0 )/vsn_merge.pl" || die "vsn_merge.pl fail"
+
+    printf "\n* Pushy\n"
+    if git remote show derived >/dev/null; then
+        VSNS_LEFT=$( git branch | perl -ne 's{^[ *]+}{}; print if /^(\d+|meta|root)$/' )
+        VSNS_GONE=$( git tag -l | perl -ne 'print qq{$1\n} if m{^rm/(\d+)$}' )
+        printf "Versions gone: %s\n    remaining: %s\n\n" \
+            "$( echo $VSNS_GONE )" "$( echo $VSNS_LEFT )"
+        GONE_PUSH=$( perl -e 'print map {"rm/$_:refs/heads/$_\n"} @ARGV' $VSNS_GONE )
+
+        # push them all at once, else the repo merges for us; then we
+        # can't f-f
+        git push derived $GONE_PUSH $VSNS_LEFT live_new:dev live_new:live
+    else
+        printf "Remote 'derived' not defined - skipping\n"
+    fi
 }
 
 main
