@@ -2,6 +2,9 @@
 
 # Assuming standard components of github.com/~mca-wtsi/git-yacontrib
 # are on PATH because we plan not to need this for long
+#
+# To rewind the derived remote dev to ground-zero,
+#    ssh intcvs1 'cd /repos/git/anacode/server-config.git && git reset --soft 96971e86' && git fetch derived
 
 die() {
     echo "$0 abort: $@" >&2
@@ -31,12 +34,14 @@ do_filterbranch() {
             --index-filter "git rm -rq --cached --ignore-unmatch $VSNS derived .gitignore ls.-l" \
             --parent-filter "perl $PARFILTER $VSN $IEC" \
             --msg-filter "perl $MSGFILTER $VSN" \
+            --env-filter "[ \$GIT_COMMIT != '$IEC' ] && export GIT_AUTHOR_NAME='File tracking repo' GIT_AUTHOR_EMAIL=undef@sanger.ac.uk || true" \
             $VSN
     else
         git filter-branch -f -d $FASTTMP --prune-empty \
             --subdirectory-filter $VSN \
             --parent-filter "perl $PARFILTER $VSN $IEC" \
             --msg-filter "perl $MSGFILTER $VSN" \
+            --env-filter "[ \$GIT_COMMIT != '$IEC' ] && export GIT_AUTHOR_NAME='File tracking repo' GIT_AUTHOR_EMAIL=undef@sanger.ac.uk || true" \
             $VSN
     fi || die "filtering failed"
 
@@ -87,6 +92,7 @@ main() {
 
         # push them all at once, else the repo merges for us; then we
         # can't f-f
+        echo git push derived $GONE_PUSH $VSNS_LEFT live_new:dev live_new:live
         git push derived $GONE_PUSH $VSNS_LEFT live_new:dev live_new:live
     else
         printf "Remote 'derived' not defined - skipping\n"

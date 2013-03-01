@@ -208,7 +208,8 @@ sub make_merge {
 
     if (system(qw( git diff --quiet --exit-code --cached ))) {
         local @ENV{qw{ GIT_AUTHOR_DATE GIT_COMMITTER_DATE }} = ("$utime +0000") x 2;
-        local $ENV{GIT_COMMITTER_NAME} = 'Reconstruction';
+        local $ENV{GIT_AUTHOR_NAME} = 'Reconstructed by vsn_merge.pl';
+        local $ENV{GIT_AUTHOR_EMAIL} = 'undef@sanger.ac.uk';
         run(commit => qw( git commit -m ), qq{In sync: merged (@merged)\n\nreconstruction of webpublished content from dev branches + diffdevlive\n  may contain false positives & false negatives});
     } else {
         warn "no diff, skip commit\n";
