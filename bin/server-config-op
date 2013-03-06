@@ -51,9 +51,9 @@ commits.
 The default remote is C<origin>.
 
 Local branches which persist after the remote has been tagged and
-removed are cleanly deleted with a C<git merge --ff> to ensure no
-local commits are discarded; this unlikely event is handled tersely
-and without cleaning up properly.
+removed are cleanly deleted after a C<git merge --ff-only>.  This
+ensures no local commits are discarded, but (being an unlikely event)
+the error is handled tersely and without cleaning up properly.
 
 XXX: Newly created local branches are not handled.  This missing
 feature, will be used monthly, workaround by branching on the remote.
@@ -255,9 +255,15 @@ sub main {
         run(fetch => qw( git fetch --tags -v ), $remote); # could prune local tags with -p, but doesn't seem friendly
         die "Found no remote tracking branches from $remote" unless @r_br;
         print "\n* Update local branches\n";
-        update_local($remote, [ sort @l_br ], [ sort @r_br ]);
-        print "\n* Restore checkout branch\n";
-        run(checkout => qw( git checkout ), $br, '--'); # back where we started
+        my @del = update_local($remote, [ sort @l_br ], [ sort @r_br ]);
+        if (grep { $_ eq $br } @del) {
+            print "\n* Checkout root (nb. $br was cleanly deleted)\n";
+            run(checkout => qw( git checkout root -- ));
+        } else {
+            # original branch was deleted
+            print "\n* Restore checkout branch\n";
+            run(checkout => qw( git checkout ), $br, '--'); # back where we started
+        }
 
     } else {
         syntax_msg();
@@ -474,7 +480,11 @@ sub update_local {
 
     foreach my $br (uniq sort (@$l_br, @$r_br)) {
         my $gone_tag = "rm/$br";
-        if (exists $l_br{$br} && exists $r_br{$br}) {
+        if (exists $r_br{$br} && exists $tag{$gone_tag}) {
+            die "Confused by presence of remote branch and deletion tag for $br.\n";
+            # bug in whatever made the tag, or failed to remove the remote branch?
+            # version being reincarnated?  (an unlikely event)
+        } elsif (exists $l_br{$br} && exists $r_br{$br}) {
             # update the local tracking branch
             print STDERR "** "; # prefix for git-checkout noise,
                                 # which we keep to explain rebase actions
@@ -486,9 +496,13 @@ sub update_local {
             # local branch has no remote
             if (exists $tag{$gone_tag}) {
                 # remote thinks it's gone
+                print "** Tag $gone_tag: $br is gone\n";
+                die "Did not expect 'root' to disappear" if $br eq 'root';
                 run(checkout => qw( git checkout -q ), $br, '--');
-                run(decommissioned_version_ff => qw( git merge --ff ), $gone_tag);
+                run(decommissioned_version_ff => qw( git merge --ff-only ), $gone_tag);
                 # if that fails, user has outstanding commits on a dead version
+                run(decommissioned_co_other => qw ( git checkout -q root -- ));
+                print " >> OK - you had no local commits awaiting push\n";
                 run(decommissioned_version_rm => qw( git branch -D ), $br);
                 delete $l_br{$br};
             } else {
@@ -500,12 +514,11 @@ sub update_local {
         } elsif (exists $r_br{$br}) {
             # new remote
             run(checkout => qw( git checkout -q -b ), $br, "$remote/$br", '--');
-            # in the unlikely event of a version being reincarnated,
-            # and because we don't "git fetch -p --tags"
-            run(no_rm_tag => qw( git tag -d ), $gone_tag) if exists $tag{$gone_tag};
         } # else { this didn't happen }
     }
-    return ();
+
+    # tell of absent branches
+    return map { m{^rm/(\d+)$} ? ($1) : () } @tag;
 }
 
 
