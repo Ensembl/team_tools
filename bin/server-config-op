@@ -512,8 +512,9 @@ sub update_local {
 # branch or another version.  Versions should be made with $op='next'
             }
         } elsif (exists $r_br{$br}) {
-            # new remote
-            run(checkout => qw( git checkout -q -b ), $br, "$remote/$br", '--');
+            # new remote - make local tracking branch
+            print "** "; # prefix for git-checkout noise
+            run(checkout => qw( git checkout -q -t ), "$remote/$br", '--');
         } # else { this didn't happen }
     }
 
