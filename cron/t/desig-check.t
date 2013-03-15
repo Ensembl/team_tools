@@ -53,12 +53,14 @@ foreach my $holtdir (@holtdir) {
     my %want_nondes = map {( $_ => $desig->{$_} )}
       grep { /^\d+$/ } keys %$desig;
 
-    is_deeply(\%got_ln, \%want_ln, "Symlinks in $holtdir") &&
-      is_deeply(\%got_nondes, \%want_nondes, "Non-designated in $holtdir")
-        or diag Dump({ desig => $desig,
-                       got_non_designated => \%got_nondes,
-                       want_non_designated => \%want_nondes,
-                       got_ln => \%got_ln, want_ln => \%want_ln });
+    my $pass = 1;
+    $pass = 0 unless is_deeply(\%got_ln, \%want_ln, "Symlinks in $holtdir");
+    $pass = 0 unless is_deeply(\%got_nondes, \%want_nondes, "Non-designated in $holtdir");
+    diag Dump({ desig => $desig,
+                got_non_designated => \%got_nondes,
+                want_non_designated => \%want_nondes,
+                got_ln => \%got_ln, want_ln => \%want_ln })
+      unless $pass;
 }
 
 foreach my $dir (map {"/nfs/WWWdev/SANGER_docs/$_/otter"} qw( lib cgi-bin )) {
