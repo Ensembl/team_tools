@@ -1,0 +1,13 @@
+# Set up local::lib ~/p5-anacode, with Otterlace at required release:
+#
+export OTTER_HOME=/software/anacode/otter/otter_rel73
+source /software/anacode/bin/setup_anacode_env
+eval $( /software/perl-5.12.2/bin/perl -Mlocal::lib=~/p5-anacode )
+
+# Bootstrap cpanm - I used an install in my default local::lib:
+# ~/perl5/bin/cpanm App::cpanminus
+
+# Install pre-reqs:
+#
+cpanm DBIx::Class::Schema::Loader
+cpanm SQL::Translator

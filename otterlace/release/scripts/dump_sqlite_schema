@@ -1,0 +1,44 @@
+#!/usr/bin/env perl
+
+use DBIx::Class::Schema::Loader qw(make_schema_at);
+use File::Copy;
+use File::Spec;
+use File::Temp;
+use Readonly;
+
+use Bio::Otter::Server::Config;
+
+Readonly my $DATASET      => 'human';
+Readonly my $SCHEMA_CLASS => 'Loutre';
+Readonly my $TARGET_DBM   => 'SQLite';
+Readonly my $DEST_PATH    => 'loutre_schema_sqlite.sql';
+
+sub main {
+    my $dump_dir = File::Temp->newdir;
+
+    my $ds = Bio::Otter::Server::Config->SpeciesDat->dataset($DATASET);
+    my $dbh = $ds->otter_dba->dbc->db_handle;
+
+    my $connect_info = [ sub { return $dbh; } ]; # see connect_info() in perldoc DBIx::Class::Storage::DBI
+
+    make_schema_at($SCHEMA_CLASS, { naming => 'current' }, $connect_info );
+
+    my $connected_schema = $SCHEMA_CLASS->connect($connect_info);
+    $connected_schema->create_ddl_dir(
+        [ $TARGET_DBM ],
+        $DATASET,               # abusing the version field
+        $dump_dir,
+        undef,
+        { add_drop_table => 0 },
+        );
+
+    my $dumped_filename = sprintf('%s-%s-%s.sql', $SCHEMA_CLASS, $DATASET, $TARGET_DBM);
+    my $dumped_path = File::Spec->catfile($dump_dir, $dumped_filename);
+
+    move($dumped_path, $DEST_PATH);
+}
+
+main;
+exit;
+
+# EOF
