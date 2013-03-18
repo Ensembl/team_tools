@@ -29,7 +29,10 @@ sub main {
         $DATASET,               # abusing the version field
         $dump_dir,
         undef,
-        { add_drop_table => 0 },
+        {
+            add_drop_table => 0,
+            producer_args  => { no_transaction => 1 },
+        },
         );
 
     my $dumped_filename = sprintf('%s-%s-%s.sql', $SCHEMA_CLASS, $DATASET, $TARGET_DBM);
