@@ -34,15 +34,15 @@ server-config-op - operate on Otter Server config repository
  git commit -m 'fixed another thing'
 
  git checkout dev
- server-config-op merge
- # changes from branches (65, 66, root) are merged in their subdirectories
- git push
+ git pull
+ # 'origin' server will have done the merge from branches (65, 66,
+ # root) are merged in their subdirectories
 
 =head1 DESCRIPTION
 
 =over 4
 
-=item server-config-op update [ <remote> ]
+=item server-config-op < update | up > [ <remote> ]
 
 Fetch all the remote tracking branches (with prune option), and tags.
 Then ensure all corresponding local branches exist, rebasing any local
@@ -242,7 +242,7 @@ sub main {
         my $changed = make_merge(@vsn);
         apply_commit() if !$BARE && $changed;
 
-    } elsif ($op eq 'update') {
+    } elsif ($op =~ /^up(date)?$/) {
         my $remote = @ARGV ? shift @ARGV : 'origin';
         @r_br = map { m{^\*?\s+$remote/(\S+)$} ? ($1) : () } @r_br;
         @l_br = map { m{^\*?\s+(\S+)$}         ? ($1) : () } @l_br;
