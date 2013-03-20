@@ -1,10 +1,12 @@
-#! /bin/sh
+#! /bin/bash
+# Bash: regex
 
 # curl wrapper to
 #   - take Otterlace's cookie for WTSISignOn; assume it is current
 #   - zcat if necessary
 #   - avoid the proxy
 #   - be quiet
+#   - fill in the base URL & version (live) from client config
 
 unset http_proxy
 unset HTTP_PROXY
@@ -21,5 +23,34 @@ zcat_maybe() {
    print $data;
  }'
 }
+
+# accept shortcuts like qw( test 73/test ~mca/73/test )
+if ! [[ "$1" =~ ^(https?:|/) ]]; then
+    set -e
+    url="$( PERL5LIB= perl \
+ -I/software/anacode/otter/otter_live/ensembl-otter/modules \
+ -MBio::Otter::Version -MConfig::IniFiles -E '
+
+ my $url = shift;
+ my $c;
+ foreach $fn (@ARGV) {
+   $c = Config::IniFiles->new(-file => $fn, -import => $c) if -f $fn;
+ }
+ my $base = $c->val(qw( client url ));
+ $base =~ s{/+$}{};
+ $base =~ s{~[^/]+$}{} if $url =~ m{^~};
+
+ my @url = ($base);
+ if ($url =~ m{(^|/)\d{2,3}/}) {
+   push @url, "/" unless $1 eq "/";
+ } else {
+   push @url, "/", Bio::Otter::Version->version, "/";
+ }
+ push @url, $url;
+ print join "", @url;
+ ' "$1" ~/.otter_config ~/.otter/config )"
+    echo Fetch url=$url >&2
+    set -- $url
+fi
 
 curl -s -b ~/.otter/ns_cookie_jar "$@" | zcat_maybe
