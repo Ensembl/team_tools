@@ -54,6 +54,13 @@ goto_build_root () {
 extra_cflags="-arch i386 -mmacosx-version-min=10.5 -isysroot /Developer/SDKs/MacOSX10.5.sdk"
 export MACOSX_DEPLOYMENT_TARGET=10.5
 
+# Specify which X libraries to use
+
+x_base="${install_base}"
+
+config_x_includes="--x-includes=${x_base}/include"
+config_x_libraries="--x-libraries=${x_base}/lib"
+
 # Now we need access to some of our local tools
 export PATH="${install_base}/bin:${PATH}"
 
@@ -66,7 +73,7 @@ _do_config_make () {
     (
 	cd "${src_dir}"
 
-	CFLAGS="${extra_cflags}" ./configure --prefix="${prefix}"
+	CFLAGS="${extra_cflags}" ./configure --prefix="${prefix}" "${config_x_includes}" "${config_x_libraries}"
 	make
 
     )
