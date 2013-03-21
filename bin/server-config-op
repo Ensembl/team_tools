@@ -449,6 +449,10 @@ sub make_merge {
             mkdir $ENV{GIT_WORK_TREE}; # must exist, but isn't used
         }
         run(commit => qw( git commit -m ), qq{Merged (@diff_br)\n});
+        my $CEM = "$GIT_DIR/COMMIT_EDITMSG";
+        unlink $CEM # tidy up, to avoid permission problems next time
+          or warn "unlink $CEM failed: $!";
+
         return 1;
 
     } else {
