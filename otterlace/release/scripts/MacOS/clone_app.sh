@@ -64,7 +64,7 @@ cp -a ${source_install_base}/* "${target_install_base}/"
 
 echo "Copying ${contents_macos_path}..."
 mkdir -v -p "${target_macos}"
-cp -a ${source_macos}/* "${target_macos}/"
+cp -a ${source_macos}/* "${target_macos}/" || echo "No ${source_macos} - skipping on...."
 
 copy_non_dist "${source_non_dist}" "${target_non_dist}" 'exclude_macports_build'
 
