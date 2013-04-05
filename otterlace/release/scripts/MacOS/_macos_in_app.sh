@@ -7,9 +7,6 @@
 # assume we're being run in the top-level app dir, e.g. otterlace.app
 app_base="${PWD}"
 
-# based on this script being in $TT/otterlace/release/scripts/MacOS ...
-etc_macos="${macos_scripts}/../../etc/MacOS"
-
 install_base="${app_base}/${resources_path}"
 
 # side-effects: sets $unpacked_tarball

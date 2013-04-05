@@ -1,0 +1,11 @@
+# List of top-level directories in Contents/Resources which should not be distributed
+
+-share
+-var
+
+# List of exceptions which should be distributed
+# (mechanism only supports immediate child directories)
+
++share/X11
+
+# EOF
