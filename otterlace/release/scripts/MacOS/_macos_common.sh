@@ -25,4 +25,8 @@ non_dist_dirs() {
     echo "$( grep '^-' "${etc_macos}/non_dist.list" | sed -e 's/^-//' )"
 }
 
+non_dist_exceptions() {
+    echo "$( grep '^+' "${etc_macos}/non_dist.list" | sed -e 's/^+//' )"
+}
+
 # EOF

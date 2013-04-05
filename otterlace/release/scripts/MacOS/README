@@ -61,6 +61,14 @@ cleanup_ports.sh
   # Also removes static libraries (except libperl.a).
 
 
+import_dist_extras.sh
+
+  # Brings back into the tree those parts of share and var which
+  # are needed for successful operation of the application.
+  #
+  # Specified in etc/MacOS/non_dist.list.
+
+
 install_annotools_prereqs.sh <path to zmap build directory>
 
   # compiles and installs ACEDB and libAceConn, which don't need to
