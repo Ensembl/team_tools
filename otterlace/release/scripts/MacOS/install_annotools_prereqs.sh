@@ -9,6 +9,11 @@ port_sanity_check || exit 3
 check_set_zmap_build_dir_from_arg "$@"
 goto_build_root
 
+# Cleanup
+
+echo "Removing previous ACEDB and libAceConn builds, if any"
+rm -rf ACEDB-* libAceConn-*
+
 # ACEDB
 
 acedb_tarball="${zmap_dist_dir}/ACEDB-*.src.tar.gz"
