@@ -29,11 +29,11 @@ echo "Removing empty target Resources contents"
 rm -r ${target_install_base}/*
 
 echo "Copying main contents..."
-cp -a ${source_install_base}/* "${target_install_base}/"
+cp -pR ${source_install_base}/* "${target_install_base}/"
 
 echo "Copying ${contents_macos_path}..."
 mkdir -v -p "${target_macos}"
-cp -a ${source_macos}/* "${target_macos}/" || echo "No ${source_macos} - skipping on...."
+cp -pR ${source_macos}/* "${target_macos}/" || echo "No ${source_macos} - skipping on...."
 
 copy_non_dist "${source_non_dist}" "${target_non_dist_path}" 'exclude_macports_build'
 

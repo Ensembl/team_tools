@@ -55,7 +55,7 @@ subdivide_parent() {
             src="$( readlink "${child}" )"
             tmp="_tmp_import_${child}"
             echo "Copying contents of '${child}' from '${src}'"
-            cp -a "${src}" "${tmp}"
+            cp -pR "${src}" "${tmp}"
             rm "${child}"       # get rid of link
             mv "${tmp}" "${child}"
         else
