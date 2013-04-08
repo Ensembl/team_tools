@@ -40,11 +40,19 @@ zmap_acedb_binaries='tace sgifaceserver xremote'
     install_binaries "bin.${acedb_machine}" "${stage_prefix}/bin" $zmap_acedb_binaries
 )
 
-# libAceConn
+if [ -d "${zmap_build_dir}/ZMap/src/libAceConn" ]; then
 
-libaceconn_tarball="${zmap_dist_dir}/libAceConn-*.tar.gz"
-unpack_matching_tarball "${libaceconn_tarball}" "libAceConn-"
-libaceconn_src="${unpacked_tarball}"
-config_make_install "${libaceconn_src}"
+    echo "looks like libAceConn is part of ZMap, so skipping it here."
+
+else
+
+    # libAceConn
+
+    libaceconn_tarball="${zmap_dist_dir}/libAceConn-*.tar.gz"
+    unpack_matching_tarball "${libaceconn_tarball}" "libAceConn-"
+    libaceconn_src="${unpacked_tarball}"
+    config_make_install "${libaceconn_src}"
+
+fi
 
 exit 0
