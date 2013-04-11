@@ -213,7 +213,14 @@ setup_globals() {
     otter_ipath_get otter_home
 
 
-    ensembl_cvs_flags="-r branch-ensembl-${client_ensembl_version}"
+    if [[ "${client_ensembl_version}" =~ ^[0-9]+$ ]]
+    then
+        # ordinarily just a verson number, so turn it into a tag
+        ensembl_cvs_flags="-r branch-ensembl-${client_ensembl_version}"
+    else
+        # for anything else, we assume it's the whole tag
+        ensembl_cvs_flags="-r ${client_ensembl_version}"
+    fi
     # (ensembl libs on the server are provided by the web team)
 }
 
