@@ -35,7 +35,7 @@ foreach my $holtdir (@holtdir) {
         my ($maj, $min) =
           $vsn =~ m{_rel(\d+)(?:\.(\d+))?$} or
             die "Incomprehensible otter client $holtdir/$vsn";
-        $got_nondes{$maj} = defined $min ? "$maj.$min" : 'dev';
+        $got_nondes{$maj} = defined $min ? "$maj.$min" : $maj;
         $major{$maj} = 1;
     }
 
