@@ -374,9 +374,18 @@ otterlace_client_install_scripts() {
 }
 
 otterlace_client_install_zmap() {
-    local install_dir bin_dir build_dir
+    local install_dir bin_dir
     install_dir="$1"
     bin_dir="${install_dir}/bin"
+    mkdir -p -- "$bin_dir" &&
+    build_lib__$( milestone_zircon ) &&
+    cp -- ${zmap_prefix}/bin/{zmap,tace,sgifaceserver,blixemh,dotter,belvu} "$bin_dir" &&
+    cp -r -- "${zmap_prefix}/share" "$install_dir" &&
+    true
+}
+
+build_lib__xremote() {
+    local build_dir
     build_dir="/tmp/otterlace_xremote_build/$$"
     rm -rf -- "$build_dir" &&
     mkdir -p -- "$build_dir" &&
@@ -396,9 +405,7 @@ otterlace_client_install_zmap() {
         make install &&
         rm -rf -- "$build_dir" &&
         true ) &&
-    mkdir -p -- "$bin_dir" &&
-    cp -- ${zmap_prefix}/bin/{zmap,tace,sgifaceserver,blixemh,dotter,belvu,xremote} "$bin_dir" &&
-    cp -r -- "${zmap_prefix}/share" "$install_dir" &&
+    cp -- ${zmap_prefix}/bin/xremote "$bin_dir" &&
     true
 }
 
