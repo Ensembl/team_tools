@@ -246,6 +246,26 @@ print join q{ }, @out;
 }
 
 
+milestone_zircon() {
+    # run in ensembl-otter working copy
+    local zirc xrem
+    git grep -qE '^ *use Zircon::'       >/dev/null && zirc=1
+    git grep -qE '^ *use X11::XRemote\>' >/dev/null && xrem=1
+
+    if [ -n "$zirc" ] && [ -z "$xrem" ]; then
+        echo zircon
+    elif [ -n "$xrem" ] && [ -z "$zirc" ]; then
+        echo xremote
+    else
+        {
+            printf '\nI can see these libraries being used\n'
+            git --no-pager grep -nE '^ *use (Zircon::|X11::XRemote\>)' | sed -e 's/^/  /'
+        } >&2
+        bail "milestone_zircon: puzzled, cannot build"
+    fi
+}
+
+
 
 # Related scripts assume that $( cd foo; echo bar ) chdir(./foo) and
 # capture only bar .  CDPATH breaks these assumptions.  It would be
