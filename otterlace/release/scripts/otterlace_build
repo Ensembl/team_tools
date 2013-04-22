@@ -204,6 +204,7 @@ setup_globals() {
     : ${build_log:=/nfs/anacode/otterlace/ensembl_otter_build_log}
     anacode_cvsroot=:ext:cvs.internal.sanger.ac.uk:/repos/cvs/anacode
     ensembl_cvsroot=:ext:cvs.sanger.ac.uk:/cvsroot/ensembl
+    default_zircon=intcvs1:/repos/git/anacode/zircon.git
     # / EXTERNAL PARAMETERS
 
     # check early, else it will be too late
@@ -406,6 +407,30 @@ build_lib__xremote() {
         rm -rf -- "$build_dir" &&
         true ) &&
     cp -- ${zmap_prefix}/bin/xremote "$bin_dir" &&
+    true
+}
+
+build_lib__zircon() {
+    local build_dir gitsrc
+    build_dir="$( mktemp --tmpdir -d otterlace_build.zircon.XXXXXX )" || \
+        bail "Failed to mktemp -d"
+    if [ -n "$ANACODE_ZIRCON" ]; then
+        git diff --cached --quiet && git diff --quiet || \
+            bail "Would source HEAD of ANACODE_ZIRCON=$ANACODE_ZIRCON but it has uncommitted changes"
+        gitsrc="$ANACODE_ZIRCON"
+    else
+        gitsrc="$default_zircon"
+    fi
+    git clone -q "$gitsrc" "$build_dir" &&
+    (
+        cd "$build_dir" &&
+        perl Makefile.PL INSTALL_BASE="${install_dir}" \
+            INSTALLMAN3DIR=none &&
+        make &&
+        make test &&
+        make install &&
+        rm -rf -- "$build_dir" &&
+        true ) &&
     true
 }
 
