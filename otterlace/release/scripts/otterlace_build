@@ -57,7 +57,7 @@ get_opts_inputvars() {
                 ;;
             --local-client-only | -L)
                 [ -n "$otterlace_client_host" ] \
-                    && bail "Was abot to overwrite otterlace_client_host='$otterlace_client_host'"
+                    && bail "Was about to overwrite otterlace_client_host='$otterlace_client_host'"
                 otterlace_client_host="$( hostname )"
                 local_client_only=1
                 ;;
