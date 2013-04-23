@@ -379,7 +379,12 @@ otterlace_client_install_zmap() {
     install_dir="$1"
     bin_dir="${install_dir}/bin"
     mkdir -p -- "$bin_dir" &&
-    build_lib__$( milestone_zircon ) &&
+    if [ "$version_major" -ge 75 ]; then
+        build_lib__zircon
+    fi &&
+    if [ -z "$( git branch --merged | grep '\<feature/zircon\>$' )" ] ; then
+        build_lib__xremote
+    fi &&
     cp -- ${zmap_prefix}/bin/{zmap,tace,sgifaceserver,blixemh,dotter,belvu} "$bin_dir" &&
     cp -r -- "${zmap_prefix}/share" "$install_dir" &&
     true
