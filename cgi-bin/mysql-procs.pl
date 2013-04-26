@@ -173,13 +173,13 @@ sub show_conn {
     my $hstatus = '';
     if (defined $status) {
 	my %status = map {($_->[0], $_->[1])} @$status; # rows of (key, value)
-	my $up = $status{'Uptime'};
+	my $up = $status{'Uptime'}; # also 'Uptime_since_flush_status' would be useful
 	my $d = int($up / 86400); $up -= $d * 86400;
 	my $h = int($up /  3600); $up -= $h *  3600;
 	$RO .= ' <span class="mode">slave</span>' if $status{'Slave_running'} eq 'ON';
 	$hstatus = join ", ", sprintf('Up %dd %dh %dm', $d, $h, int($up / 60)),
 	  map {escapeHTML("$_ = $status{$_}")}
-            qw( Slave_running Threads_connected Threads_running );
+            qw( Slave_running Threads_connected Threads_running Max_used_connections );
     }
 
     my $hdr = qq{ <tr><th colspan="3"> $RO <a name="$hdbinst"> <h2>$hdbinst</h2> </a></th><td colspan="4">$hvars</td><td>$hstatus</td></tr>\n};
