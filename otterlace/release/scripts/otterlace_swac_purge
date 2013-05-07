@@ -1,4 +1,5 @@
 #! /software/bin/perl-5.12.2
+# -*- perl -*-
 use strict;
 use warnings;
 use File::Slurp 'read_dir';
