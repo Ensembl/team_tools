@@ -21,6 +21,8 @@ my %major; # set of versions with clients, key = major
 
 my @holtdir = map {"/software/noarch/linux-$_/anacode/otter"} qw( i386 x86_64 );
 foreach my $holtdir (@holtdir) {
+    diag "In $holtdir";
+
     # List designated versions
     my @holt_leaf = read_dir($holtdir);
     my %got_ln =
@@ -28,15 +30,21 @@ foreach my $holtdir (@holtdir) {
         grep { -l $_ && $_ !~ m{/otter_production_main} }
           map {"$holtdir/$_"} @holt_leaf;
 
+    my @dev_feat; # notice feature-branch dev builds so we can subtract their designating symlinks
+
     # List other non-designated version
     my %got_nondes; # key = major, val = latest major.minor
     foreach my $vsn (sort grep { ! -l "$holtdir/$_" && -d _ } @holt_leaf) {
         # "latest" minor version is given by loop's sort
-        my ($maj, $min) =
-          $vsn =~ m{_rel(\d+)(?:\.(\d+))?$} or
+        my ($maj, $min, $feat) =
+          $vsn =~ m{_rel(\d+)(?:\.(\d+)|_(\w+))?$} or
             die "Incomprehensible otter client $holtdir/$vsn";
-        $got_nondes{$maj} = defined $min ? "$maj.$min" : $maj;
-        $major{$maj} = 1;
+        if (defined $feat) {
+            push @dev_feat, "${maj}_$feat";
+        } else {
+            $got_nondes{$maj} = defined $min ? "$maj.$min" : $maj;
+            $major{$maj} = 1;
+        }
     }
 
     # Build expected designation list
@@ -45,9 +53,21 @@ foreach my $holtdir (@holtdir) {
 
     # Build expected non-designated list
     while (my ($k, $v) = each %got_ln) {
-        my ($maj, $min) =
-          $v =~ m{_rel(\d+)(?:\.(\d+))?$} or
+        my ($maj, $min, $feat) =
+          $v =~ m{_rel(\d+)(?:\.(\d+)|_(\w+))?$} or
             die "Incomprehensible otter client $k => $v";
+        if (defined $feat) {
+            my @found_feat = grep { "${maj}_$feat" eq $_ } @dev_feat;
+            if (@found_feat) {
+                # valid feature branch designation - won't be part of
+                # %want_ln because designations.txt doesn't include
+                # them
+                delete $got_ln{$k};
+            } else {
+                # didn't see the directory, provoke a failure
+                $got_ln{$k} = "$v (feature branch dangles)";
+            }
+        }
         delete $got_nondes{$maj};
     }
     my %want_nondes = map {( $_ => $desig->{$_} )}
@@ -61,6 +81,8 @@ foreach my $holtdir (@holtdir) {
                 want_non_designated => \%want_nondes,
                 got_ln => \%got_ln, want_ln => \%want_ln })
       unless $pass;
+
+    diag "Saw feature branches: @dev_feat\n" if @dev_feat;
 }
 
 foreach my $dir (map {"/nfs/WWWdev/SANGER_docs/$_/otter"} qw( lib cgi-bin )) {
