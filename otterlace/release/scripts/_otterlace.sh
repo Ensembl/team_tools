@@ -131,7 +131,7 @@ _whatami() {
 # recursion; avoid duplicated calculations; avoid array variables.
 otter_ipath_get() {
     local __varname __key __out \
-        version_major full_version swac nfswub otterhome_suffixing \
+        version_major version_minor full_version swac nfswub otterhome_suffixing \
         _oig_holtdir _oig_otter_home _oig_bin _oig_wrapperfile
 
     __varname="$1"
@@ -139,7 +139,11 @@ otter_ipath_get() {
     [ -z "$__varname" ] && __varname='__out' # will send to STDOUT
 
     config_get version_major
-    full_version="$( full_version )" || bail "Cannot get version number"
+    config_get version_minor
+    feature="$( _feature_get )"
+    full_version="$version_major"
+    [ -n "$feature" ] && full_version="${full_version}_${feature}"
+    [ -n "$version_minor" ] && full_version="${full_version}.${version_minor}"
 
     if [ -n "$otter_suffix" ]; then
         # override from environment; slightly deprecated, but probably
@@ -209,6 +213,12 @@ otter_ipath_get() {
         *) bail "otter_ipath_get: unknown key '$__key'"
     esac
     [ "$__varname" = '__out' ] && printf %s "$__out"
+}
+
+
+_feature_get() {
+    git branch |
+    sed -n -e 's|^\*[[:blank:]]\+feature/\([-_[:alnum:]]\+\).*$|\1|p'
 }
 
 
