@@ -26,9 +26,6 @@ done
 [ "$#" = 1 ] || bail "Syntax: $0 [ -n | --dry-run ] <track>"
 track="$1"
 
-# e.g. 58.01 (for a release) or 59 (during dev)
-version="$( full_version )"
-
 otter_ipath_get holtdir
 otter_ipath_get otter_home
 
