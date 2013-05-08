@@ -24,6 +24,7 @@ sub import {
 
     my ($tt_rc, %criticrc);
     if ($tt_rc = $ENV{ANACODE_PERLCRITICRC} and -r $tt_rc) {
+        Test::Builder->new->note("Using perlcriticrc: $tt_rc");
         $criticrc{'-profile'} = $tt_rc;
     }
 
