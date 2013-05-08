@@ -8,6 +8,14 @@ our @EXPORT = qw(critic_module_ok); ## no critic (ProhibitAutomaticExportation)
 
 use File::Spec;
 
+BEGIN {
+    # Ensure team_tools/perl/lib is in INC before loading perl critic
+    my $tt;
+    if ($tt = $ENV{ANACODE_TEAM_TOOLS} and -d $tt) {
+        unshift(@INC, File::Spec->catfile($tt, 'perl', 'lib'));
+    }
+}
+
 use Test::Builder;
 use Test::Perl::Critic;
 
