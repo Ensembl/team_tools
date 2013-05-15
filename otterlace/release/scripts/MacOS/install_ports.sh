@@ -20,4 +20,6 @@ while read entry; do
 
 done < "${ports_list}"
 
+# FIXME: strip local paths from ${install_base}/etc/fonts/fonts.conf
+
 exit 0
