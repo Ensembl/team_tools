@@ -50,4 +50,9 @@ samtools
 #
 p5-test-perl-critic
 
+# ensembl testing
+#
+p5-devel-cycle
+p5-padwalker
+
 # EOF
