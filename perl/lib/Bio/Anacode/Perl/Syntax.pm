@@ -26,4 +26,17 @@ $INC{$_}++ for
 
     ;
 
+# Bring in stubs.
+# They are kept separate because most other code does not want to
+# accidentally load them.
+require lib;
+my $dir = __FILE__;
+my $subdir = 'stubs.syntax_check';
+if ($dir =~ s{/lib/Bio/Anacode/Perl/Syntax\.pm$}{} &&
+    -d "$dir/$subdir") {
+    lib->import("$dir/$subdir");
+} else {
+    die "Cannot find my $subdir relative to $dir";
+}
+
 1;
