@@ -9,10 +9,6 @@ details.
   prove_quietly		use the 'prove' tool to run some periodic
   t/			sanity checks.
 
-  bg.mrconfig		config for mr(1) which mca uses to maintain
-   [experimental]	~/gitwk--bg/ as a stable production
-			environment, separate from other development.
-
   lib/			modules used only in this subproject.
 
 
