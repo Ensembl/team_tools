@@ -1,5 +1,5 @@
 #!/bin/bash
-# Bash for ${substs}, bitwise arithmetic
+# Bash for ${sub:st:s}, regexps, {brace,expansion}, ...
 
 
 # TO DO
@@ -109,6 +109,22 @@ get_opts_inputvars() {
         cd "$ensembl_otter_root"
     else
         ensembl_otter_root="$( pwd )"
+    fi
+
+    # sanity check for the remote phases
+    if [ -n "$local_client_only" ] ||
+        [ "$client_build_hosts" = ' ' ] ||
+        ! [[ ~ =~ /nfs/ ]]; then
+        # Probably OK, not a remote build
+        :
+    elif [[ "$ensembl_otter_root" =~ /(nfs|software|warehouse)/ ]] &&
+        [[ "$zmap_trees" =~ /(nfs|software|warehouse)/ ]]; then
+        # Probably OK, sources are remote
+        :
+    else
+        printf "\n [W] Are we about to build remotely from local filesystem?\n\n   e-o = %s\n  zmap = %s\n     ~ = %s\n\n(wait 3 sec...)\n" \
+            "$ensembl_otter_root" "$zmap_trees" ~ >&2
+        sleep 3
     fi
 }
 
