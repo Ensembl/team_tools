@@ -28,6 +28,7 @@ p5-config-inifiles
 p5-mac-propertylist
 p5-log-log4perl
 p5-file-slurp
+p5-test-differences
 
 # graphics
 #
