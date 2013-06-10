@@ -420,7 +420,7 @@ build_lib__zircon() {
     build_dir="$( mktemp -d -t otterlace_build.zircon.XXXXXX )" || \
         bail "Failed to mktemp -d"
     if [ -n "$ANACODE_ZIRCON" ]; then
-        git diff --cached --quiet && git diff --quiet || \
+        ( cd "$ANACODE_ZIRCON" && git diff --cached --quiet && git diff --quiet ) || \
             bail "Would source HEAD of ANACODE_ZIRCON=$ANACODE_ZIRCON but it has uncommitted changes"
         gitsrc="$ANACODE_ZIRCON"
     else
