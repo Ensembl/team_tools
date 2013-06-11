@@ -1,4 +1,5 @@
 #!/bin/bash
+# Bash for ${substs}, bitwise arithmetic
 
 
 # TO DO
@@ -543,7 +544,7 @@ otterlace_client_install() {
 }
 
 otterlace_install_all() {
-    local env_cmd ssh_cmd
+    local env_cmd ssh_cmd fails status
 
     if [ "$client_build_hosts" = ' ' ]; then
         # This value started off as a quick hack to persuade existing
@@ -559,7 +560,7 @@ otterlace_install_all() {
             || bail "Bad zmap builds?  No build hosts - no build"
     fi
 
-    otterlace_server_install &&
+    otterlace_server_install || fails="server:$?"
     for host in $client_build_hosts; do
         export zmap_build="$( _otterlace_build_config.pl -host $host $zmap_trees )" \
             || bail "No zmap_build for $host ..?"
@@ -570,10 +571,20 @@ otterlace_install_all() {
 
         ssh_cmd="ssh -A $host  env $env_cmd otterlace_client_host=$host  $0"
         printf "\n== Client build: $ssh_cmd\n"
-        $ssh_cmd || write_build_log_entry --level client --failed "returned $?"
+        $ssh_cmd
+        status=$?
+        if [ "$status" != 0 ]; then
+            write_build_log_entry --level client --failed "returned $status"
+            fails="$fails${fails:+" "}client,$host:$status"
+        fi
     done
 
-    write_build_log_entry --level all
+    if [ -z "$fails" ]; then
+        write_build_log_entry --level all
+    else
+        write_build_log_entry --level all --failed "$fails"
+        ( exit 1 )
+    fi
 }
 
 write_build_log_entry() {
