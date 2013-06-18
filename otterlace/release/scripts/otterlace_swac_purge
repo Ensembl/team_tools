@@ -116,7 +116,13 @@ sub cleanup {
     ### sanity check the symlinks
     #
     # first put them in expected order of major version
-    my @desig = sort keys %desig;
+    my @other_keep; # major versions list
+    my @other_desig = grep { not /^(old|live|dev|test)$/ } keys %desig;
+    my @desig =  sort grep {     /^(old|live|dev|test)$/ } keys %desig;
+    if (@other_desig) {
+        @other_keep = sort { $a <=> $b } map { $desig{$_}->[0] } @other_desig;
+        warn "[i] Noticed non-temporal designations (@other_desig) => keep (@other_keep)\n";
+    }
     if ("@desig" eq 'dev live old') {
         @desig = qw( old live dev );
     } elsif ("@desig" eq 'live old') {
@@ -143,7 +149,7 @@ sub cleanup {
     die "n => $n, live => $live ...?" unless $live >= $n;
 
     # make byebye list
-    my @drop = whittle(\@keep, $desig_vsn[0], $live, @fn);
+    my @drop = whittle(\@keep, $desig_vsn[0], $live, \@other_keep, @fn);
     warn "[i] $desig_list.  OK\n";
 
     # check we're not keeping and dropping (!)
@@ -176,7 +182,7 @@ sub nodup {
 
 
 sub whittle {
-    my ($keep, $old, $live, @fn) = @_;
+    my ($keep, $old, $live, $keep_major, @fn) = @_;
 
     my @drop;
     my %old; # key = major, value = { $minor => \@fn }
@@ -187,7 +193,7 @@ sub whittle {
         if (!-d $fn || !defined $major) {
             warn "[w] Skipping incomprehensible $fn\n";
             push @$keep, $fn;
-        } elsif ($major >= $old) {
+        } elsif ($major >= $old || grep { $major == $_ } @$keep_major) {
             # has a designation symlink - keep all
             push @$keep, $fn;
         } elsif ($major <= $live - 6) {
