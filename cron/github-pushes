@@ -41,10 +41,10 @@ setup_vars() {
 
 all_repos() {
     REFS_WHITE='refs/tags/(humpub-release-.*|initial_empty_commit|cvs_MAIN_final|info/.*)|origin/humpub-branch-.*'
-    REFS_BLACK='origin/master|origin/(feature|jgrg|jh13|mca|mg13|tmp)/.*|refs/tags/cvs/.*'
+    REFS_BLACK='origin/master|origin/(feature|jgrg|jh13|mca|mg13|tmp)/.*|refs/tags/(cvs|feature)/.*'
     MAKE_MASTER_RE='tags/humpub-release-(\d+)-dev$'
     FROM_REMOTE='origin'
-    REPO="$HOME/gitwk-anacode/ensembl-otter"
+    REPO="$HOME/gitwk--bg/ensembl-otter"
     TO_REMOTE='git@github.com:Anacode/ensembl-otter.git'
     do_push
     # Blacklist rationale:
@@ -107,7 +107,8 @@ do_push() {
     set -e
 
     cd $REPO
-    git fetch -q $FROM_REMOTE
+    $ECHO '>git' fetch -p -q $FROM_REMOTE
+    git          fetch -p -q $FROM_REMOTE
 
     export REFS_WHITE REFS_BLACK FROM_REMOTE MAKE_MASTER_RE
     push_refs=$( list_refs | munge_refs ) || {
@@ -120,7 +121,7 @@ do_push() {
         exit 1
     fi >&2
     $ECHO '>git' push $PUSHOPTS $TO_REMOTE $push_refs
-    git push $PUSHOPTS $TO_REMOTE $push_refs
+    git          push $PUSHOPTS $TO_REMOTE $push_refs
 }
 
 setup_vars "$@"
