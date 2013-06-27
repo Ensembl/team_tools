@@ -54,9 +54,9 @@ sub main {
 #	 [ \&be_readonly, "mca_loutremouse_schema" ], # test would fail because writable
        ],
       );
-    my %slave = (otterlive => "mcs30",
+    my %slave = (otterlive => "otlpslave",
 		 otterpipe1 => "otp1slave",
-		 otterpipe2 => "mcs31");
+		 otterpipe2 => "otp2slave");
 
     foreach my $wantrow (@want) {
 	my ($hostport, $user, $pass, @morechecks) = @$wantrow;
@@ -73,7 +73,7 @@ sub main {
 	}
 	$dbh->disconnect if $dbh;
 
-	# check again for the slaves; the password MUST be different
+	# check again for the slaves; the password used to be different
 	# except for ottro
 	my ($master, $port) = host_port($hostport);
 	my $slave = $slave{$master};
