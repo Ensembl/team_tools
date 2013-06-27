@@ -116,11 +116,11 @@ TBL
 }
 
 sub show_databases {
-    my @db = qw( lutra8:3324 lutra5:3322 lutra7:3323 );
+    my @db = qw( vm-mii-otlp:3324 lutra5:3322 lutra7:3323 );
 #    push @db, qw( otterlive:3324 otterpipe1:3322 otterpipe2:3323 ); # new masters
 #    push @db, qw(  otterslave:3312 otterslave:3313 ); # old slaves - dead hardware
-    push @db, qw( lutra6:3322 lutra6:3323 lutra6:3324 ); # new slaves
-    push @db, qw(  mcs30:3322  mcs31:3323  mcs30:3324 ); # Flint Cross slaves
+    push @db, qw( lutra6:3322 lutra6:3323 mcs14:3324 ); # new slaves
+    push @db, qw(  mcs30:3322  mcs31:3323  mcs31:3324 ); # Flint Cross slaves
 
     print "<p>[", (join " | ", map { my $h = escapeHTML($_); qq{<a href="#$_">$_</a>} } @db), "]</p>\n";
 
