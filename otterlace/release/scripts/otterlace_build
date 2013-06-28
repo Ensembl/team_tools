@@ -371,7 +371,12 @@ otterlace_client_install_scripts() {
     [ -n "${2}" ] && src_subdir="scripts/${2}/client"
 
     mkdir -p -- "$install_dir" &&
-    cp -- ${ensembl_otter_root}/${src_subdir}/* "$install_dir" &&
+    if [ -n "$( find ${ensembl_otter_root}/${src_subdir}/ -type f -print -quit )" ]; then
+        cp -- ${ensembl_otter_root}/${src_subdir}/* "$install_dir"
+    else
+        # no files
+        true
+    fi &&
     true
 }
 
