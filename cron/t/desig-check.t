@@ -37,10 +37,11 @@ foreach my $holtdir (@holtdir) {
     foreach my $vsn (sort grep { ! -l "$holtdir/$_" && -d _ } @holt_leaf) {
         # "latest" minor version is given by loop's sort
         my ($maj, $min, $feat) =
-          $vsn =~ m{_rel(\d+)(?:\.(\d+)|_(\w+))?$} or
+          $vsn =~ m{_rel(\d+)(?:\.(\d+))?(?:_(\w+))?$} or
             die "Incomprehensible otter client $holtdir/$vsn";
         if (defined $feat) {
-            push @dev_feat, "${maj}_$feat";
+            $min = '' unless defined $min;
+            push @dev_feat, "${maj}${min}_$feat";
         } else {
             $got_nondes{$maj} = defined $min ? "$maj.$min" : $maj;
             $major{$maj} = 1;

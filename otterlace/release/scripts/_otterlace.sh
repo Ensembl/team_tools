@@ -142,8 +142,8 @@ otter_ipath_get() {
     config_get version_minor
     feature="$( _feature_get )"
     full_version="$version_major"
-    [ -n "$feature" ] && full_version="${full_version}_${feature}"
     [ -n "$version_minor" ] && full_version="${full_version}.${version_minor}"
+    [ -n "$feature" ] && full_version="${full_version}_${feature}"
 
     if [ -n "$otter_suffix" ]; then
         # override from environment; slightly deprecated, but probably
