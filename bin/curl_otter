@@ -7,6 +7,17 @@
 #   - avoid the proxy
 #   - be quiet
 #   - fill in the base URL & version (live) from client config
+#
+# Examples...
+#
+#  With explicit URL and verbosity,
+#   curl_otter -v http://www.sanger.ac.uk/cgi-bin/otter/74/get_accession_types?accessions=P35613.2,B0PJS9.1
+#
+#  Taking server from .otter_config ,
+#    curl_otter 73/test
+#    curl_otter test		# live version
+#    curl_otter \~mca/76/test	# use the per-developer config
+
 
 unset http_proxy
 unset HTTP_PROXY
@@ -24,6 +35,13 @@ zcat_maybe() {
  }'
 }
 
+# accept extra flags to curl
+FLAG=-s
+while [[ "$1" =~ ^- ]]; do
+    FLAG="$FLAG $1"
+    shift
+done
+
 # accept shortcuts like qw( test 73/test ~mca/73/test )
 if ! [[ "$1" =~ ^(https?:|/) ]]; then
     set -e
@@ -37,6 +55,7 @@ if ! [[ "$1" =~ ^(https?:|/) ]]; then
    $c = Config::IniFiles->new(-file => $fn, -import => $c) if -f $fn;
  }
  my $base = $c->val(qw( client url ));
+ $base = qq{http://www.sanger.ac.uk/cgi-bin/otter} if !defined $base;
  $base =~ s{/+$}{};
  $base =~ s{~[^/]+$}{} if $url =~ m{^~};
 
@@ -53,4 +72,4 @@ if ! [[ "$1" =~ ^(https?:|/) ]]; then
     set -- $url
 fi
 
-curl -s -b ~/.otter/ns_cookie_jar "$@" | zcat_maybe
+curl $FLAG -b ~/.otter/ns_cookie_jar "$@" | zcat_maybe
