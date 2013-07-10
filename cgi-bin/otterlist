@@ -341,7 +341,7 @@ sub hoik_compiled_version {
         my @new = $exe =~
 	  m{\x00(ZMap - (?:develop|production|release)?[-_0-9.]+(?:-g[0-9a-f]{4,12})?)[\r\n]*\x00};
 	my @ts = $exe =~
-	  m{\x00($MO3 [ 0-9]\d 20\d{2} \d{2}:\d{2}:\d{2})\x00};
+	  m{(?:\x00|\xff)($MO3 [ 0-9]\d 20\d{2} \d{2}:\d{2}:\d{2})\x00};
 
         if (@new && @ts) {
             ($vsn, $compiled) = ($new[0], $ts[0]);
