@@ -58,12 +58,13 @@ $(document).ready(function() {
         var transcriptBiotype = result.transcript_biotype;
         var transcriptStart = result.transcript_start;
         var transcriptEnd = result.transcript_end;
+        var transcriptStrand = result.transcript_strand;
         var transcriptText =
         transcriptStableID +
         "[" + transcriptID + "]" +
         " " + transcriptBiotype
         + " " +
-        "(" + transcriptStart + " - " + transcriptEnd + ")";
+        "(" + transcriptStart + " - " + transcriptEnd + ", " + transcriptStrand + ")";
         var transcriptLI = $(document.createElement("li"));
         transcriptUL.append(transcriptLI);
         transcriptLI.text(transcriptText);
@@ -91,11 +92,14 @@ $(document).ready(function() {
       var addExon = function(result) {
         var exonID = result.start_exon_id;
         var exonStableID = result.start_exon_sid;
+        var exonStart    = result.start_exon_start;
+        var exonEnd      = result.start_exon_end;
         var exonPhase    = result.start_exon_phase;
         var exonRank     = result.start_exon_rank;
         var exonText =
         exonStableID +
         "[" + exonID + "]" +
+        " (" + exonStart + " - " + exonEnd + ")" +
         " phase " + exonPhase +
         ", rank " + exonRank;
         var exonLI = $(document.createElement("li"));
