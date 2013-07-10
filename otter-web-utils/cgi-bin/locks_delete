@@ -1,0 +1,66 @@
+#!/usr/local/bin/perl -Tw
+
+use strict;
+use warnings;
+
+use DBI;
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
+use JSON();
+
+my $cgi = CGI->new;
+my $json = JSON->new;
+
+my $db = $cgi->param("db");
+my $locks = $json->decode($cgi->param("locks"));
+
+my $dbh =
+    DBI->connect("DBI:mysql:host=otterlive;port=3324;database=${db}",
+                 "ottadmin", "lutralutra",
+                 { RaiseError => 1, AutoCommit => 0 });
+
+my $statement = $dbh->prepare(<<SQL)
+delete from contig_lock
+where contig_lock_id = ?
+SQL
+    ;
+
+my $locks_bogus     = [ ];
+my $locks_succeeded = [ ];
+my $locks_failed    = [ ];
+
+foreach my $id ( @{$locks} ) {
+    my $valid = 1
+        && defined $id
+        && $id =~ /\A[[:digit:]]+\z/
+        ;
+    unless ($valid) {
+        push @{$locks_bogus}, $id;
+        next;
+    }
+    my $deleted_count = $statement->execute($id);
+    if ( $deleted_count == 1 ) {
+        push @{$locks_succeeded}, $id;
+    }
+    elsif ( $deleted_count == 0 ) {
+        push @{$locks_failed}, $id;
+    }
+    else {
+        die sprintf "unexpected deletion count '%s', aborting..."
+            , $deleted_count;
+    }
+}
+
+$dbh->commit;
+
+$dbh->disconnect;
+
+my $result = {
+    database  => $db,
+    locks     => $locks,
+    bogus     => $locks_bogus,
+    succeeded => $locks_succeeded,
+    failed    => $locks_failed,
+};
+
+print $cgi->header("text/plain"), $json->encode($result);

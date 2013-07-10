@@ -1,0 +1,32 @@
+
+tbody.db_list tr { vertical-align: top; }
+
+.progress_loading {
+    background-color: yellow;
+    font-weight: bolder;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.progress_ok {
+    background-color: green;
+    color: white;
+    font-weight: bold;
+    font-size: xx-large;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.progress_bogus {
+    border-style: solid;
+    border-color: red;
+    border-width: thick;
+}
+
+.feature_start , .feature_end , .feature_length {
+    text-align: right;
+}
+
+.feature_strand {
+    text-align: center;
+}

@@ -1,0 +1,78 @@
+#!/usr/local/bin/perl -Tw
+
+use strict;
+use warnings;
+
+use DBI;
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
+use JSON();
+
+my $assembly_adjacencies_count_select_sql = <<'SQL'
+select count(*)
+from assembly first
+inner join assembly second
+  using ( asm_seq_region_id , cmp_seq_region_id )
+where first.ori = second.ori
+and   first.asm_end + 1 = second.asm_start
+and   first.cmp_end + 1 = second.cmp_start
+SQL
+    ;
+
+my $assembly_adjacencies_select_sql = <<'SQL'
+select
+    asm_seq_region_id,
+    cmp_seq_region_id,
+    count(*) as count
+from assembly first
+inner join assembly second
+  using ( asm_seq_region_id , cmp_seq_region_id )
+where first.asm_end + 1 = second.asm_start
+and   first.cmp_end + 1 = second.cmp_start
+group by asm_seq_region_id, cmp_seq_region_id
+SQL
+    ;
+
+my $seq_region_select_sql_template = <<'SQL'
+select seq_region_id, name
+from seq_region
+    where name in ( %s );
+SQL
+    ;
+
+my $cgi  = CGI->new;
+my $json = JSON->new;
+
+my $db = $cgi->param("db");
+my $dbh = DBI->connect( "DBI:mysql:host=otterlive;port=3324;database=${db}",
+    "ottadmin", "lutralutra", { RaiseError => 1, AutoCommit => 0 } );
+
+my ($count) = @{$dbh->selectcol_arrayref(
+                    $assembly_adjacencies_count_select_sql)};
+my $adjacencies = $dbh->selectall_arrayref(
+    $assembly_adjacencies_select_sql, { Slice => { } });
+
+# get all the seq_region IDs
+my $seq_region_id = { };
+for ( @{ $adjacencies } ) {
+    for ( @{$_}{ qw( asm_seq_region_id cmp_seq_region_id ) } ) {
+        $seq_region_id->{$_}++;
+    }
+}
+
+=pod
+
+my $seq_region_id_name_hash =
+    $dbh->selectall_hashref();
+
+=cut
+
+$dbh->disconnect;
+
+print
+    $cgi->header("text/plain"),
+    $json->encode(
+    {
+        count => $count,
+        adjacencies => $adjacencies,
+    });
