@@ -1,0 +1,69 @@
+#!/usr/local/bin/perl -Tw
+
+use strict;
+use warnings;
+
+use DBI;
+use CGI;
+# use CGI::Carp qw(fatalsToBrowser);
+use JSON();
+
+my $cgi = CGI->new;
+my $json = JSON->new;
+
+my $db = $cgi->param("db");
+my $dbh =
+    DBI->connect("DBI:mysql:host=otterlive;port=3324;database=${db}",
+                 "ottadmin", "xxx",
+                 { RaiseError => 1, AutoCommit => 0 });
+my $db_selection =
+    $dbh->selectall_arrayref(<<'QUERY', { Slice => { } });
+
+select
+
+    sr.name              as chr_name,
+    sr.seq_region_id     as chr_id,
+    sra.value            as chr_hidden,
+    g.stable_id          as gene_sid,
+    g.gene_id            as gene_id,
+    g.seq_region_start   as gene_start,
+    g.seq_region_end     as gene_end,
+    ts.stable_id         as transcript_sid,
+    ts.transcript_id     as transcript_id,
+    ts.biotype           as transcript_biotype,
+    ts.seq_region_start  as transcript_start,
+    ts.seq_region_end    as transcript_end,
+    tl.stable_id         as translation_sid,
+    tl.transcript_id     as translation_id,
+    tl.seq_start         as translation_start,
+    tl.seq_end           as translation_end,
+    se.stable_id         as start_exon_sid,
+    se.exon_id           as start_exon_id,
+    se.phase             as start_exon_phase,
+    extr.rank            as start_exon_rank
+
+from
+
+  seq_region sr
+  left  join seq_region_attrib sra using ( seq_region_id )
+  inner join attrib_type       at  using ( attrib_type_id )
+  inner join gene             g  using ( seq_region_id )
+  inner join transcript      ts  using ( gene_id       )
+  inner join translation     tl
+    on ( tl.translation_id = ts.canonical_translation_id )
+  inner join exon            se
+    on ( se.exon_id = tl.start_exon_id )
+  inner join exon_transcript extr
+    on ( extr.exon_id = se.exon_id and extr.transcript_id = ts.transcript_id )
+where
+  g.is_current = 1
+  and ts.is_current = 1
+  and at.code = 'hidden'
+  and tl.seq_start > 1
+  and se.phase != -1
+order by sr.name, sr.seq_region_id, g.stable_id, ts.stable_id
+
+QUERY
+$dbh->disconnect;
+
+print $cgi->header("text/plain"), $json->encode($db_selection);
