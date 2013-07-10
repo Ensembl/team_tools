@@ -33,12 +33,15 @@ select
     ts.biotype           as transcript_biotype,
     ts.seq_region_start  as transcript_start,
     ts.seq_region_end    as transcript_end,
+    ts.seq_region_strand as transcript_strand,
     tl.stable_id         as translation_sid,
     tl.transcript_id     as translation_id,
     tl.seq_start         as translation_start,
     tl.seq_end           as translation_end,
     se.stable_id         as start_exon_sid,
     se.exon_id           as start_exon_id,
+    se.seq_region_start  as start_exon_start,
+    se.seq_region_end    as start_exon_end,
     se.phase             as start_exon_phase,
     extr.rank            as start_exon_rank
 
