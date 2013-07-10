@@ -1,0 +1,61 @@
+#!/usr/local/bin/perl -Tw
+
+use strict;
+use warnings;
+
+use DBI;
+use CGI;
+# use CGI::Carp qw(fatalsToBrowser);
+use JSON();
+
+my $cgi = CGI->new;
+my $json = JSON->new;
+
+my $db = $cgi->param("db");
+my $dbh =
+    DBI->connect("DBI:mysql:host=otterlive;port=3324;database=${db}",
+                 "ottadmin", "wibble",
+                 { RaiseError => 1, AutoCommit => 0 });
+my $db_selection =
+    $dbh->selectall_arrayref(<<'QUERY', { Slice => { } });
+
+select
+
+    sr.name              as chr_name,
+    sr.seq_region_id     as chr_id,
+    g.stable_id          as gene_sid,
+    g.gene_id            as gene_id,
+    g.seq_region_start   as gene_start,
+    g.seq_region_end     as gene_end,
+    ts.stable_id         as transcript_sid,
+    ts.transcript_id     as transcript_id,
+    ts.biotype           as transcript_biotype,
+    ts.seq_region_start  as transcript_start,
+    ts.seq_region_end    as transcript_end
+
+from
+
+  seq_region sr
+  inner join gene          g  using ( seq_region_id )
+  inner join transcript   ts  using ( gene_id       )
+  inner join translation  tl
+    on ( tl.translation_id = ts.canonical_translation_id )
+
+  -- CDS start not found
+  inner join transcript_attrib cdssnf_a
+    on ( cdssnf_a.transcript_id = ts.transcript_id )
+  inner join attrib_type cdssnf_at
+    on ( cdssnf_at.attrib_type_id = cdssnf_a.attrib_type_id )
+
+where
+  g.is_current = 1
+  and ts.is_current = 1
+  and cdssnf_at.code = 'cds_start_NF'
+  and cdssnf_a.value != '0'
+  and ( ts.seq_region_strand = +1 and tl.seq_start > 1 ) 
+order by sr.name, sr.seq_region_id, g.stable_id, ts.stable_id
+
+QUERY
+$dbh->disconnect;
+
+print $cgi->header("text/plain"), $json->encode($db_selection);

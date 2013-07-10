@@ -1,0 +1,77 @@
+#!/usr/local/bin/perl -Tw
+
+use strict;
+use warnings;
+
+use DBI;
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
+use JSON();
+
+my $cgi  = CGI->new;
+my $json = JSON->new;
+
+my $bin_size = $cgi->param('bin_size');
+defined $bin_size or die 'bin_size is not defined';
+
+# my $db = $cgi->param("db");
+my $db  = 'loutre_mouse';
+my $dbh = DBI->connect( "DBI:mysql:host=otterlive;port=3324;database=${db}",
+    "ottadmin", "wibble", { RaiseError => 1, AutoCommit => 0 } );
+
+my $seq_region_id_select_sql = <<'SQL'
+select sr.seq_region_id from seq_region sr
+inner join coord_system cs using (coord_system_id)
+where sr.name = ? and cs.name = 'chromosome' and cs.version = ?
+SQL
+  ;
+my $seq_region_id_select_sth = $dbh->prepare($seq_region_id_select_sql);
+
+sub seq_region_id {
+    my ( $name, $coord_system ) = @_;
+    $seq_region_id_select_sth->execute($name, $coord_system);
+    my $row = $seq_region_id_select_sth->fetchrow_arrayref;
+    defined $row or die sprintf
+        "no sequence region: name = '%s', coordinate system = '%s'\n"
+        , $name, $coord_system;
+    my ($seq_region_id) = @{$row};
+    return $seq_region_id;
+}
+
+my $asm_id = seq_region_id 'chr4-38', 'Otter';
+my $cmp_id = seq_region_id '4', 'NCBIM37';
+
+my @queries = ( <<'QUERY', <<'QUERY', )
+
+select bin_index, count(*) as count
+from ( select a.cmp_start div ? as bin_index
+       from assembly a
+       where asm_seq_region_id = ?
+       and   cmp_seq_region_id = ?
+       ) bin
+group by bin_index
+QUERY
+
+select bin_index, count(*) as count
+from ( select a.cmp_end div ? as bin_index
+       from assembly a
+       where asm_seq_region_id = ?
+       and   cmp_seq_region_id = ?
+       ) bin
+group by bin_index
+QUERY
+
+    ;
+
+my $fragments = {};
+for (@queries) {
+    my $sth = $dbh->prepare($_);
+    $sth->execute( $bin_size, $asm_id, $cmp_id );
+    while ( my ( $index, $count ) = $sth->fetchrow_array ) {
+        $fragments->{$index} += $count;
+    }
+}
+
+$dbh->disconnect;
+
+print $cgi->header("text/plain"), $json->encode($fragments);
