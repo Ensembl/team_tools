@@ -52,7 +52,7 @@ where
   and ts.is_current = 1
   and cdssnf_at.code = 'cds_start_NF'
   and cdssnf_a.value != '0'
-  and ( ts.seq_region_strand = +1 and tl.seq_start > 1 ) 
+  and tl.seq_start > 1
 order by sr.name, sr.seq_region_id, g.stable_id, ts.stable_id
 
 QUERY
