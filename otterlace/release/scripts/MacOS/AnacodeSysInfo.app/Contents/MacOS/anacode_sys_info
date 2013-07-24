@@ -1,0 +1,60 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use URI::Escape qw{ uri_escape };
+
+my $TO = 'mg13@sanger.ac.uk';
+
+main();
+
+sub main {
+
+    my $me = qx/whoami/;                   chomp $me;
+    my $hn = qx/hostname/;                 chomp $hn;
+    my $os = qx/sw_vers -productVersion/;  chomp $os;
+    my $ar = qx/uname -m/;                 chomp $ar;
+
+    my $subject = "Anacode system info from '$me' for '$hn'";
+
+    my $body = <<"__EO_BODY__";
+whoami: $me
+hostname: $hn
+os: $os
+arch: $ar
+__EO_BODY__
+
+    open_uri("mailto:$TO", {
+        subject => $subject,
+        body    => $body,
+             }
+    ) or do {
+        print << "__EO_WARNING__";
+WARNING: could not open your email client.
+
+Please copy and paste the following into an email
+and send it to: $TO
+----------------------------------------
+$body
+----------------------------------------
+Many thanks!
+__EO_WARNING__
+    };
+
+    return;
+}
+
+# Copy-and-pasted (more-or-less) from ensembl-otter
+#
+sub open_uri {
+    my ($path, $param_hash) = @_;
+
+    my $form = '';
+    if ($param_hash) {
+        $form = '?' . join('&', map { "$_=" . uri_escape($param_hash->{$_}) } keys %$param_hash);
+    }
+    return system('open', $path . $form) == 0;
+}
+
+exit;
