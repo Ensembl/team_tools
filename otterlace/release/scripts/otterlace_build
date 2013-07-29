@@ -338,9 +338,11 @@ otterlace_client_install_perl_modules() {
             checkout -P $ensembl_cvs_flags \
             ensembl/modules &&
 
-        cvs -Q -f -d "$ensembl_cvsroot" \
-            checkout -P $ensembl_cvs_flags \
-            ensembl-variation/modules &&
+        if [ "${version_major}" -le 75 ]; then # ensembl-variation not required on client after v75
+            cvs -Q -f -d "$ensembl_cvsroot" \
+                checkout -P $ensembl_cvs_flags \
+                ensembl-variation/modules
+        fi &&
 
         cvs -Q -f -d "$anacode_cvsroot" \
             checkout -P -r "$cvs_humpub_release" \
