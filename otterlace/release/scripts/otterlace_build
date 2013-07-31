@@ -572,6 +572,7 @@ otterlace_install_all() {
         export zmap_build="$( _otterlace_build_config.pl -host $host $zmap_trees )" \
             || bail "No zmap_build for $host ..?"
         env_reexport env_cmd \
+            ANACODE_ZIRCON \
             otter_swac otter_nfswub otter_suffix \
             ensembl_otter_root zmap_build build_log
         unset zmap_build
