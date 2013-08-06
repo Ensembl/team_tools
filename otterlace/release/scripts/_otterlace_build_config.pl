@@ -100,8 +100,10 @@ sub main {
     # Mappings: find the ones we want, then whinge about new ones
     my %ohost2dir;
     while (my ($zhost, $dir) = each %zhost2dir) {
-        my $ohost = $CONFIG{zhost2ohost}{$zhost};
-        $ohost2dir{$ohost} = $dir if defined $ohost;
+        my $ohost_list = $CONFIG{zhost2ohost}{$zhost};
+        foreach my $ohost (split / /, ($ohost_list || '')) {
+            $ohost2dir{$ohost} = $dir;
+        }
     }
     my @unk_zhost = sort
       grep { !exists $CONFIG{zhost2ohost}{$_} } keys %zhost2dir;
@@ -122,7 +124,8 @@ sub main {
         } sort keys %$z2o;
     } elsif ($op eq '-host') {
         my $dir = $ohost2dir{$for_host};
-        die "$0: $for_host is not an Otterlace build host\n".
+        die "$0: $for_host is not an Otterlace build host,\n".
+          "  Given zmapdirs (@zmapdirs)\n".
           "  Valid hosts are (@ohost)\n" unless defined $dir;
         printf("%s\n", $dir);
     } else {

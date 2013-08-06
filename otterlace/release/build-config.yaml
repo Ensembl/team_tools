@@ -1,13 +1,13 @@
-# Map the zmap build host to an otterlace build host; undef to ignore
-# that build
+# Map the zmap build host to an otterlace build host(s), space
+# separated; undef to ignore that build
 #
 # Pass client_build_hosts=hostname to restrict the selection, but note
 # that trying to switch to a different build host will result in
 # otterlace_build not knowing which zmap build tree to use.
 ---
 zhost2ohost:
-  cbi4a: cbi4a
-  cbi4h: cbi4a
+  cbi4a: cbi4a gen1
+  cbi4h: cbi4h gen1
   deskpro20407: lucid-dev32
   lucid-dev64: lucid-dev64
   mac18480i: ~
