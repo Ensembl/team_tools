@@ -412,7 +412,9 @@ build_lib__xremote() {
     build_dir="/tmp/otterlace_xremote_build/$$"
     rm -rf -- "$build_dir" &&
     mkdir -p -- "$build_dir" &&
-    ( cd "$build_dir" &&
+    (
+        [ "$( lsb_release -sc 2>/dev/null )" = 'precise' ] && PATH=/software/gcc-4.8.1/bin:$PATH
+        cd "$build_dir" &&
         cp -r -- "${zmap_build}/ZMap/src/perl/X11-XRemote-0.01" . &&
         cd X11-XRemote-0.01 &&
         perl Makefile.PL \
