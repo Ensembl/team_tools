@@ -146,6 +146,9 @@ show_help_exit() {
 
 # Set environment variables about self, umask.  These don't take
 # parameters and are needed early (during get_opts_inputvars)
+#
+# While doing this, identify the (same) Perl which Otterlace should
+# use at runtime.
 setup_self_globals() {
     # shared config and functions
     . "$( dirname "$0" )/_otterlace.sh" || exit 1
@@ -157,13 +160,14 @@ setup_self_globals() {
             # Assume for now that PATH already contains the correct container, inc. perl
             export PATH=$PATH:$dist_scripts
             install_group="$( id -g -n )"
+            otter_perl=perl_is_bundled # a magic word for otterlace_env.sh
             ;;
 
         *)
-            export PATH=/software/perl-5.12.2/bin:/bin:/usr/bin:/usr/local/bin:$dist_scripts
-            # XXX: insertion of a Perl build in PATH should probably be under control of something like otter_ipath_get,
-            # and should from there be replicated to the otterlace wrapperfile (and any other built component running under Perl, probably via $PATH),
-            # t/swac_stopwords.t will be failing while this is here...
+            # Assume PATH has /software/perl-$MUMBLE/bin from team_tools/bash_profile
+            # We need to preserve that into otterlace_env.sh
+            otter_perl="$( dirname $( which perl ))"
+            export PATH=$otter_perl:/bin:/usr/bin:/usr/local/bin:$dist_scripts
             install_group="anacode"
             ;;
     esac
@@ -174,8 +178,12 @@ setup_self_globals() {
 
 # Set some environment variables, global variables for the script
 setup_globals() {
+    local found_perl
 
-    perl -M5.12.2 -e 1 || bail "Think I have the wrong Perl"
+    found_perl="$( which perl )"
+    if ! perl -M5.12.2 -e 1 || [ "$( dirname "$found_perl" )" = '/usr/bin' ]; then
+        bail "Think I have the wrong Perl ($found_perl)"
+    fi
 
     config_get version_major
     config_get version_minor
@@ -272,6 +280,7 @@ otterlace_script_vars_update() {
         otter_ipath_get SUBST_anasoft    swac
         otter_ipath_get SUBST_OTTER_HOME otter_home
         export SUBST_version="$version"
+        export SUBST_otter_perl="$otter_perl"
         export SUBST_anasoft SUBST_OTTER_HOME
         perl -i -pe '
  if (!$finished && /^(\w+)=$/) {
