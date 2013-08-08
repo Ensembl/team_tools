@@ -55,7 +55,7 @@ _create_dummy_repos_cvs() {
     dummies="$( mktemp -t -d DUMMY_REPOS.XXXXXX )" || bail "Failed to mktemp -d"
         # Serious because caller does not want to do real operations
 
-    printf "\n*** Creating and running with dummy repos,\n    dummies=%s\n    these will NOT be cleaned up\n    you can use them again by setting the variable\n\n" "$dummies"
+    printf "\n*** Creating and running with dummy repos,\n    dummies=%s\n    these will NOT be cleaned up\n    you can use them again by setting the variable and flag\n\n" "$dummies"
 
     # Make fake repos
     #  ens-ott is deliberately != ensembl-otter
@@ -331,7 +331,12 @@ main() {
 
     tmp_dir="$( mktemp -t -d "$( basename "$0" ).XXXXXX" )" || bail "mktemp failed"
 
-    [ -n "$with_dummy" ] && _use_dummy_repos_cvs
+    if [ -n "$with_dummy" ]; then
+        _use_dummy_repos_cvs
+    elif [ -n "$dummies" ]; then
+        bail "Found dummies=$dummies but not given --dummy flag"
+        # continuing is probably not what the caller expected
+    fi
 
     ( cd "$tmp_dir" &&
         git_update &&
