@@ -112,7 +112,7 @@ get_opts_inputvars() {
     fi
 
     # sanity check for the remote phases
-    if [ -n "$local_client_only" ] ||
+    if [ -n "$otterlace_client_host" ] ||
         [ "$client_build_hosts" = ' ' ] ||
         ! [[ ~ =~ /nfs/ ]]; then
         # Probably OK, not a remote build
