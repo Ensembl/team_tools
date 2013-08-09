@@ -275,8 +275,8 @@ sub main {
         sane_repo("remote tracking ($remote)" => @vsn);
 
         print "* Fetch\n";
-        run(fetch => qw( git fetch -p -v ), $remote);
-        run(fetch => qw( git fetch --tags -v ), $remote); # could prune local tags with -p, but doesn't seem friendly
+        run(fetch => qw( git fetch -p ), $remote);
+        run(fetch => qw( git fetch --tags ), $remote); # could prune local tags with -p, but doesn't seem friendly
         die "Found no remote tracking branches from $remote" unless @r_br;
         print "\n* Update local branches\n";
         my @del = update_local($remote, [ sort @l_br ], [ sort @r_br ]);
