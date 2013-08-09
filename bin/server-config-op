@@ -58,7 +58,30 @@ the error is handled tersely and without cleaning up properly.
 XXX: Newly created local branches are not handled.  This missing
 feature, will be used monthly, workaround by branching on the remote.
 
+=item server-config-op < cherry-pick | pick > <branch>* <commit>*
+
+Given a list of branch names (which must exist already) and commits
+(five or more hex digits), mixed any way,
+
+=over 2
+
+=item 1. For each branch (in the order given),
+
+=item 2. For each commit (in the order given - last in list is applied last),
+
+=item 3. Attempt to C<git cherry-pick> the commit onto the branch.
+
+If something goes wrong, abort leaving you with the pieces to examine.
+
+=item 4. Check out the original branch afterwards.
+
 =back
+
+Merge conflict and null pick are the most likely cause of failure.
+When these happen, you are left to clear up and proceed with the rest
+of your merges by hand; maybe file the transcript with your feature
+request?
+
 
 =head2 To run in intcvs1 hook
 
@@ -261,6 +284,13 @@ sub main {
             print "\n* NB. $br was cleanly deleted\n";
             $br = 'root';
         }
+        restore_checkout($br);
+
+    } elsif ($op =~ /^(cherry-)?pick$/) {
+        die "Cannot 'cherry-pick' in a bare repository" if $BARE;
+        my @vsn = sort map { m{^(\d+|root)$} ? ($1) : () } @l_br;
+        sane_repo(local => @vsn);
+        cherry_pick(\@l_br, @ARGV);
         restore_checkout($br);
 
     } else {
@@ -529,6 +559,36 @@ sub update_local {
 
     # tell of absent branches
     return map { m{^rm/(\d+)$} ? ($1) : () } @tag;
+}
+
+
+sub cherry_pick {
+    my ($l_brs, @arg) = @_;
+    my %l_br;
+    @l_br{ @$l_brs } = (1) x @$l_brs;
+
+    my @ci = grep { m{^[0-9a-f]{5,40}$} } @arg;
+    my @br = grep { $l_br{$_} } @arg;
+    my @bad = grep { not( $l_br{$_} xor m{^[0-9a-f]{5,40}$} ) } @arg;
+    if (@bad) {
+        my @ambig = grep { $l_br{$_} } @bad;
+        my @none = grep { !$l_br{$_} } @bad;
+        die "Will not cherry-pick with ambiguous (@ambig) or bad (@none) arguments\n";
+    }
+    die "Cannot cherry-pick onto @br - no commits given\n" unless @ci;
+    die "Cannot cherry-pick commits @ci - no branches given\n" unless @br;
+
+    print "* Cherry Pick\n";
+    foreach my $br (@br) {
+        print "** Onto branch $br\n";
+        run(checkout => qw( git checkout -q ), $br, '--');
+        foreach my $ci (@ci) {
+            print "*** $ci\n";
+            run(pick => qw( git cherry-pick -x ), $ci);
+        }
+    }
+
+    return;
 }
 
 
