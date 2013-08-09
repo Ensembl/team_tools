@@ -224,14 +224,14 @@ sub main {
 
     # Sanity check repo
     my @l_br = pipe_from(qw( git branch ));
-    my @r_br = pipe_from(qw( git branch -r ));
     my ($br) = (join '', @l_br) =~ m{^\*\s*(.+)$}m;
+    @l_br = map { m{^\*?\s+(\S+)$} ? ($1) : () } @l_br;
 
     set_globals();
 
     # Do stuff
     if ($op eq 'merge') {
-        my @vsn = sort map { /^\*?\s*(\d+|root)$/ ? ($1) : () } @l_br;
+        my @vsn = sort map { m{^(\d+|root)$} ? ($1) : () } @l_br;
         sane_repo(local => @vsn);
 
         die "Abort: merge on non-central repo is risky"
@@ -244,9 +244,10 @@ sub main {
 
     } elsif ($op =~ /^up(date)?$/) {
         my $remote = @ARGV ? shift @ARGV : 'origin';
+        my @r_br = pipe_from(qw( git branch -r ));
         @r_br = map { m{^\*?\s+$remote/(\S+)$} ? ($1) : () } @r_br;
-        @l_br = map { m{^\*?\s+(\S+)$}         ? ($1) : () } @l_br;
-        my @vsn = sort map { /^(\d+|root)$/ ? ($1) : () } @r_br;
+
+        my @vsn = sort map { m{^(\d+|root)$} ? ($1) : () } @r_br;
         die "Cannot 'update' a bare repository" if $BARE;
         sane_repo("remote tracking ($remote)" => @vsn);
 
@@ -257,13 +258,10 @@ sub main {
         print "\n* Update local branches\n";
         my @del = update_local($remote, [ sort @l_br ], [ sort @r_br ]);
         if (grep { $_ eq $br } @del) {
-            print "\n* Checkout root (nb. $br was cleanly deleted)\n";
-            run(checkout => qw( git checkout root -- ));
-        } else {
-            # original branch was deleted
-            print "\n* Restore checkout branch\n";
-            run(checkout => qw( git checkout ), $br, '--'); # back where we started
+            print "\n* NB. $br was cleanly deleted\n";
+            $br = 'root';
         }
+        restore_checkout($br);
 
     } else {
         syntax_msg();
@@ -322,6 +320,13 @@ specified remote.  Local changes are rebased forward.  Obsolete
 branches are removed safely.
 
 HELP
+}
+
+sub restore_checkout {
+    my ($br) = @_;
+    print "\n* Restore checkout branch\n";
+    run(checkout => qw( git checkout ), $br, '--'); # back where we started
+    return;
 }
 
 
