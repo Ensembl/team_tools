@@ -201,6 +201,15 @@ setup_globals() {
         bail "Think I have the wrong Perl ($found_perl)"
     fi
 
+    if [ -z "$DISPLAY" ]; then
+        # X11 display is unset or empty (cannot tell which)
+        #
+        # Ensure it is unset because, if it is merely empty then "ssh"
+        # tries to forward it to the build host, which then tries to
+        # use the tunnel and discovers it is broken.
+        unset DISPLAY
+    fi
+
     config_get version_major
     config_get version_minor
     config_get client_ensembl_version
