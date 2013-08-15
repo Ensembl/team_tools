@@ -365,7 +365,8 @@ Optional switches:
 
 
 Further changes to dist/conf/foo may be given with 'foo=bar' after the
-switches.  These are applied to the release branch, not master.
+switches.  These are applied to the release branch, not master.  There
+is no expansion or special treatment of values, they are just text.
 
 
 This is $thisprog
