@@ -1,0 +1,23 @@
+#! /bin/sh
+
+case "$1" in
+    -h|--help)
+        echo "Syntax: $0 <webpublish-options>*
+
+Run webpublish with a filter on the back,
+to remove (blacklist) cruft.
+" >&2
+        exit 1
+esac
+
+webpublish "$@" 2>&1 | perl -ne 'print unless
+  m{^  \w+\s+\[ pass \]\s*$} ||
+  m{^\s*$} ||
+  m{^<keepalive: (begin|end) (bzip2_integrity|file_size|file_type|group_membership|perl_critic|perl_nfs_check|perl_style|script_compilation|webservice_war|well_formed_xml|well_formed_yaml)>$} ||
+  m{^\s+(RCS keywords .* not found|Missing "(NAME|VERSION|SYNOPSIS|SUBROUTINES/METHODS|DESCRIPTION|DIAGNOSTICS|CONFIGURATION AND ENVIRONMENT|DEPENDENCIES|INCOMPATIBILITIES|BUGS AND LIMITATIONS|LICENSE AND COPYRIGHT)" section in POD)} ||
+  m{^\s+(Return value of "close" ignored|Multiple "package" declarations|Found "(\\N\{SPACE\})+" at the end of the line|String delimiter used with "split")} ||
+  m{^\s+(List of quoted literal words|Code structure is deeply nested|Subroutine with high complexity score|Private subroutine/method used|Package declaration must match filename|Backtick operator used|Return value of eval not tested)} ||
+  m{is not one of the allowed literal values.*Use the Readonly module or the "constant" pragma instead} ||
+  m{^\s+(Found method-call chain of length .* Long chains of method calls indicate code that is too tightly coupled.)} ||
+  m{\. See pages? [0-9,]+ of PBP\.$}
+'
