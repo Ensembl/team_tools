@@ -1,0 +1,44 @@
+#!/usr/local/bin/perl -Tw
+
+use strict;
+use warnings;
+
+use DBI;
+use CGI;
+# use CGI::Carp qw(fatalsToBrowser);
+use JSON();
+
+my $cgi = CGI->new;
+my $json = JSON->new;
+
+my $db = $cgi->param("db");
+my $dbh =
+    DBI->connect("DBI:mysql:host=otterlive;port=3324;database=${db}",
+                 "ottadmin", "lutralutra",
+                 { RaiseError => 1, AutoCommit => 0 });
+my $db_selection =
+    $dbh->selectall_arrayref(<<'QUERY', { Slice => { } });
+select
+    sr.name as chr_name, sr.seq_region_id as chr_id, -- chromosome
+    e.stable_id as exon_sid,                         -- exon stable id
+    e.exon_id as exon_id                             -- exon id
+from
+    (select
+     e.seq_region_id,
+     e.stable_id
+
+     from exon e
+     where e.is_current
+     group by e.seq_region_id, e.stable_id
+     having count(*) > 1
+    ) dups
+    inner join seq_region sr using (seq_region_id)
+    inner join exon e using (seq_region_id)
+    where e.stable_id = dups.stable_id
+    and   e.is_current
+order by sr.name, sr.seq_region_id, e.stable_id, e.exon_id
+limit 25 -- because sometimes there are vast numbers of these
+QUERY
+$dbh->disconnect;
+
+print $cgi->header("text/plain"), $json->encode($db_selection);

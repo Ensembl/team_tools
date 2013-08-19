@@ -1,0 +1,24 @@
+#!/usr/local/bin/perl -Tw
+
+use strict;
+use warnings;
+
+use DBI;
+use CGI;
+# use CGI::Carp qw(fatalsToBrowser);
+use JSON();
+
+my $cgi = CGI->new;
+my $json = JSON->new;
+
+my $dbh =
+    DBI->connect("DBI:mysql:host=otterlive;port=3324",
+                 "ottadmin", "lutralutra",
+                 { RaiseError => 1, AutoCommit => 0 });
+my $db_selection =
+    $dbh->selectall_arrayref("show databases like 'loutre_%'");
+$dbh->disconnect;
+
+my $db_list = [ grep { ! /^loutre_act/ } map { @$_ } @{$db_selection} ];
+
+print $cgi->header("text/plain"), $json->encode($db_list);
