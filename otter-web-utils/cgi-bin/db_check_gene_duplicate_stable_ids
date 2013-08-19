@@ -1,0 +1,43 @@
+#!/usr/local/bin/perl -Tw
+
+use strict;
+use warnings;
+
+use DBI;
+use CGI;
+# use CGI::Carp qw(fatalsToBrowser);
+use JSON();
+
+my $cgi = CGI->new;
+my $json = JSON->new;
+
+my $db = $cgi->param("db");
+my $dbh =
+    DBI->connect("DBI:mysql:host=otterlive;port=3324;database=${db}",
+                 "ottadmin", "xxx",
+                 { RaiseError => 1, AutoCommit => 0 });
+my $db_selection =
+    $dbh->selectall_arrayref(<<'QUERY', { Slice => { } });
+select
+    sr.name as chr_name, sr.seq_region_id as chr_id, -- chromosome
+    g.stable_id as gene_sid,                         -- gene stable id
+    g.gene_id as gene_id                             -- gene id
+from
+    (select
+     g.seq_region_id,
+     g.stable_id
+
+     from gene g
+     where g.is_current
+     group by g.seq_region_id, g.stable_id
+     having count(*) > 1
+    ) dups
+    inner join seq_region sr using (seq_region_id)
+    inner join gene g using (seq_region_id)
+    where g.stable_id = dups.stable_id
+    and   g.is_current
+order by sr.name, sr.seq_region_id, g.stable_id, g.gene_id
+QUERY
+$dbh->disconnect;
+
+print $cgi->header("text/plain"), $json->encode($db_selection);

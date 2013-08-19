@@ -1,0 +1,57 @@
+#!/usr/local/bin/perl -Tw
+
+use strict;
+use warnings;
+
+use DBI;
+use CGI;
+# use CGI::Carp qw(fatalsToBrowser);
+use JSON();
+
+my $cgi = CGI->new;
+my $json = JSON->new;
+
+my $db = $cgi->param("db");
+my $dbh =
+    DBI->connect("DBI:mysql:host=otterlive;port=3324;database=${db}",
+                 "ottadmin", "xxx",
+                 { RaiseError => 1, AutoCommit => 0 });
+my $db_selection =
+    $dbh->selectall_arrayref(<<'QUERY', { Slice => { } });
+select
+    sr.name as chr_name, sr.seq_region_id as chr_id, -- chromosome
+    name_attrib.value as gene_name,                  -- name
+    g.gene_id as gene_id,                            -- gene id
+    g.stable_id as gene_sid,                         -- gene stable id
+    --                                               -- region
+    g.seq_region_start as  start,
+    g.seq_region_end   as  end,
+    g.seq_region_strand as strand
+from
+    (select
+     g.seq_region_id,
+     name_attrib.attrib_type_id,
+     name_attrib.value
+
+     from attrib_type name_at
+     inner join gene_attrib name_attrib using (attrib_type_id)
+     inner join gene g using (gene_id)
+
+     where name_at.code = 'name'
+     and   g.is_current
+
+     group by g.seq_region_id, name_attrib.attrib_type_id, name_attrib.value
+     having count(distinct g.stable_id) > 1
+    ) dups
+    inner join seq_region sr using (seq_region_id)
+    inner join gene_attrib name_attrib
+    on (name_attrib.attrib_type_id = dups.attrib_type_id
+        and name_attrib.value = dups.value)
+    inner join gene g using (gene_id)
+
+where g.is_current
+order by sr.name, sr.seq_region_id, dups.value, g.stable_id
+QUERY
+$dbh->disconnect;
+
+print $cgi->header("text/plain"), $json->encode($db_selection);
