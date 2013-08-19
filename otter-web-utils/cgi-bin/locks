@@ -1,0 +1,70 @@
+#!/usr/local/bin/perl -Tw
+
+use strict;
+use warnings;
+
+use DBI;
+use CGI;
+# use CGI::Carp qw(fatalsToBrowser);
+use JSON();
+
+my $cgi = CGI->new;
+my $json = JSON->new;
+
+my $db = $cgi->param("db");
+my $dbh =
+    DBI->connect("DBI:mysql:host=otterlive;port=3324;database=${db}",
+                 "ottadmin", "wibble",
+                 { RaiseError => 1, AutoCommit => 0 });
+my $db_selection =
+    $dbh->selectall_arrayref(<<'QUERY', { Slice => { } });
+
+select distinct
+    ctg_lock.contig_lock_id,
+    ctg_lock.timestamp,
+    ctg_lock.hostname,
+    au.author_name,
+    au.author_id,
+    chr_sr.name             as chr_name,
+    clone_sr.name           as clone_name,
+    contig_sr.name          as contig_name,
+    contig_sr.seq_region_id as contig_id
+
+from contig_lock ctg_lock
+
+-- join lock -> author
+inner join author au using (author_id)
+
+-- join lock -> contig
+inner join seq_region contig_sr
+  on ( contig_sr.seq_region_id = ctg_lock.seq_region_id )
+
+-- join contig -> chromosome
+inner join assembly chr_asm
+  on ( chr_asm.cmp_seq_region_id = contig_sr.seq_region_id )
+inner join seq_region chr_sr
+  on ( chr_sr.seq_region_id = chr_asm.asm_seq_region_id )
+inner join coord_system chr_cs 
+  on ( chr_cs.coord_system_id = chr_sr.coord_system_id )
+inner join seq_region_attrib chr_hidden_at
+  on ( chr_hidden_at.seq_region_id = chr_sr.seq_region_id )
+inner join attrib_type chr_hidden_at_t using (attrib_type_id)
+
+-- join contig -> clone
+inner join assembly clone_asm
+  on ( clone_asm.cmp_seq_region_id = contig_sr.seq_region_id )
+inner join seq_region clone_sr
+  on ( clone_sr.seq_region_id = clone_asm.asm_seq_region_id )
+inner join coord_system clone_cs
+  on ( clone_cs.coord_system_id = clone_sr.coord_system_id )
+
+where chr_cs.name    = 'chromosome'
+and   chr_cs.version = 'Otter'
+and   chr_hidden_at_t.code = 'hidden'
+and   chr_hidden_at.value  = '0'
+and   clone_cs.name  = 'clone'
+
+QUERY
+$dbh->disconnect;
+
+print $cgi->header("text/plain"), $json->encode($db_selection);

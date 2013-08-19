@@ -1,0 +1,45 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
+use JSON();
+
+use JH13::Otter::Filter;
+
+my @param_list = qw(
+    dataset
+    dataset_param
+    config_path_extra
+    );
+
+my $cgi = CGI->new;
+
+my @param_key_value_list =
+    map { $_ => $cgi->param($_); } @param_list;
+my $url_collection =
+    JH13::Otter::Filter->url_collection(
+        @param_key_value_list);
+
+my @url_list = map {
+    my $version = $_;
+    my $version_url_collection = $url_collection->{$_};
+    my $version_url_list =
+        [ map {
+            my $filter = $_;
+            my $filter_url = $version_url_collection->{$filter};
+            {
+                'filter' => $filter,
+                'url'    => $filter_url,
+            };
+          } sort keys %{$version_url_collection} ];
+    {
+        'version' => $version,
+        'url'     => $version_url_list
+    };
+} sort { $b <=> $a } keys %{$url_collection};
+
+my $json = JSON->new;
+print $cgi->header("text/plain"), $json->objToJson(\@url_list);

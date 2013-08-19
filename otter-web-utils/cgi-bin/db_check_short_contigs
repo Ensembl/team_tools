@@ -1,0 +1,42 @@
+#!/usr/local/bin/perl -Tw
+
+use strict;
+use warnings;
+
+use DBI;
+use CGI;
+# use CGI::Carp qw(fatalsToBrowser);
+use JSON();
+
+my $cgi = CGI->new;
+my $json = JSON->new;
+
+my $db = $cgi->param("db");
+my $dbh =
+    DBI->connect("DBI:mysql:host=otterlive;port=3324;database=${db}",
+                 "ottadmin", "wibble",
+                 { RaiseError => 1, AutoCommit => 0 });
+my $db_selection =
+    $dbh->selectall_arrayref(<<'QUERY', { Slice => { } });
+
+select distinct
+    asm_sr.name                  as asm_name
+  , cmp_sr.name                  as cmp_name
+  , cmp_sr.length                as cmp_length
+  , a.cmp_end - a.cmp_start + 1  as asm_length
+
+from
+    assembly   a
+  , seq_region asm_sr
+  , seq_region cmp_sr
+
+where 1
+  AND  asm_sr.coord_system_id = 2
+  AND  a.asm_seq_region_id = asm_sr.seq_region_id
+  AND  a.cmp_seq_region_id = cmp_sr.seq_region_id
+  AND  ( a.cmp_end - a.cmp_start + 1 ) > cmp_sr.length
+
+QUERY
+$dbh->disconnect;
+
+print $cgi->header("text/plain"), $json->encode($db_selection);

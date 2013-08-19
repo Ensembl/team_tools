@@ -1,0 +1,15 @@
+otter-web-utils
+===============
+
+An import of Jeremy's web tools (HTML/js/CGI) for examining the otter
+databases.
+
+If you have a checkout of anacode/webvm.git at $WEBVM, you should be
+able to add these by doing:
+
+( cd $WEBVM/apps             && \
+  ln -s $ANACODE_TEAM_TOOLS  && \
+  ln -s team_tools/otter-web-utils/conf/60otter-web-utils.conf )
+
+and then restarting your apache.
+
