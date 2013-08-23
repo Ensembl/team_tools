@@ -1,10 +1,11 @@
 #!/usr/local/bin/perl -Tw
 
-use SangerPaths qw( core bioperl123 ensembl57 otter54 );
+use CGI::Carp qw( fatalsToBrowser );
+
+BEGIN { use lib ($ENV{OTTER_PERL_INC} || q{}) =~ m{([^:]+)}g }
+use SangerPaths qw( core bioperl123 ensembl70 otter76 );
 use SangerWeb;
 
 use YAML qw( Dump );
-
-use CGI::Carp qw( fatalsToBrowser );
 
 die Dump(\@INC);

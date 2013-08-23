@@ -3,8 +3,10 @@
 use strict;
 use warnings;
 
-use CGI;
 use CGI::Carp qw(fatalsToBrowser);
+BEGIN { use lib ($ENV{OTTER_PERL_INC} || q{}) =~ m{([^:]+)}g }
+
+use CGI;
 use JSON();
 
 use JH13::Otter::Filter;
