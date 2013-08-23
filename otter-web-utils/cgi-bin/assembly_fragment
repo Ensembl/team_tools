@@ -3,9 +3,11 @@
 use strict;
 use warnings;
 
+use CGI::Carp qw(fatalsToBrowser);
+BEGIN { use lib ($ENV{OTTER_PERL_INC} || q{}) =~ m{([^:]+)}g }
+
 use DBI;
 use CGI;
-use CGI::Carp qw(fatalsToBrowser);
 use JSON();
 
 my $cgi  = CGI->new;
