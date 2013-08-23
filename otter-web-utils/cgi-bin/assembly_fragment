@@ -6,7 +6,7 @@ use warnings;
 use CGI::Carp qw(fatalsToBrowser);
 BEGIN { use lib ($ENV{OTTER_PERL_INC} || q{}) =~ m{([^:]+)}g }
 
-use DBI;
+use OtterWeb 'otterlive_dbh';
 use CGI;
 use JSON();
 
@@ -18,8 +18,7 @@ defined $bin_size or die 'bin_size is not defined';
 
 # my $db = $cgi->param("db");
 my $db  = 'loutre_mouse';
-my $dbh = DBI->connect( "DBI:mysql:host=otterlive;port=3324;database=${db}",
-    "ottadmin", "lutralutra", { RaiseError => 1, AutoCommit => 0 } );
+my $dbh = otterlive_dbh($db);
 
 my $seq_region_id_select_sql = <<'SQL'
 select sr.seq_region_id from seq_region sr
