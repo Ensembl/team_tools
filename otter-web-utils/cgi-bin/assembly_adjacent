@@ -6,7 +6,7 @@ use warnings;
 use CGI::Carp qw(fatalsToBrowser);
 BEGIN { use lib ($ENV{OTTER_PERL_INC} || q{}) =~ m{([^:]+)}g }
 
-use DBI;
+use OtterWeb 'otterlive_dbh';
 use CGI;
 use JSON();
 
@@ -46,8 +46,7 @@ my $cgi  = CGI->new;
 my $json = JSON->new;
 
 my $db = $cgi->param("db");
-my $dbh = DBI->connect( "DBI:mysql:host=otterlive;port=3324;database=${db}",
-    "ottadmin", "xxx", { RaiseError => 1, AutoCommit => 0 } );
+my $dbh = otterlive_dbh($db);
 
 my ($count) = @{$dbh->selectcol_arrayref(
                     $assembly_adjacencies_count_select_sql)};
