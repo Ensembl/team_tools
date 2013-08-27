@@ -1,0 +1,132 @@
+#! /usr/bin/env perl
+
+use strict;
+use warnings;
+use Getopt::Long;
+use Try::Tiny;
+use File::Slurp 'read_dir';
+
+sub main {
+    my (@error, %opt);
+    GetOptions(\%opt, 'help|h', 'verbose|v', 'keyname|k=s',
+               'keyfile|K=s', 'ident|i')
+      or push @error, 'Bad options';
+    push @error, 'Cannot resolve key - specified by keyname and keyfile'
+      if exists $opt{keyname} && exists $opt{keyfile};
+
+    ### Where we're going, and as which user
+    #
+    my ($desthost, $cmd, @arg) = @ARGV;
+    if (!defined $desthost) {
+        $desthost = 'not-specified';
+        push @error, 'Destination host argument is required';
+    }
+    unless ($opt{ident} xor defined $cmd) {
+        push @error, 'Command or --ident is required';
+    }
+    my ($dlu, $remuser) = try { hostinfo($desthost) }
+      catch { push @error, "hostinfo($desthost): $_"; qw() };
+
+    ### Find key
+    #
+    my $keysdir = keysdir($remuser);
+    $opt{keyname} = 'restart-server';
+    my $key = exists $opt{keyfile} ? $opt{keyfile} : "$keysdir/$opt{keyname}";
+    delete @opt{qw{ keyname keyfile }};
+
+    unless (-f $key && -f "$key.pub") {
+        my @key;
+        @key = -d $keysdir ? read_dir($keysdir) : ('(absent)');
+        push @error, "Files ($key $key.pub) not present,\n  $keysdir contains (@key)";
+    }
+
+    ### Go / no-go
+    #
+    push @error, 'Help requested' if $opt{help};
+    show_syntax(\@error, $keysdir, $dlu) if @error;
+
+    if ($opt{ident}) {
+        print "$key\n";
+    } else {
+        die "Needs translation from Bash mess";
+    }
+
+    return;
+}
+
+
+sub hostinfo {
+    my ($desthost) = @_;
+
+    if ($desthost =~ m{^web-otterdev-}) {
+        return qw( www-dev www-core );
+    } elsif ($desthost =~ m{^web-otter(staging|live)-}) {
+        return qw( www-live www-core );
+    } elsif ($desthost =~ m{^web-ottersand-}) {
+        warn "[d] Going to $desthost, you will need to have defined your own keys\n";
+        my $user = getpwuid($<);
+        return ("www-$user", $user);
+    } else {
+        die "desthost=$desthost not recognised, cannot set DLU or remuser";
+    }
+}
+
+sub keysdir {
+    my ($remuser) = @_;
+    my $sshdir = "$ENV{HOME}/.ssh";
+    my $psdir = "$sshdir/pagesmith"; # contains $key and $key.pub put there by webteam
+    my $webvmdir = "$sshdir/webvm"; # user-maintained
+    return $remuser eq 'www-core' ? $psdir : $webvmdir;
+}
+
+
+sub show_syntax {
+    my ($errs, $keysdir, $dlu) = @_;
+    local $" = "\n  ";
+    print "Syntax: $0 [-v] [ -k <keyname> | -K <keyfile> ] <hostname> { -i | <cmd> <args>* }
+
+Requires the named key to exist in $keysdir/
+or at the given <keyfile>.
+
+Remote script expects cmd... in the form
+  /www/www-*/utilities/* <args>
+
+When <cmd> is not an absolute path,
+  /www/www-$dlu/utilities/ is prepended,
+  where DLU = dev | live | \$USER and is derived from the hostname
+
+(Docs here are incomplete)
+  @$errs
+";
+    exit 4;
+}
+
+main();
+
+__END__
+
+# Error 'Requires command user and parameters to be set\n' (sic)
+# comes from /www/utilities/server-actions.pl
+#
+# Error 'restricted-scp: This key can only be used to scp files to/from this server (and to run ls)'
+# comes from /www/utilities/restricted-scp
+
+remotecmd=$1
+if ! [[ "$remotecmd" =~ ^/ ]]; then
+    remotecmd="/www/www-$DLU/utilities/$remotecmd"
+    [ -n "$verbose" ] && echo "[i] with prefix, remotecmd=$remotecmd" >&2
+fi
+
+remoteparam="$( verbose=$verbose \
+ perl -MJSON::XS -MMIME::Base64 -e '
+  my $out = encode_base64(encode_json(\@ARGV));
+  # comes out multi-line, but then the shell does s{\n}{ }g
+  warn "[i] Params encode to\n$out" if $ENV{verbose};
+  print $out;
+' "$@" )" || {
+    echo Failed to encode parameters - please check Perl and its libs >&2
+    exit 71
+}
+
+[ -n "$verbose" ] && set -x
+exec ssh -Taxi "$key" $remuser@"$desthost" "$remotecmd" "$remoteparam"
