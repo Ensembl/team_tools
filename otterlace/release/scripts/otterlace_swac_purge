@@ -35,7 +35,11 @@ mca@sanger.ac.uk
 
 =cut
 
-my @expect_arch = qw( linux-i386 linux-x86_64 );
+my @expect_arch = qw(
+    linux-i386
+    linux-x86_64
+    precise-x86_64
+    );
 
 sub main {
     my $really = 0;
