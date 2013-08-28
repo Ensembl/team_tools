@@ -47,15 +47,32 @@ Purge old Otterlace releases from /software/anacode .
 Defaults to a dry run.\n";
     } # else continue, dry run
 
-    my @found_dir = sort glob("/software/noarch/*/anacode/otter");
-    my @expect_dir = map {   "/software/noarch/$_/anacode/otter" } @expect_arch;
+    # calculate the expected and found lists
+    my %found_dir  = map {
+        $_ => 1;
+    } glob("/software/noarch/*/anacode/otter");
+    my %expect_dir = map {
+        (sprintf '/software/noarch/%s/anacode/otter', $_) => 1;
+    } @expect_arch;
+    my @not_found_dir  = grep { ! $found_dir{$_}  } keys %expect_dir;
+    my @not_expect_dir = grep { ! $expect_dir{$_} } keys %found_dir;
 
-    die "Arch change? @found_dir != @expect_dir"
-      unless "@found_dir" eq "@expect_dir";
+    # die if the expected and found lists do not match
+    if (@not_found_dir || @not_expect_dir) {
+        my @error = 'Arch change?';
+        push @error
+            , join "\n    ", 'not found', sort @not_found_dir
+            if @not_found_dir;
+        push @error
+            , join "\n    ", 'not expected', sort @not_expect_dir
+            if @not_expect_dir;
+        push @error, 'died'; # this puts the file name and line number on to a separate line
+        die join "\n  ", @error;
+    }
 
     # Treat the arches together, so the version designations go in
     # lockstep.  This isn't necessary, they could be done separately.
-    my @drop = cleanup(@found_dir);
+    my @drop = cleanup(keys %found_dir);
 
     if ($really) {
         delete_dir(@drop);
