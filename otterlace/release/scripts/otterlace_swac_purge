@@ -259,6 +259,8 @@ sub delete_dir {
         system("rm", "-rf", $fn);
         print "\n";
     }
+
+    return;
 }
 
 exit main();
