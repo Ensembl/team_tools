@@ -263,9 +263,11 @@ sub whittle {
         my @m = sort { $a <=> $b } keys %$minors;
         my $last = pop @m; # the one we keep
 
-        # ensure no missing arches
-        die "Missing arch in @{ $minors->{$last} } for v$major"
-          unless @{ $minors->{$last} } == @expect_arch;
+        # note missing arches - we would keep them, if they existed
+        my $missing = @expect_arch - @{ $minors->{$last} };
+        warn join '',
+          "[w] Want to keep v$major.$last: it is missing $missing arch(es), present are\n",
+            map {"  $_\n"} @{ $minors->{$last} } if $missing;
 
         push @$keep, @{ $minors->{$last} };
         push @drop,  @{ $minors->{$_}    } foreach @m;
