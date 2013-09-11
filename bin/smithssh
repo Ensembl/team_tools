@@ -131,6 +131,11 @@ comes from /www/utilities/restricted-scp
  http://apps.sanger.ac.uk/docs/admin/svn/
  http://apps.sanger.ac.uk/docs/admin/publish/
 
+
+=head1 AUTHOR
+
+mca@sanger.ac.uk
+
 =cut
 
 
@@ -149,27 +154,23 @@ my %CMD2KEYN = #  keyname => regexp_for_command
   );
 
 
+my %opt;
 sub main {
     ensure_uniC();
 
-    ### Option processing.
+    ### Option processing
     #
-    my (@error, %opt);
-    # Avoid stealing options from the remote command
-    Getopt::Long::Configure(qw( bundling require_order ));
-    GetOptions(\%opt, 'help|h', 'keyname|k=s', 'keyfile|K=s',
-               'utilities|u', 'ident|i', 'dryrun|dry-run|n')
-      or push @error, 'Bad options';
-    push @error, 'Cannot resolve key - specified by keyname and keyfile'
-      if exists $opt{keyname} && exists $opt{keyfile};
-
-    pod2usage(-exitstatus => 0, -verbose => 2) if $opt{help};
-
+    my @error;
+    try {
+        do_getopt()
+    } catch {
+        push @error, $_;
+    };
 
     ### Where we're going, and as which user
     #
     my ($desthost, $cmd, @arg) = @ARGV;
-    if (!defined $desthost or $desthost eq '') {
+    if (!defined $desthost || $desthost eq '') {
         $desthost = 'web-otterdev--mumbly-unspecified'; # for &hostinfo
         push @error, 'Destination host argument is required'
           unless $opt{ident};
@@ -182,7 +183,8 @@ sub main {
 
     ### What we're doing
     #
-    if ($opt{utilities} || $cmd =~ m{^utilities/}) {
+    $opt{utilities} = 1 if defined $cmd && $cmd =~ m{^utilities/};
+    if ($opt{utilities}) {
         $cmd =~ s{^(utilities/|)([^/]+)$}{/www/$dlu/utilities/$2}
           or push @error, "Failed to supply pathname prefix for command '$cmd'";
     }
@@ -213,21 +215,14 @@ sub main {
 
     ### Encode parameters, maybe
     #
-    if ($key =~ m{/restart-server$}) {
-        # Remote script using this key decodes the parameters
-        #
-        my $json_utf8 = encode_json(\@arg); # also does UTF8 encoding
-        my $b64 = encode_base64($json_utf8); # may contain "\n"s
-        warn explain_uniC(arg => \@arg, json_utf8 => $json_utf8,
-                          output_base64 => $b64) if $opt{dryrun};
-        @arg = ($b64);
-    }
+    # Remote script using this key decodes the parameters
+    @arg = quote64_args(@arg) if $key =~ m{/restart-server$};
 
     ### Go / no-go
     #
-    show_syntax($keysdir, $dlu, @error) if @error;
-
-    if ($opt{ident}) {
+    if (@error) {
+        show_syntax($keysdir, $dlu, @error);
+    } elsif ($opt{ident}) {
         print "$key\n";
     } else {
         my @cmd = ('ssh');
@@ -243,11 +238,26 @@ sub main {
 
         if ($opt{dryrun}) {
             warn "[d] Command would be\n @cmd\n";
-        } else {
-            exec @cmd;
-            die "Failed: @cmd";
+            exit 0;
         }
+
+        exec @cmd;
+        die "Failed: @cmd";
     }
+
+    return;
+}
+
+sub do_getopt {
+    # Avoid stealing options from the remote command
+    Getopt::Long::Configure(qw( bundling require_order ));
+    GetOptions(\%opt, 'help|h', 'keyname|k=s', 'keyfile|K=s',
+               'utilities|u', 'ident|i', 'dryrun|dry-run|n')
+      or die "Bad options\n";
+    die "Cannot resolve key - specified by keyname and keyfile\n"
+      if exists $opt{keyname} && exists $opt{keyfile};
+
+    pod2usage(-exitstatus => 0, -verbose => 2) if $opt{help};
 
     return;
 }
@@ -270,6 +280,16 @@ sub ensure_uniC {
     }
 
     return;
+}
+
+sub quote64_args {
+    my @arg = @_;
+
+    my $json_utf8 = encode_json(\@arg); # also does UTF8 encoding
+    my $b64 = encode_base64($json_utf8); # may contain "\n"s
+    warn explain_uniC(arg => \@arg, json_utf8 => $json_utf8,
+                      output_base64 => $b64) if $opt{dryrun};
+    return $b64;
 }
 
 sub explain_uniC {
