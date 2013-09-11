@@ -2,60 +2,293 @@
 
 use strict;
 use warnings;
+
 use Getopt::Long;
+use Pod::Usage;
+
 use Try::Tiny;
 use File::Slurp 'read_dir';
 
+use JSON 'encode_json'; # should use JSON::XS automatically
+use MIME::Base64 'encode_base64';
+
+
+=head1 NAME
+
+smithssh - wrapper for "find the right key; ssh to webserver"
+
+=head1 SYNTAX
+
+  smithssh <host> <command> [ <args> ]*
+  smithssh --ident [ <host> [ <command> ... ] ]
+
+=head2 Examples
+
+  smithssh -u web-otterdev-01 restart
+  smithssh    web-otterdev-01 utilities/restart
+
+  smithssh web-otterstaging-01 ls -l /www/www-live/
+
+  rsync -ai -e smithssh web-otterdev-01:/www/tmp/www-dev /tmp/foo
+
+  scp -i $( smithssh -i web-otterdev-01 scp ) -rp \
+               www-core@web-otterdev-01:/www/tmp/www-dev /tmp/foo
+  # Ugh.  Let me know if you want "smithscp".
+
+=head1 DESCRIPTION
+
+The user account running the web server on the virtual machines does
+not accept password logins.  Instead it requires use of ssh key pairs,
+with a restricted command.
+
+=head2 Prerequisites
+
+You need a host to connect to, e.g. C<web-otterdev-01>.
+
+In the normal case of the remote user being C<www-core> you need ssh
+keypairs written into F<~/.ssh/pagesmith/> by the web team's script.
+
+=head2 Functions of this script
+
+=over 4
+
+=item * Guessing the correct key to use
+
+There may be up to three keys (by usage patterns seen at time of
+writing).  Having the script guess which to use saves typing.
+
+=item * Guessing the remote user
+
+The options are "yourself" for the sandbox, or "www-core" for dev,
+staging and live hosts.  This is handled implicitly.
+
+=item * Encoding the command
+
+The remote C<server-actions.pl> command requires that its arguments be
+UTF8, JSON and Base64 encoded.
+
+=item * Supplying command abbreviations
+
+The remote C<server-actions.pl> command requires that subcommands be
+given with an explicit path which can be inferred from the other
+parameters.
+
+=back
+
+Logic for these functions is provided by inspection of the remote
+code.
+
+
+=head1 OPTIONS
+
+These are all optional flags.
+
+=over 4
+
+=item --utilities | -u
+
+Prepend C< <command> > with the remainder of the name of the
+F<utilities/> directory, calculated for the remote host and user.
+
+This is implied if the command starts with C<utilities/>.
+
+=item --dryrun | -n
+
+Echo the resulting L<ssh(1)> command instead of calling C<exec>.
+
+=item --ident | -i
+
+Don't run L<ssh(1)> but instead print the filename of the key.
+
+=item --keyfile | -K <filename>
+
+Give the filename of the key for C<ssh -i $filename> .  There are
+easier ways to get the right key, you probably don't need it.
+
+This may be a relative filename, we do not C<chdir>.
+
+=item --keyname | -k <name>
+
+Give the leafname the key for the keyfile.  There are easier ways to
+get the right key, you probably don't need it.
+
+The directory is inferred from the expected remote user.
+
+=back
+
+
+=head1 DIAGNOSTICS
+
+Error C<'Requires command user and parameters to be set\n'> (sic)
+comes from F</www/utilities/server-actions.pl>
+
+Error C<'restricted-scp: This key can only be used to scp files to/from this server (and to run ls)'>
+comes from /www/utilities/restricted-scp
+
+
+=head1 SEE ALSO
+
+ http://apps.sanger.ac.uk/docs/admin/svn/
+ http://apps.sanger.ac.uk/docs/admin/publish/
+
+=cut
+
+
+# Hints for auto keyname guessing are derived from study of the
+# scripts invoked on the remote
+#
+my %CMD2KEYN = #  keyname => regexp_for_command
+  (# server-actions.pl runs tools within the WEBDIR
+   'restart-server' => qr{^/www/},
+
+   # restricted-scp does various file transfer
+   'scp-ssh' => qr{^(scp|rsync|ls|rm|mkdir|rmdir|grep)$},
+
+   # used direct?  I don't have it
+   'svn-ssh' => qr{^(svn)$},
+  );
+
+
 sub main {
+    ensure_uniC();
+
+    ### Option processing.
+    #
     my (@error, %opt);
-    GetOptions(\%opt, 'help|h', 'verbose|v', 'keyname|k=s',
-               'keyfile|K=s', 'ident|i')
+    # Avoid stealing options from the remote command
+    Getopt::Long::Configure(qw( bundling require_order ));
+    GetOptions(\%opt, 'help|h', 'keyname|k=s', 'keyfile|K=s',
+               'utilities|u', 'ident|i', 'dryrun|dry-run|n')
       or push @error, 'Bad options';
     push @error, 'Cannot resolve key - specified by keyname and keyfile'
       if exists $opt{keyname} && exists $opt{keyfile};
 
+    pod2usage(-exitstatus => 0, -verbose => 2) if $opt{help};
+
+
     ### Where we're going, and as which user
     #
     my ($desthost, $cmd, @arg) = @ARGV;
-    if (!defined $desthost) {
-        $desthost = 'not-specified';
-        push @error, 'Destination host argument is required';
+    if (!defined $desthost or $desthost eq '') {
+        $desthost = 'web-otterdev--mumbly-unspecified'; # for &hostinfo
+        push @error, 'Destination host argument is required'
+          unless $opt{ident};
     }
-    unless ($opt{ident} xor defined $cmd) {
-        push @error, 'Command or --ident is required';
+    unless ($opt{ident} or defined $cmd) {
+        push @error, 'Command and/or --ident are required';
     }
     my ($dlu, $remuser) = try { hostinfo($desthost) }
       catch { push @error, "hostinfo($desthost): $_"; qw() };
 
+    ### What we're doing
+    #
+    if ($opt{utilities} || $cmd =~ m{^utilities/}) {
+        $cmd =~ s{^(utilities/|)([^/]+)$}{/www/$dlu/utilities/$2}
+          or push @error, "Failed to supply pathname prefix for command '$cmd'";
+    }
+
     ### Find key
     #
     my $keysdir = keysdir($remuser);
-    $opt{keyname} = 'restart-server';
-    my $key = exists $opt{keyfile} ? $opt{keyfile} : "$keysdir/$opt{keyname}";
-    delete @opt{qw{ keyname keyfile }};
+    my ($key, $keysrc);
+    if (exists $opt{keyfile}) {
+        $key = delete $opt{keyfile};
+        $keysrc = '--keyfile';
+    } else {
+        my $keyname = delete $opt{keyname};
+        if (defined $keyname) {
+            $keysrc = '--keyname';
+        } else {
+            $keyname = guess_keyname($cmd);
+            $keysrc = 'guess_keyname';
+        }
+        $key = "$keysdir/$keyname";
+    }
 
     unless (-f $key && -f "$key.pub") {
         my @key;
         @key = -d $keysdir ? read_dir($keysdir) : ('(absent)');
-        push @error, "Files ($key $key.pub) not present,\n  $keysdir contains (@key)";
+        push @error, "Files ($key $key.pub) from $keysrc not present,\n  $keysdir contains (@key)";
+    }
+
+    ### Encode parameters, maybe
+    #
+    if ($key =~ m{/restart-server$}) {
+        # Remote script using this key decodes the parameters
+        #
+        my $json_utf8 = encode_json(\@arg); # also does UTF8 encoding
+        my $b64 = encode_base64($json_utf8); # may contain "\n"s
+        warn explain_uniC(arg => \@arg, json_utf8 => $json_utf8,
+                          output_base64 => $b64) if $opt{dryrun};
+        @arg = ($b64);
     }
 
     ### Go / no-go
     #
-    push @error, 'Help requested' if $opt{help};
-    show_syntax(\@error, $keysdir, $dlu) if @error;
+    show_syntax($keysdir, $dlu, @error) if @error;
 
     if ($opt{ident}) {
         print "$key\n";
     } else {
-        die "Needs translation from Bash mess";
+        my @cmd = ('ssh');
+
+        # Withhold stuff from remote - local XServer & keyring
+        push @cmd, '-Ax';
+        delete $ENV{SSH_AUTH_SOCK};
+
+        push @cmd, -i => $key;
+
+        $desthost .= " \\\n   " if $opt{dryrun};
+        push @cmd, "$remuser\@$desthost", $cmd, @arg;
+
+        if ($opt{dryrun}) {
+            warn "[d] Command would be\n @cmd\n";
+        } else {
+            exec @cmd;
+            die "Failed: @cmd";
+        }
     }
 
     return;
 }
 
 
-sub hostinfo {
+sub ensure_uniC {
+    my ($guard, $guarded) = ('--done-cal');
+    my $want = 0x60; # require -CAL for locale-conditional Unicode @ARGV
+
+    if (@ARGV && $ARGV[0] eq $guard) {
+        $guarded = 1;
+        shift @ARGV;
+    }
+
+    if ((${^UNICODE} & $want) != $want) {
+        my @reexec = ($^X, "-CAL", $0, $guard, @ARGV);
+        die "Re-exec(@reexec): something went wrong" if $guarded;
+        exec @reexec;
+        die "Failed to re-exec(@reexec): $!";
+    }
+
+    return;
+}
+
+sub explain_uniC {
+    my %info = @_;
+
+    my @no_tbs = (@{ $info{arg} }, $info{json_utf8});
+    foreach (@no_tbs) {
+        s{([^\x0A\x20-\x7F])}{sprintf(ord($1) > 255 ? "\\x{%04X}" : "\\x%02X", ord($1))}eg;
+    }
+    $info{tbs_quoted} = \@no_tbs;
+    $info{unicode_config} = { '${^UNICODE}' => ${^UNICODE},
+                              map { $_=>$ENV{$_} } qw( LC_ALL LC_TYPE LANG ) };
+
+    require YAML;
+    return YAML::Dump({ '[d] explain_uniC' => \%info });
+}
+
+
+sub hostinfo { # returns ($dlu, $remuser)
     my ($desthost) = @_;
 
     if ($desthost =~ m{^web-otterdev-}) {
@@ -63,70 +296,50 @@ sub hostinfo {
     } elsif ($desthost =~ m{^web-otter(staging|live)-}) {
         return qw( www-live www-core );
     } elsif ($desthost =~ m{^web-ottersand-}) {
-        warn "[d] Going to $desthost, you will need to have defined your own keys\n";
         my $user = getpwuid($<);
-        return ("www-$user", $user);
+        return ("$user/www-dev", $user);
     } else {
-        die "desthost=$desthost not recognised, cannot set DLU or remuser";
+        die "desthost=$desthost not recognised, cannot set DLU or remuser\n";
     }
+}
+
+sub guess_keyname {
+    my ($cmd) = @_;
+    if (!defined $cmd) {
+        warn "[w] without a command, I use an arbitrary keyname\n";
+        return 'restart-server';
+    }
+
+    my @out;
+    while (my ($name, $re) = each %CMD2KEYN) {
+        push @out, $name if $cmd =~ $re;
+    }
+    return $out[0] if 1 == @out;
+    die "Cannot guess keyname from command '$cmd'\n";
 }
 
 sub keysdir {
     my ($remuser) = @_;
     my $sshdir = "$ENV{HOME}/.ssh";
     my $psdir = "$sshdir/pagesmith"; # contains $key and $key.pub put there by webteam
-    my $webvmdir = "$sshdir/webvm"; # user-maintained
+    my $webvmdir = "$sshdir/smithssh"; # user-maintained
     return $remuser eq 'www-core' ? $psdir : $webvmdir;
 }
 
 
 sub show_syntax {
-    my ($errs, $keysdir, $dlu) = @_;
+    my ($keysdir, $dlu, @err) = @_;
     local $" = "\n  ";
-    print "Syntax: $0 [-v] [ -k <keyname> | -K <keyfile> ] <hostname> { -i | <cmd> <args>* }
+    print "Syntax: $0 [ -k <keyname> | -K <keyfile> ] <hostname> <cmd> <args>*
 
-Requires the named key to exist in $keysdir/
-or at the given <keyfile>.
+Based on options I understood,
+  looking for keys in $keysdir/
+  utility commands get /www/$dlu/utilities/ prepended
 
-Remote script expects cmd... in the form
-  /www/www-*/utilities/* <args>
-
-When <cmd> is not an absolute path,
-  /www/www-$dlu/utilities/ is prepended,
-  where DLU = dev | live | \$USER and is derived from the hostname
-
-(Docs here are incomplete)
-  @$errs
+Problems!
+  @err
 ";
     exit 4;
 }
 
 main();
-
-__END__
-
-# Error 'Requires command user and parameters to be set\n' (sic)
-# comes from /www/utilities/server-actions.pl
-#
-# Error 'restricted-scp: This key can only be used to scp files to/from this server (and to run ls)'
-# comes from /www/utilities/restricted-scp
-
-remotecmd=$1
-if ! [[ "$remotecmd" =~ ^/ ]]; then
-    remotecmd="/www/www-$DLU/utilities/$remotecmd"
-    [ -n "$verbose" ] && echo "[i] with prefix, remotecmd=$remotecmd" >&2
-fi
-
-remoteparam="$( verbose=$verbose \
- perl -MJSON::XS -MMIME::Base64 -e '
-  my $out = encode_base64(encode_json(\@ARGV));
-  # comes out multi-line, but then the shell does s{\n}{ }g
-  warn "[i] Params encode to\n$out" if $ENV{verbose};
-  print $out;
-' "$@" )" || {
-    echo Failed to encode parameters - please check Perl and its libs >&2
-    exit 71
-}
-
-[ -n "$verbose" ] && set -x
-exec ssh -Taxi "$key" $remuser@"$desthost" "$remotecmd" "$remoteparam"
