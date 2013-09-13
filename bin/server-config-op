@@ -63,7 +63,7 @@ feature, will be used monthly, workaround by branching on the remote.
 Given a list of branch names (which must exist already) and commits
 (five or more hex digits), mixed any way,
 
-=over 2
+=over 4
 
 =item 1. For each branch (in the order given),
 
@@ -81,6 +81,8 @@ Merge conflict and null pick are the most likely cause of failure.
 When these happen, you are left to clear up and proceed with the rest
 of your merges by hand; maybe file the transcript with your feature
 request?
+
+=back
 
 
 =head2 To run in intcvs1 hook
@@ -339,15 +341,21 @@ sub sane_repo {
 sub syntax_msg {
     $0 =~ s{.*/}{};
     die <<"HELP";
-Syntax: $0 merge [ --force ]
-        $0 update [ <remote> ]
+Syntax: $0 update [ <remote> ]
+        $0 pick <commitid>+  <branch>+
 
-Merge is probably best done centrally via a hook.
-Let's see how it goes.
+For details, see
+  perldoc $0
 
 Update ensures all local branches exist and are up-to-date with the
 specified remote.  Local changes are rebased forward.  Obsolete
 branches are removed safely.
+
+Pick will "git cherry-pick -x" each of the given commitids, in order,
+onto all of the given numeric branches in turn.
+
+This script also implements a merge-like operation.  This is done
+centrally via a hook and not intended for use in working copies.
 
 HELP
 }
