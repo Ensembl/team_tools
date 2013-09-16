@@ -21,6 +21,7 @@ smithssh - wrapper for "find the right key; ssh to webserver"
 
   smithssh <host> <command> [ <args> ]*
   smithssh --ident [ <host> [ <command> ... ] ]
+  smithssh --path <type> <host>
 
 =head2 Examples
 
@@ -29,10 +30,11 @@ smithssh - wrapper for "find the right key; ssh to webserver"
 
   smithssh web-otterstaging-01 ls -l /www/www-live/
 
-  rsync -ai -e smithssh web-otterdev-01:/www/tmp/www-dev /tmp/foo
+  rem_tmp=$( smithssh -p tmp web-otterdev-01 )
+  rsync -ai -e smithssh web-otterdev-01:$rem_tmp /tmp/foo
 
   scp -i $( smithssh -i web-otterdev-01 scp ) -rp \
-               www-core@web-otterdev-01:/www/tmp/www-dev /tmp/foo
+               www-core@web-otterdev-01:$rem_tmp /tmp/foo
   # Ugh.  Let me know if you want "smithscp".
 
 =head1 DESCRIPTION
@@ -73,6 +75,10 @@ The remote C<server-actions.pl> command requires that subcommands be
 given with an explicit path which can be inferred from the other
 parameters.
 
+=item * Knowing the remote directory name
+
+So code operating on remote directories can avoid magic strings.
+
 =back
 
 Logic for these functions is provided by inspection of the remote
@@ -99,6 +105,13 @@ Echo the resulting L<ssh(1)> command instead of calling C<exec>.
 =item --ident | -i
 
 Don't run L<ssh(1)> but instead print the filename of the key.
+
+=item --path | -p <type>
+
+Don't run L<ssh(1)> but instead print the filename on the remote, of
+the given type.
+
+Valid types are C<tmp> or C<webdir>.
 
 =item --keyfile | -K <filename>
 
@@ -175,7 +188,7 @@ sub main {
         push @error, 'Destination host argument is required'
           unless $opt{ident};
     }
-    unless ($opt{ident} or defined $cmd) {
+    unless ($opt{ident} or $opt{path} or defined $cmd) {
         push @error, 'Command and/or --ident are required';
     }
     my ($dlu, $remuser) = try { hostinfo($desthost) }
@@ -187,6 +200,12 @@ sub main {
     if ($opt{utilities}) {
         $cmd =~ s{^(utilities/|)([^/]+)$}{/www/$dlu/utilities/$2}
           or push @error, "Failed to supply pathname prefix for command '$cmd'";
+    }
+    if ($opt{path}) {
+        push @error, "--path $opt{path}: Expected 'tmp' or 'webdir'"
+          unless $opt{path} =~ m{^(tmp|webdir)$};
+        $opt{keyname} = 'restart-server' # irrelevant for this action
+          unless $opt{keyname} || $opt{keyfile};
     }
 
     ### Find key
@@ -224,6 +243,10 @@ sub main {
         show_syntax($keysdir, $dlu, @error);
     } elsif ($opt{ident}) {
         print "$key\n";
+    } elsif ($opt{path}) {
+        my $tmp = $opt{path} eq 'tmp' ? 'tmp/' : '';
+        my $dir = "/www/$tmp$dlu";
+        print "$dir\n";
     } else {
         my @cmd = ('ssh');
 
@@ -252,7 +275,8 @@ sub do_getopt {
     # Avoid stealing options from the remote command
     Getopt::Long::Configure(qw( bundling require_order ));
     GetOptions(\%opt, 'help|h', 'keyname|k=s', 'keyfile|K=s',
-               'utilities|u', 'ident|i', 'dryrun|dry-run|n')
+               'utilities|u', 'ident|i', 'path|p=s',
+               'dryrun|dry-run|n')
       or die "Bad options\n";
     die "Cannot resolve key - specified by keyname and keyfile\n"
       if exists $opt{keyname} && exists $opt{keyfile};
@@ -351,6 +375,8 @@ sub show_syntax {
     my ($keysdir, $dlu, @err) = @_;
     local $" = "\n  ";
     print "Syntax: $0 [ -k <keyname> | -K <keyfile> ] <hostname> <cmd> <args>*
+        $0 --ident [ <hostname> [ <cmd> ] ]
+        $0 --path < tmp | webdir > <hostname>
 
 Based on options I understood,
   looking for keys in $keysdir/
