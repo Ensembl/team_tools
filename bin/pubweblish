@@ -1,0 +1,89 @@
+#! /bin/sh
+
+info_txt() {
+cat <<INFO
+Syntax:  publweblish --dev
+
+  Update $SRCDIR from $LEGACY_DIR
+  then update web-otterdev-01 from $SRCDIR
+  just for {cgi-bin,lib,data}
+
+
+The tree /nfs/anacode/WEBVM_docs.dev is analogous
+to       /nfs/WWWdev/SANGER_docs for "dev" purposes.
+
+and serves as the source for copying to new virtual machine
+webservers.
+
+
+The tree /nfs/anacode/WEBVM_docs.live does not yet exist,
+there is nowhere to put it.
+
+
+
+The directories
+  WEBVM_docs.dev/lib/otter/
+  WEBVM_docs.dev/cgi-bin/otter/
+    are to be populated by the build script,
+
+  WEBVM_docs.dev/
+  WEBVM_docs.dev/data/otter/
+  WEBVM_docs.dev/apps/webvm-deps/
+    are updated with git-pull(1),
+
+then the rsync'd over into the webvm.git trees.
+
+
+
+This is currently intended as a makeshift solution, awaiting an easier
+way to run pull or build operations remotely.
+			-- mca 2013-09-16
+INFO
+}
+
+
+send_files() {
+    local srcdir host part dest
+    srcdir=$1
+    host=$2
+    part=$3
+    dest=$( smithssh -p webdir $host )
+    echo == send_files: $srcdir/$part/ to $host:$dest/$part/
+    # nb. "rsync -n" broken, awaiting RT#353531
+    #      "rsync -SWH" are also not available
+    rsync -v -ai --delete -e smithssh $srcdir/$part/ $host:$dest/$part/
+}
+
+from_WWWdev() {
+    local old part srcdir
+    old=$1
+    srcdir=$2
+    part=$3
+    echo == from_WWWdev: $part
+    rsync -aiSWH --no-g --delete $old/$part/otter/ $srcdir/$part/otter/
+}
+
+do_util() {
+    local host op
+    host=$1
+    op=$2
+    echo == do_util: utilities/$op on $host
+    smithssh $host utilities/$op
+    echo
+}
+
+
+SRCDIR=/nfs/anacode/WEBVM_docs.dev
+LEGACY_DIR=/nfs/WWWdev/SANGER_docs
+
+if [ "$1" = '--dev' ]; then
+
+    for dir in cgi-bin lib data; do
+        from_WWWdev $LEGACY_DIR $SRCDIR $dir
+        send_files $SRCDIR web-otterdev-01 $dir/otter
+    done
+
+    do_util web-otterdev-01 restart
+else
+    info_txt
+fi
