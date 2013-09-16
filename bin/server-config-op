@@ -25,9 +25,8 @@ server-config-op - operate on Otter Server config repository
  # edit files
  git commit -m 'fixed something'
 
- git checkout 65
- git cherry-pick -x $( git rev-parse 66 )
- # XXX: could be a useful subcommand
+ commitid=$( git rev-parse 66 )
+ server-config-op pick $commitid 65
 
  git checkout root
  # edit files
@@ -58,6 +57,8 @@ the error is handled tersely and without cleaning up properly.
 XXX: Newly created local branches are not handled.  This missing
 feature, will be used monthly, workaround by branching on the remote.
 
+See L<http://mediawiki.internal.sanger.ac.uk/index.php/Otter_Server_configuration#Getting_up-to-date>
+
 =item server-config-op < cherry-pick | pick > <branch>* <commit>*
 
 Given a list of branch names (which must exist already) and commits
@@ -81,6 +82,37 @@ Merge conflict and null pick are the most likely cause of failure.
 When these happen, you are left to clear up and proceed with the rest
 of your merges by hand; maybe file the transcript with your feature
 request?
+
+See L<http://mediawiki.internal.sanger.ac.uk/index.php/Otter_Server_configuration#Cherry_pick_to_other_versions>
+
+=item new <version> [ <remote> ]
+
+The version number should be one greater than the largest current
+version number.  The new version is created by
+
+=over 4
+
+=item 1. Update, like C<server-config-op update>
+
+=item 2. Tagging the branch point, because it is otherwise hard to
+find later.
+
+=item 3. Update designations.txt for new dev.
+
+Currently manual, after C<server-config-op new> finishes.
+
+=item 4. Push tag and new remote.
+
+=item 5. Update again.
+
+=back
+
+The default remote is C<origin>.
+
+If L<webpublish(1)> is still required, the caller must do it.
+
+See L<http://mediawiki.internal.sanger.ac.uk/index.php/Otter_Server_configuration#New_version_branch>
+
 
 =back
 
@@ -244,15 +276,12 @@ our $TMPFILE_RE = qr{^\.?\#|(~|\.bak|\.swp)$};
 sub main {
     $| = 1;
     umask 02;
+    set_globals();
 
     my $op = shift @ARGV || '(nil)';
 
     # Sanity check repo
-    my @l_br = pipe_from(qw( git branch ));
-    my ($br) = (join '', @l_br) =~ m{^\*\s*(.+)$}m;
-    @l_br = map { m{^\*?\s+(\S+)$} ? ($1) : () } @l_br;
-
-    set_globals();
+    my ($br, @l_br) = branch_info();
 
     # Do stuff
     if ($op eq 'merge') {
@@ -289,11 +318,17 @@ sub main {
         restore_checkout($br);
 
     } elsif ($op =~ /^(cherry-)?pick$/) {
-        die "Cannot 'cherry-pick' in a bare repository" if $BARE;
+        die "Cannot '$op' in a bare repository" if $BARE;
         my @vsn = sort map { m{^(\d+|root)$} ? ($1) : () } @l_br;
         sane_repo(local => @vsn);
         cherry_pick(\@l_br, @ARGV);
         restore_checkout($br);
+
+    } elsif ($op eq 'new') {
+        die "Cannot '$op' in a bare repository" if $BARE;
+        my @vsn = sort map { m{^(\d+|root)$} ? ($1) : () } @l_br;
+        sane_repo(local => @vsn);
+        push_new(@ARGV);
 
     } else {
         syntax_msg();
@@ -316,6 +351,15 @@ sub set_globals {
     }
     return ();
 }
+
+sub branch_info { # Return ($checkout_branch, @local_branches)
+    my @l_br = pipe_from(qw( git branch ));
+    my ($br) = (join '', @l_br) =~ m{^\*\s*(.+)$}m;
+    @l_br = map { m{^\*?\s+(\S+)$} ? ($1) : () } @l_br;
+
+    return ($br, @l_br);
+}
+
 
 sub sane_repo {
     my ($l_r, @vsn) = @_;
@@ -343,6 +387,7 @@ sub syntax_msg {
     die <<"HELP";
 Syntax: $0 update [ <remote> ]
         $0 pick <commitid>+  <branch>+
+        $0 new <next-version> [ <remote> ]
 
 For details, see
   perldoc $0
@@ -595,6 +640,37 @@ sub cherry_pick {
             run(pick => qw( git cherry-pick -x ), $ci);
         }
     }
+
+    return;
+}
+
+
+sub push_new {
+    my ($new, $remote) = @_;
+    $remote = 'origin' unless defined $remote;
+    die "Expected to be given one new version number.  Requested is '$new' on remote '$remote'\n"
+      unless (1 == @_ || 2 == @_) && $new =~ m{^\d+$};
+
+    print "* 1.  Update from $remote (calling self)\n";
+    run(update1 => qw( server-config-op update ), $remote);
+
+    # Figure out latest version now, after update
+    my (undef, @l_br) = branch_info();
+    my ($last) = sort { $b <=> $a } map { m{^(\d+)$} ? ($1) : () } @l_br;
+    die "Expected that the new version would be N+1.  Latest (after update) = $last, requested is '$new' on '$remote'\n"
+      unless $last + 1 == $new;
+
+    print "* 2.  Tag\n";
+    run(tag2 => qw( git tag -a -m ), "Branch $new came off $last here", "new/$new", $last);
+
+    print "* 3.  Update designations.txt : dev = $new
+   XXX: This is not automated!\n\n"; sleep 3;
+
+    print "* 4.  Push to $remote\n";
+    run(push4 => qw( git push ), $remote, "new/$new", "$last:refs/heads/$new");
+
+    print "* 5.  Update again\n";
+    run(update5 => qw( server-config-op update ), $remote);
 
     return;
 }
