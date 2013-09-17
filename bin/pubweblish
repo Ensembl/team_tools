@@ -48,10 +48,12 @@ send_files() {
     host=$2
     part=$3
     dest=$( smithssh -p webdir $host )
-    echo == send_files: $srcdir/$part/ to $host:$dest/$part/
+    echo "== send_files($part):" $srcdir/$part/ to $host:$dest/$part/
     # nb. "rsync -n" broken, awaiting RT#353531
     #      "rsync -SWH" are also not available
+    set -x
     rsync -v -ai --delete -e smithssh $srcdir/$part/ $host:$dest/$part/
+    set +x
 }
 
 from_WWWdev() {
@@ -59,16 +61,20 @@ from_WWWdev() {
     old=$1
     srcdir=$2
     part=$3
-    echo == from_WWWdev: $part
+    echo "== from_WWWdev($part)"
+    set -x
     rsync -aiSWH --no-g --delete $old/$part/otter/ $srcdir/$part/otter/
+    set +x
 }
 
 do_util() {
     local host op
     host=$1
     op=$2
-    echo == do_util: utilities/$op on $host
+    echo == do_util: $host $op
+    set -x
     smithssh $host utilities/$op
+    set +x
     echo
 }
 
