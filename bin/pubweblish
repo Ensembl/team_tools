@@ -48,10 +48,10 @@ send_files() {
     host=$2
     part=$3
     dest=$( smithssh -p webdir $host )
-    echo "== send_files($part):" $srcdir/$part/ to $host:$dest/$part/
+    echo "== send_files(webdir$part):" $srcdir$part/ to $host:$dest$part/
     # nb. "rsync -SWH" are not available
     set -x
-    rsync $DRY_RUN -v -ai --delete -e smithssh $srcdir/$part/ $host:$dest/$part/
+    rsync $DRY_RUN -v -ai --delete -e smithssh $srcdir$part/ $host:$dest$part/
     set +x
 }
 
@@ -97,10 +97,13 @@ if [ "$1" = '--dev' ]; then
     shift
     maybe_dry "$@"
 
+    # Sync all three parts from legacy to our offline copy
     for dir in cgi-bin lib data; do
         from_WWWdev $LEGACY_DIR $SRCDIR $dir
-        send_files $SRCDIR web-otterdev-01 $dir/otter
     done
+
+    # Sync entire offline copy to webserver
+    send_files $SRCDIR web-otterdev-01 ''
 
     do_util web-otterdev-01 restart
 else
