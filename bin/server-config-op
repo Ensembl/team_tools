@@ -9,6 +9,7 @@ use warnings;
 use List::MoreUtils 'uniq';
 use File::Slurp qw( write_file );
 use Cwd 'getcwd';
+use Try::Tiny;
 
 
 =head1 NAME
@@ -367,8 +368,15 @@ sub sane_repo {
     die "init fail?" unless defined $BARE;
     rev_parse('HEAD'); # ensure we have a valid HEAD
     unless ($BARE) {
-        run(is_clean => qw( git diff --quiet --exit-code --cached ));
-        run(is_clean => qw( git diff --quiet --exit-code ));
+        try {
+            run(is_clean => qw( git diff --quiet --exit-code --cached ));
+            run(is_clean => qw( git diff --quiet --exit-code ));
+        } catch {
+            my $err = $_;
+            warn "Your working copy has uncommitted changes, according to\n$_\n";
+            run(status => qw( git status ));
+            die "\n\n\tMade no changes, to avoid losing your work-in-progress.\n\n\tPlease commit or reset, then try again.\n\n"
+        };
     }
 
     my $more =
