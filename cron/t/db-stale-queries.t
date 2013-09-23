@@ -104,6 +104,12 @@ sub check_stale {
         while (my $row = shift @$procs) {
             my %r;
             @r{qw{ Id User Host db Command Time State Info }} = @$row;
+            if (!defined $r{Time} && !defined $r{Info} && !defined $r{db} &&
+                $r{Command} eq 'Connect' &&
+                $r{State} eq 'Reading from net') {
+                # Connection has just started - nothing to learn
+                next;
+            }
             $r{Age} = age($r{Time});
             $r{Server} = $server;
             my ($id, $q_user, $host, $db, $command, $time, $state, $info) = @$row;
