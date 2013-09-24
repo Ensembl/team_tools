@@ -2,7 +2,7 @@
 $(document).ready(function() {
 
     var filterCheckUrlListUrl =
-      "/cgi-bin/jh13/filter_check_url_list";
+      "/cgi-bin/otter-web-utils/filter_check_url_list";
 
     var field_update =
       function(field) { field.td.text(field.value); };

@@ -2,7 +2,7 @@
 $(document).ready(function() {
 
     var
-      dbRootURL      = "/cgi-bin/jh13/",
+      dbRootURL      = "/cgi-bin/otter-web-utils/",
       dbNamesURL     = dbRootURL + "db_list",
       LocksURL       = dbRootURL + "locks",
       LocksDeleteURL = dbRootURL + "locks_delete";
