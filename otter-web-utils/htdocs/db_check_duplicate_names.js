@@ -2,7 +2,7 @@
 $(document).ready(function() {
 
     var
-      DBRootURL = "/cgi-bin/jh13/",
+      DBRootURL = "/cgi-bin/otter-web-utils/",
       DBListURL = DBRootURL + "db_list",
       DBCheckGeneDuplicateNamesURL       = DBRootURL + "db_check_gene_duplicate_names",
       DBCheckTranscriptDuplicateNamesURL = DBRootURL + "db_check_transcript_duplicate_names";
