@@ -186,3 +186,17 @@ splice @$arr, 1,2, 'baz'; # OK: reset
        (join ' ', sort @collect), 'eached');
 }
 splice @$arr, 1,2, 'baz'; # OK: reset
+
+
+
+
+# Clean code which may trip up the policy --
+
+my @elements = qw( Na K Li );
+while (my $this_ele = shift @elements) { # breakage from RT#355286
+    # Sing the Elements song
+}
+
+while (my $arg = shift) { # from @ARGV
+    # Junk the args
+}

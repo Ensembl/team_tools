@@ -45,7 +45,10 @@ sub violates {
 
     my $arg = first_arg($element);
     my $more_arg = '';
-    if ($arg->class eq 'PPI::Token::Word') {
+    if (!defined $arg) {
+        # implicit args - no problem
+        return;
+    } elsif ($arg->class eq 'PPI::Token::Word') {
         # bad
     } elsif ($arg->class eq 'PPI::Token::Cast') {
         # @{ ... } or similar
@@ -58,7 +61,7 @@ sub violates {
         # @foo or similar.  Might be OK, unless it is a @weird[1]
         my $more = $arg->snext_sibling;
         return
-          unless $more->class eq 'PPI::Structure::Subscript';
+          unless $more && $more->class eq 'PPI::Structure::Subscript';
         $more_arg = $more->content;
     } # else not OK
 
