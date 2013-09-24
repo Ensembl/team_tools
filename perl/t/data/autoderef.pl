@@ -200,3 +200,15 @@ while (my $this_ele = shift @elements) { # breakage from RT#355286
 while (my $arg = shift) { # from @ARGV
     # Junk the args
 }
+
+# More false positives from RT#355314 & trawling nearby code
+my $foo = shift;
+sub some_method {
+    my $self = shift @_;
+    $self->{'true_version'} = shift if (@_);
+    return;
+}
+my $from = shift || "button";
+sub bob { return shift->ensembl_cigar_type; }
+sub bob2 { return shift()->ensembl_cigar_type; }
+my %z_comps = map { $_ => $-{$_}[0] } keys %-; # flatten %-
