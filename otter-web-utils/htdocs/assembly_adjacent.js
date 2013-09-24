@@ -2,7 +2,7 @@
 $(document).ready(function() {
 
     var
-      DBRootURL = "/cgi-bin/jh13/",
+      DBRootURL = "/cgi-bin/otter-web-utils/",
       DBListURL = DBRootURL + "db_list",
       DBAdjacenciesURL = DBRootURL + "assembly_adjacent";
 
