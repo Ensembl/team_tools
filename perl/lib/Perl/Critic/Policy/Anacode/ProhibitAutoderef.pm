@@ -37,6 +37,9 @@ my %AUTODEREF;
 my %USE_INSTEAD;
 @USE_INSTEAD{__qrify(qw( @ %@ % ))} = ('@{...}', '@{...} or %{...}', '%{...}');
 
+my %NON_ARG_WORD;
+@NON_ARG_WORD{qw{ if unless }} = (1) x 2;
+
 
 sub violates {
     my ($self, $element, undef) = @_;
@@ -48,15 +51,27 @@ sub violates {
     if (!defined $arg) {
         # implicit args - no problem
         return;
+    } elsif ($arg->class eq 'PPI::Token::Structure' &&
+             $arg->content eq ';') {
+        # end of statement - implicit args - no problem
+        return;
+    } elsif ($arg->isa('PPI::Token::Operator')) {
+        # this is not the first arg, but an absence of arguments to
+        # $element misinterpreted, e.g.  my $foo = shift->do_foo;
+        return;
     } elsif ($arg->class eq 'PPI::Token::Word') {
-        # bad
+        if ($NON_ARG_WORD{"$arg"}) {
+            # some word indicating the end of $element's clause
+            return;
+        }
+        # else bad
     } elsif ($arg->class eq 'PPI::Token::Cast') {
         # @{ ... } or similar
         my $cast = $arg->content;
         return if $cast =~ $want_sigil;
         # Need to check this for @{ blah() }[1]  ...too weird to be real?
 
-    } elsif ($arg->class eq 'PPI::Token::Symbol' &&
+    } elsif ($arg->isa('PPI::Token::Symbol') &&
              $arg->raw_type =~ $want_sigil) {
         # @foo or similar.  Might be OK, unless it is a @weird[1]
         my $more = $arg->snext_sibling;
