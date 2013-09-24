@@ -8,7 +8,8 @@ use Perl::Critic;
 
 
 sub main {
-    my $fn = 't/data/autoderef.pl';
+    my $fn = $0;
+    $fn =~ s{\w+\.t$}{data/autoderef.pl} or die "Can't find data from $0";
     my $KW_RE = qr{push|unshift|pop|shift|splice|keys|values|each};
     plan tests => 4;
 
