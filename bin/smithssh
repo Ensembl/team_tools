@@ -84,6 +84,8 @@ So code operating on remote directories can avoid magic strings.
 Logic for these functions is provided by inspection of the remote
 code.
 
+See also L<webhosts(1)>.
+
 
 =head1 OPTIONS
 
@@ -143,6 +145,7 @@ comes from /www/utilities/restricted-scp
 
  http://apps.sanger.ac.uk/docs/admin/svn/
  http://apps.sanger.ac.uk/docs/admin/publish/
+ http://mediawiki.internal.sanger.ac.uk/index.php/Anacode:_Web_VMs#Access_control_.26_users
 
 
 =head1 AUTHOR
