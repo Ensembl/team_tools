@@ -1,0 +1,225 @@
+#! /usr/bin/env perl
+use strict;
+use warnings;
+
+use Getopt::Long;
+use Pod::Usage;
+
+use LWP::UserAgent;
+use YAML qw( Dump Load );
+
+
+=head1 NAME
+
+webhosts - enumerate webservers, by asking one for its config
+
+
+=head1 SYNTAX
+
+  webhosts <type> [ <source> ]
+
+=head2 Example
+
+  for h in $( webhosts dev ); do
+    echo Poking $h
+    smithssh -u $h restart
+    sleep 15
+  done
+
+
+=head1 DESCRIPTION
+
+This tools means that code which operates on all hosts can avoid
+hard-wired lists of hosts, or repeating the rules to find them.
+
+This information mostly comes from an existing webserver, which
+contains an svn checkout of the relevant configuration file.
+
+Some of the information needed (e.g. what are the sandbox hosts?)
+isn't configured anywhere.  This program patches over these holes, but
+of course the holes may move around...
+
+
+=head1 OPTIONS
+
+The C<type> is mandatory.
+
+The C<source> defaults to C<otter.dev.sanger.ac.uk> but can be pointed
+at another hostname, C<host:port> or a full URL.
+
+=over 4
+
+=item --proxy | -P
+
+Set to call L<LWP::UserAgent/env_proxy>.  Normally no proxy is
+required.
+
+=item --fqdn | -f
+
+Return the Fully Qualified Domain Names instead of the short names.
+Normally this is not required.
+
+=item --debug | -D
+
+Extra noise to stdout.
+
+=back
+
+
+=head1 SEE ALSO
+
+ http://mediawiki.internal.sanger.ac.uk/index.php/Anacode:_Web_VMs#Deployment_tracks
+ L<smithssh(1)>
+ /cgi-bin/server-meta in webvm.git
+
+=head1 AUTHOR
+
+mca@sanger.ac.uk
+
+=cut
+
+my $DOMAIN = '.internal.sanger.ac.uk';
+my @TYPE = qw( sandbox dev live );
+# We have no staging,
+# <57F40B99-4C26-42AA-8CDF-A489BB93F53E@sanger.ac.uk>  mw6
+
+my %opt;
+
+sub main {
+    do_getopt();
+
+    # Get type
+    my $type;
+    if ($opt{types}) {
+        # list valid types
+        print "@TYPE\n";
+        return 0;
+    } elsif (@ARGV) {
+        $type = shift @ARGV;
+        die "Unknown host type '$type', valid are (@TYPE)\n"
+          unless grep { $_ eq $type } @TYPE;
+    } else {
+        warn "Required parameter <type> was not given\n";
+        show_help();
+        return 1; # not reached
+    }
+
+    # Get source, maybe
+    my $source = 'otter.dev.sanger.ac.uk';
+    $source = shift @ARGV if @ARGV;
+
+    # What?
+    die "Spare parameters (@ARGV) after optional source - rejected\n" if @ARGV;
+
+    if ($type eq 'sandbox') {
+        # the config doesn't include these, so fake it here
+        do_enumerate('web-ottersand-', '01');
+    } else {
+        do_lookup($type, $source);
+    }
+
+    return 0;
+}
+
+
+sub do_getopt {
+    my @spec = qw( help|h types|t proxy|P debug|D fqdn|f );
+    unless (GetOptions(\%opt, @spec)) {
+        warn "Bad options\n";
+        $opt{help} = 1;
+    }
+    show_help() if $opt{help};
+    return;
+}
+
+
+sub do_lookup {
+    my ($type, $source) = @_;
+
+    # Fetcher
+    my $ua = LWP::UserAgent->new;
+    $ua->timeout(10);
+    $ua->env_proxy if $opt{proxy};
+    $ua->agent( $ua->agent . ' team_tool.git/bin/webhosts' );
+
+    # Source
+    my $uri;
+    if ($source =~ m{[:/]}) {
+        $uri = URI->new($source);
+    } else {
+        $uri = URI->new('http:/cgi-bin/server-meta');
+        $uri->host_port($source);
+    }
+    print "url=$uri\n" if $opt{debug};
+
+    # Document
+    my $resp = $ua->get($uri);
+    die "$0: $uri returned ".$resp->status_line unless $resp->is_success;
+    my $doc = $resp->decoded_content;
+    print $doc if $opt{debug};
+
+    # Extract & filter content
+    $doc =~ s{^.*}{} unless $doc =~ m{^---\n}; # trim leading comment
+    my ($meta) = Load($doc);
+    my @srv =
+      grep { $_->{type} eq $type }
+        @{ $meta->{svn_config} };
+    print Dump({ type_matched => \@srv }) if $opt{debug};
+    my @host = grep { valid_host($_) } map { $_->{hostname} } @srv;
+
+    # Show
+    show($type => @host);
+    return;
+
+}
+
+
+sub show {
+    my ($type, @host) = @_;
+
+    @host = map { $_.$DOMAIN } @host if $opt{fqdn};
+    die "No hosts matched type '$type'" unless @host;
+    print "@host\n";
+
+    return;
+}
+
+
+sub valid_host {
+    my ($name) = @_;
+
+    my $packed_ip = gethostbyname($name);
+    print Dump({ gethostbyname => { query => $name, packed_ip => $packed_ip } }) if $opt{debug};
+    return defined $packed_ip;
+}
+
+
+sub do_enumerate {
+    my ($base, $sfx) = @_;
+
+    my @out;
+    while (1) { # exits with last
+        my $try = "$base$sfx";
+        $sfx ++;
+
+        if (valid_host("$try$DOMAIN")) {
+            # it's valid
+            push @out, $try;
+        } else {
+            last;
+        }
+    }
+
+    show(sandbox => @out);
+
+    return;
+}
+
+
+sub show_help {
+    pod2usage(-exitstatus => 0, -verbose => 2);
+    return; # not reached
+}
+
+exit main();
+
