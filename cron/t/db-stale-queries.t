@@ -106,7 +106,8 @@ sub check_stale {
             @r{qw{ Id User Host db Command Time State Info }} = @$row;
             if (!defined $r{Time} && !defined $r{Info} && !defined $r{db} &&
                 $r{Command} eq 'Connect' &&
-                $r{State} eq 'Reading from net') {
+                $r{User} eq 'unauthenticated user' &&
+                $r{State} =~ /^(Reading from|Writing to) net$/) {
                 # Connection has just started - nothing to learn
                 next;
             }
