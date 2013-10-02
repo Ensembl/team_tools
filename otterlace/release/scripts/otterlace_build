@@ -197,7 +197,7 @@ setup_globals() {
     local found_perl
 
     found_perl="$( which perl )"
-    if ! perl -M5.12.2 -e 1 || [ "$( dirname "$found_perl" )" = '/usr/bin' ]; then
+    if ! perl -M5.12.2 -e 1 || [ "$( dirname "$found_perl" )" = '/usr/bin' -a -z "$use_system_perl" ]; then
         bail "Think I have the wrong Perl ($found_perl)"
     fi
 
@@ -236,9 +236,10 @@ setup_globals() {
 
     # EXTERNAL PARAMETERS
     : ${build_log:=/nfs/anacode/otterlace/ensembl_otter_build_log}
-    anacode_cvsroot=:ext:cvs.internal.sanger.ac.uk:/repos/cvs/anacode
-    ensembl_cvsroot=:ext:cvs.sanger.ac.uk:/cvsroot/ensembl
-    default_zircon=intcvs1:/repos/git/anacode/zircon.git
+    cvs_user="${cvs_user}${cvs_user:+@}" # append @ to cvs_user, else empty
+    anacode_cvsroot=":ext:${cvs_user}cvs.internal.sanger.ac.uk:/repos/cvs/anacode"
+    ensembl_cvsroot=":ext:${cvs_user}cvs.sanger.ac.uk:/cvsroot/ensembl"
+    default_zircon="${cvs_user}git.internal.sanger.ac.uk:/repos/git/anacode/zircon.git"
     # / EXTERNAL PARAMETERS
 
     # Other values accepted
