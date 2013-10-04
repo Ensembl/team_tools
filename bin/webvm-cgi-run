@@ -9,8 +9,11 @@ webvm-cgi-run - a wrapper to run locally one CGI script
 
 =head1 SYNOPSIS
 
- webvm-cgi-run [ -D ] [ -C ] [ -W <webdir> ] <cgi-script>
+ webvm-cgi-run [ -D | -C ] [ -W <webdir> ] [ -q <query> | -Q ] <cgi-script>
 
+ cd ~mca/_httpd2   # my webdir
+ webvm-cgi-run -D -q dataset=human cgi-bin/otter/76/get_meta
+ webvm-cgi-run -D -Q              'cgi-bin/otter/76/get_meta?dataset=human'
 
 =head1 DESCRIPTION
 
@@ -26,6 +29,11 @@ and using a different workaround to run with C<perl -T>.
 =head2 Notes on operation
 
 =over 4
+
+=item * Emulates a GET request
+
+Support for POST is by passing C<$REQUEST_METHOD='POST'>.  An option
+to set this and read from a file might be useful.
 
 =item * Environment
 
@@ -55,16 +63,50 @@ Anything which invokes L<SangerPaths> should work.
 
 =item --stubs | -D
 
-Provide the Perl script with C< -I lib/devstub/ >.
+Provide the Perl script with C< -I lib/devstub/ > from C<webvm.git>.
+This is enough to get most Otter Server CGI scripts working with
+legible output, but authentication will be bogus.
 
-This will include bogus authentication and C<$HTTP_CLIENTREALM> setup
-for anything that C<use SangerWeb>s.
+The mechanism of action is (at current writing 2013-10) providing a
+fake L<SangerWeb>,
+
+=over 4
+
+=item * this gives the no-checks authentication
+
+=item * it also loads L<Otter::EnvFix>, which in turn
+
+=over 4
+
+=item * sets C<$HTTP_CLIENTREALM>
+
+=item * enables control of error wrapping
+
+...by respecting C<$OTTERLACE_ERROR_WRAPPING_ENABLED> , but there is
+currently no default for this.
+
+=item * disables compression in L<Bio::Otter::ServerScriptSupport>
+
+=back
+
+=back
+
+=item --query | -q <query_string>
+
+Pass the text as the GET query string.
+
+=item --strip-query | -Q
+
+With this option, the query string is not given separately from the
+script filename but stripped off the end of C<cgi-script> at the C<?>.
 
 =item --otter-cookie | -C
 
 Provide otterlace authentication cookie from F<~/.otter/> and pass it
 to C<cgi-script>.  This is done quite indiscriminately - ignoring
 hostnames, paths, expiry times etc..
+
+Note that such cookies are ignored when C<--stubs> is enabled.
 
 =item --keep-env | -E
 
@@ -96,51 +138,54 @@ my %opt;
 sub main {
     Getopt::Long::Configure(qw( bundling require_order ));
     my @opt = qw( help|h stubs|D otter_cookie|otter-cookie|C
+                  query|q=s strip_query|strip-query|Q
                   keep_env|keep-env|E webdir|W=s );
     GetOptions(\%opt, @opt) or $opt{help} = 1;
     $opt{help} = 1 unless @ARGV;
 
     pod2usage(-exitstatus => 0, -verbose => 2) if $opt{help};
 
-    # Find stuff
+    # Find script
     my $cgi_script = shift @ARGV;
+    if ($opt{strip_query}) {
+        die "Conflicting --query && --strip-query given" if exists $opt{query};
+        $opt{query} = $1 if $cgi_script =~ s{\?(.*)$}{};
+    }
+    die "cgi_script=$cgi_script: not an executable file"
+      unless -f $cgi_script && -x _;
+    $cgi_script = abs_path($cgi_script);
 
+    # Find webdir.  Otter::Paths needs it absolute, to locate libs
     my $webdir = delete $opt{webdir};
-    abs_path($cgi_script) =~ m{\A(.*)(/cgi-bin/.*)$}
-      or die "Cannot find .../cgi-bin/... for $cgi_script";
+    $cgi_script =~ m{\A(.*)(/cgi-bin/.*)$}
+      or die "Cannot find .../cgi-bin/... in $cgi_script to cook up the URL";
     my $cgi_url = $2;
     $webdir = $1 # as in old team_tools/otterlace/server/perl/SangerPaths.pm
       if !defined $webdir;
-
-
-    # Otter::Paths needs it absolute, to locate libs
     $webdir = abs_path($webdir);
 
-    my %cookie;
-    %cookie = get_cookies() if $opt{otter_cookie}; # before losing $HOME
-
-
     my @cgi_INC = ("$webdir/lib/bootstrap");
-
     die "webdir=$webdir: doesn't look like a webvm.git checkout"
       unless -d $webdir && -f "$cgi_INC[0]/Otter/Paths.pm";
-    die "cgi_script=$cgi_script: not an executable file"
-      unless -f $cgi_script && -x _;
-
 
     # Purge existing %ENV
+    my %cookie;
     my @ENV_keep =
       ('PATH',
        'OTTER_PERL_INC',      # scripts use it
        'OTTER_PERL_EXE PATH', # for Otter::PerlVersion
 
-       'OTTERLACE_ERROR_WRAPPING_ENABLED', # no longer used?
+       'HTTP_CLIENTREALM', # so you can pretend to be the zxtm
+       'OTTERLACE_ERROR_WRAPPING_ENABLED', # honoured by Otter::EnvFix
 
        'REQUEST_METHOD', # CGI
 
        'BOGUS_AUTH_USERNAME', # Otter::EnvFix & the bogus SangerWeb
        # (but it is currently overwritten)
       );
+
+    %cookie = get_cookies() if $opt{otter_cookie}; # before losing $HOME
+
     %ENV = map { exists $ENV{$_} ? ( $_ => $ENV{$_} ) : () } @ENV_keep
       unless $opt{keep_env};
 
@@ -161,6 +206,14 @@ sub main {
     $ENV{SCRIPT_FILENAME} = $cgi_script;
     $ENV{SCRIPT_NAME} = $ENV{SCRIPT_URL} = $cgi_url;
     $ENV{GATEWAY_INTERFACE} = 'CGI/bogus'; # 'CGI/1.1'
+    $ENV{REQUEST_METHOD} = 'GET' unless defined $ENV{REQUEST_METHOD};
+
+    if ($opt{query}) {
+        $ENV{QUERY_STRING} = $opt{query};
+        $ENV{REQUEST_URI} = join '?', @ENV{qw{ SCRIPT_URL QUERY_STRING }};
+    } else {
+        $ENV{REQUEST_URI} = $ENV{SCRIPT_URL};
+    }
 
     # With this, we probably don't need to use OTTER_PERL_EXE to cause
     # self-wrap in Otter::PerlVersion
