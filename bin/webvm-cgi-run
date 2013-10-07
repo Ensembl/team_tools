@@ -26,6 +26,31 @@ C<webdir>.  Both paths are relative to $PWD, which is not changed.
 Formerly known as F<team_tools.git/otterlace/server/bin/otterlace_cgi_wrap>
 and using a different workaround to run with C<perl -T>.
 
+=head2 Setup
+
+This wrapper script requires that the CGI scripts be in-situ in a
+webvm.git checkout.  It doesn't have to be running as a webserver, but
+these components are necessary,
+
+=over 4
+
+=item * F<lib/boostrap/> from webvm.git
+
+Provided directly by this script to C<perl -I>.
+
+=item * F<app/webvm-deps/> from webvm-deps.git
+
+Unless L<Otter::Paths> is going to find everything it needs elsewhere.
+
+=item * F<data/otter/> from server-config.git
+
+To satisfy L<Bio::Otter::Server::Config>.
+
+=back
+
+unless we add to each piece of code some other way to supply the
+relevant files.
+
 =head2 Notes on operation
 
 =over 4
