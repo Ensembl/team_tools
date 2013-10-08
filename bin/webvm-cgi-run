@@ -97,7 +97,7 @@ fake L<SangerWeb>,
 
 =over 4
 
-=item * this gives the no-checks authentication
+=item * this gives the no-checks authentication your username
 
 =item * it also loads L<Otter::EnvFix>, which in turn
 
@@ -111,6 +111,11 @@ fake L<SangerWeb>,
 currently no default for this.
 
 =item * disables compression in L<Bio::Otter::ServerScriptSupport>
+
+=item * (provides a default bogus authentication name, which will not be in users.txt)
+
+...we don't need that because this script passes your username in an
+environment variable.
 
 =back
 
@@ -218,6 +223,7 @@ sub main {
 
     if ($opt{stubs}) {
         $ENV{APACHE_DEVEL} = 1;
+        $ENV{BOGUS_AUTH_USERNAME} ||= (getpwuid($<))[0];
         unshift @cgi_INC, "$webdir/lib/devstub";
     }
 
