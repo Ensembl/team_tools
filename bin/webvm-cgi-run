@@ -202,12 +202,15 @@ sub main {
     # Purge existing %ENV
     my %cookie;
     my @ENV_keep =
-      ('PATH',
-       'OTTER_PERL_INC',      # scripts use it
-       'OTTER_PERL_EXE PATH', # for Otter::PerlVersion
+      ('OTTER_PERL_INC',   # scripts use it
+       'OTTER_PERL_EXE',   # for Otter::PerlVersion
 
        'HTTP_CLIENTREALM', # so you can pretend to be the zxtm
        'OTTERLACE_ERROR_WRAPPING_ENABLED', # honoured by Otter::EnvFix
+
+       'PATH',             # likely to be ignored by taint-checking scripts
+       'http_proxy', # essential for HTTP out
+       'no_proxy'    #
 
        'REQUEST_METHOD', # CGI
 
@@ -239,6 +242,9 @@ sub main {
     $ENV{SCRIPT_NAME} = $ENV{SCRIPT_URL} = $cgi_url;
     $ENV{GATEWAY_INTERFACE} = 'CGI/bogus'; # 'CGI/1.1'
     $ENV{REQUEST_METHOD} = 'GET' unless defined $ENV{REQUEST_METHOD};
+
+    $ENV{LANG} = 'C' unless exists $ENV{LANG};
+    # as in APACHECTL wrapper, which wants it to be well-defined
 
     if ($opt{query}) {
         $ENV{QUERY_STRING} = $opt{query};
