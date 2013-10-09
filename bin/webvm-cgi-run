@@ -210,7 +210,7 @@ sub main {
 
        'PATH',             # likely to be ignored by taint-checking scripts
        'http_proxy', # essential for HTTP out
-       'no_proxy'    #
+       'no_proxy',   #
 
        'REQUEST_METHOD', # CGI
 
