@@ -62,7 +62,10 @@ from_WWWdev() {
     part=$3
     echo "== from_WWWdev($part)"
     set -x
-    rsync $DRY_RUN -aiSWH --no-g --delete $old/$part/otter/ $srcdir/$part/otter/
+    rsync $DRY_RUN -aiSWH --no-g --no-p -E --delete $old/$part/otter/ $srcdir/$part/otter/
+    # --no-g : calling user cannot chgrp the resulting file
+    # --no-p : calling user may not be able to chmod the file, even if he could replace it
+    # --executability : patch over --no-perms
     set +x
 }
 
@@ -89,6 +92,7 @@ maybe_dry() {
 
 SRCDIR=/nfs/anacode/WEBVM_docs.dev
 LEGACY_DIR=/nfs/WWWdev/SANGER_docs
+umask 02
 
 unset DRY_RUN
 maybe_dry "$@" && shift
