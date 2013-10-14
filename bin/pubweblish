@@ -2,37 +2,45 @@
 
 info_txt() {
 cat <<INFO
-Syntax:  publweblish [ -n ] --dev
+Syntax:  pubweblish [ -n ] <operation>
 
-  Update $SRCDIR from $LEGACY_DIR
-  then update web-otterdev-01 from $SRCDIR
-  just for {cgi-bin,lib,data}
-
-
-The tree /nfs/anacode/WEBVM_docs.dev is analogous
-to       /nfs/WWWdev/SANGER_docs for "dev" purposes.
-
-and serves as the source for copying to new virtual machine
-webservers.
-
-
-The tree /nfs/anacode/WEBVM_docs.live does not yet exist,
-there is nowhere to put it.
-
-
-
-The directories
-  WEBVM_docs.dev/lib/otter/
-  WEBVM_docs.dev/cgi-bin/otter/
-    are to be populated by the build script,
+This tool uses the directories
+  WEBVM_docs.*/lib/otter/
+  WEBVM_docs.*/cgi-bin/otter/
+    which are to be populated by the build script,
 
   WEBVM_docs.dev/
   WEBVM_docs.dev/data/otter/
   WEBVM_docs.dev/apps/webvm-deps/
-    are updated with git-pull(1),
+    which are updated with git-pull(1),
 
-then the rsync'd over into the webvm.git trees.
+to rsync over into the webvm.git trees on servers.
 
+
+
+The tree /nfs/anacode/WEBVM_docs.dev/ is analogous
+to       /nfs/WWWdev/SANGER_docs/ for "dev" purposes.
+
+and serves as the source for copying to new virtual machine webservers
+used for development.
+
+
+The tree /nfs/anacode/WEBVM_docs.live/ must be updated manually
+(so far) and is considered read-only by this script.
+
+
+
+Operation may be one of
+
+ --import
+  Update WEBVM_docs.dev/ from $LEGACY_DIR,
+  just for {cgi-bin,lib,data}
+
+ --dev
+  Update each host $( webhosts dev ) from the full WEBVM_docs.dev/
+
+ --live
+  Update each host $( webhosts live ) from the full WEBVM_docs.live/
 
 
 This is currently intended as a makeshift solution, awaiting an easier
@@ -73,9 +81,10 @@ do_util() {
     local host op
     host=$1
     op=$2
-    echo == do_util: $host $op
+    echo === do_util: $host $op
     set -x
     smithssh $DRY_RUN $host utilities/$op
+    # we lack a newline
     set +x
     echo
 }
@@ -90,26 +99,66 @@ maybe_dry() {
 }
 
 
-SRCDIR=/nfs/anacode/WEBVM_docs.dev
-LEGACY_DIR=/nfs/WWWdev/SANGER_docs
-umask 02
-
-unset DRY_RUN
-maybe_dry "$@" && shift
-
-if [ "$1" = '--dev' ]; then
-    shift
-    maybe_dry "$@"
-
+sync_from_legacy() {
     # Sync all three parts from legacy to our offline copy
     for dir in cgi-bin lib data; do
         from_WWWdev $LEGACY_DIR $SRCDIR $dir
     done
+}
 
-    # Sync entire offline copy to webserver
-    send_files $SRCDIR web-otterdev-01 ''
+sync_to_vms() {
+    hosts=$( webhosts $HTYPE )
+    if [ -z "$hosts" ]; then
+        echo "[e] null 'webhosts $HTYPE'" >&2
+        exit 3
+    fi
+    for host in $hosts; do
+        # Sync entire offline copy to webserver
+        send_files $SRCDIR $host ''
 
-    do_util web-otterdev-01 restart
-else
-    info_txt
+        do_util $host restart
+    done
+    printf '\nFinished\n'
+}
+
+
+
+set -e
+umask 02
+LEGACY_DIR=/nfs/WWWdev/SANGER_docs
+
+unset DRY_RUN
+if maybe_dry "$@"; then
+    shift
 fi
+
+oper="$1"
+shift
+
+if maybe_dry "$@"; then
+    shift
+fi
+
+
+case "$oper" in
+    --import)
+        HTYPE=dev
+        SRCDIR=/nfs/anacode/WEBVM_docs.$HTYPE
+        sync_from_legacy
+        exit 0
+        ;;
+    --dev)
+        HTYPE=dev
+        SRCDIR=/nfs/anacode/WEBVM_docs.$HTYPE
+        sync_to_vms
+        ;;
+    --live)
+        HTYPE=live
+        SRCDIR=/nfs/anacode/WEBVM_docs.$HTYPE
+        sync_to_vms
+        ;;
+    *)
+        info_txt
+        exit 2
+        ;;
+esac
