@@ -318,6 +318,7 @@ otterlace_script_vars_update() {
    chomp;
    $_ .= qq{"$v"\n};
    $substs ++;
+ } elsif (/^(\w+)=.+/) {        # ignore lines already set by otterlace_client_edit_dist_macos()
  } elsif (/^\s*(#|$)/) {
  } elsif ($substs) {
    $finished = 1;
