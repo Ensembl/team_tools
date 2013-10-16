@@ -78,10 +78,10 @@ mca@sanger.ac.uk
 
 =cut
 
-my $DOMAIN = '.internal.sanger.ac.uk';
-my @TYPE = qw( sandbox dev live );
+my @TYPE = qw( sandbox dev staging live );
 # We have no staging,
 # <57F40B99-4C26-42AA-8CDF-A489BB93F53E@sanger.ac.uk>  mw6
+# and our host lister now knows that
 
 my %opt;
 
@@ -111,12 +111,7 @@ sub main {
     # What?
     die "Spare parameters (@ARGV) after optional source - rejected\n" if @ARGV;
 
-    if ($type eq 'sandbox') {
-        # the config doesn't include these, so fake it here
-        do_enumerate('web-ottersand-', '01');
-    } else {
-        do_lookup($type, $source);
-    }
+    do_lookup($type, $source);
 
     return 0;
 }
@@ -165,7 +160,7 @@ sub do_lookup {
       grep { $_->{type} eq $type }
         @{ $meta->{svn_config} };
     print Dump({ type_matched => \@srv }) if $opt{debug};
-    my @host = grep { valid_host($_) } map { $_->{hostname} } @srv;
+    my @host = map { $_->{hostname} } @srv;
 
     # Show
     show($type => @host);
@@ -177,40 +172,9 @@ sub do_lookup {
 sub show {
     my ($type, @host) = @_;
 
-    @host = map { $_.$DOMAIN } @host if $opt{fqdn};
+    @host = map { m{^([^.]+)(?:\.|$)} ? $1 : $_ } @host unless $opt{fqdn};
     die "No hosts matched type '$type'" unless @host;
     print "@host\n";
-
-    return;
-}
-
-
-sub valid_host {
-    my ($name) = @_;
-
-    my $packed_ip = gethostbyname($name);
-    print Dump({ gethostbyname => { query => $name, packed_ip => $packed_ip } }) if $opt{debug};
-    return defined $packed_ip;
-}
-
-
-sub do_enumerate {
-    my ($base, $sfx) = @_;
-
-    my @out;
-    while (1) { # exits with last
-        my $try = "$base$sfx";
-        $sfx ++;
-
-        if (valid_host("$try$DOMAIN")) {
-            # it's valid
-            push @out, $try;
-        } else {
-            last;
-        }
-    }
-
-    show(sandbox => @out);
 
     return;
 }
