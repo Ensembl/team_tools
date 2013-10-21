@@ -58,9 +58,9 @@ send_files() {
     dest=$( smithssh -p webdir $host )
     echo "== send_files(webdir$part):" $srcdir$part/ to $host:$dest$part/
     # nb. "rsync -SWH" are not available
-    set -x
+    echo + rsync $DRY_RUN -v -ai --delete -e smithssh $srcdir$part/ $host:$dest$part/
     rsync $DRY_RUN -v -ai --delete -e smithssh $srcdir$part/ $host:$dest$part/
-    set +x
+    # returncode from rsync(1)
 }
 
 from_WWWdev() {
@@ -69,12 +69,12 @@ from_WWWdev() {
     srcdir=$2
     part=$3
     echo "== from_WWWdev($part)"
-    set -x
-    rsync $DRY_RUN -aiSWH --no-g --no-p -E --delete $old/$part/otter/ $srcdir/$part/otter/
+    echo + rsync $DRY_RUN -aiSWH --no-g --no-p -E --delete $old/$part/otter/ $srcdir/$part/otter/
     # --no-g : calling user cannot chgrp the resulting file
     # --no-p : calling user may not be able to chmod the file, even if he could replace it
     # --executability : patch over --no-perms
-    set +x
+    rsync $DRY_RUN -aiSWH --no-g --no-p -E --delete $old/$part/otter/ $srcdir/$part/otter/
+    # returncode from rsync(1)
 }
 
 do_util() {
@@ -82,11 +82,10 @@ do_util() {
     host=$1
     op=$2
     echo === do_util: $host $op
-    set -x
+    echo + smithssh $DRY_RUN $host utilities/$op
     smithssh $DRY_RUN $host utilities/$op
     # we lack a newline
-    set +x
-    echo
+    # returncode from smithssh(1)
 }
 
 maybe_dry() {
@@ -107,18 +106,31 @@ sync_from_legacy() {
 }
 
 sync_to_vms() {
+    local status retcode
     hosts=$( webhosts $HTYPE )
     if [ -z "$hosts" ]; then
         echo "[e] null 'webhosts $HTYPE'" >&2
         exit 3
     fi
+    status="rsync'ing for $HTYPE:"
+    retcode=0
     for host in $hosts; do
-        # Sync entire offline copy to webserver
-        send_files $SRCDIR $host ''
-
-        do_util $host restart
+        # Sync entire offline copy to webserver,
+        # whichever nodes we can reach
+        if send_files $SRCDIR $host ''; then
+            if do_util $host restart; then
+                status="$(printf '%s\n  %s' "$status" "$host=OK" )"
+            else
+                retcode=$?
+                status="$(printf '%s\n  %s' "$status" "$host=rsync_ok,restart_fail($retcode)" )"
+            fi
+        else
+            retcode=$?
+            status="$(printf '%s\n  %s' "$status" "$host=rsync_fail($retcode)" )"
+        fi
     done
-    printf '\nFinished\n'
+    printf '\nFinished %s\n' "$status"
+    return $retcode
 }
 
 
