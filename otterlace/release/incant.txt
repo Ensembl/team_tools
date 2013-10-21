@@ -49,7 +49,7 @@ building 58.* releases,
   # build
   otterlace_build ~zmap/BUILD.DEVELOPMENT.{lenny,lucid}
 
-  # check server status
+  # check server status -- LEGACY
   diffdevlive /nfs/WWWdev/SANGER_docs/{lib,data,cgi-bin}/otter/58 | ~mca/bin/ansi_bleach | grep -vE '^ *- *X *X *SANGER'
 
   # Fix symlinks manually, there is only one now.  Using the script
@@ -77,5 +77,6 @@ Rebuilding just the server
     otter_nfswub=/tmp/junk/srv build_log=/tmp/junk/build_log \
       /nfs/users/nfs_m/mca/gitwk-anacode/team_tools.stable/otterlace/release/scripts/otterlace_build --server-only
 
+    # LEGACY!
     diff -ru /tmp/junk/srv/cgi-bin/otter/57 /nfs/WWWdev/SANGER_docs/cgi-bin/otter/57
     diff -ru /tmp/junk/srv/lib/otter/57 /nfs/WWWdev/SANGER_docs/lib/otter/57
