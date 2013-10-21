@@ -156,7 +156,7 @@ otter_ipath_get() {
     # These are our previously-hardcoded installation paths.
     # Accept override from the environment.
     swac=${otter_swac:-/software/anacode}
-    nfswub=${otter_nfswub:-/nfs/WWWdev/SANGER_docs}
+    nfswub=${otter_nfswub:-/nfs/anacode/WEBVM_docs.dev}
 
     [ -d "$swac"   ] || echo "W: swac=$swac: not a directory" >&2
     [ -d "$nfswub" ] || [ -n "$local_client_only" ] || echo "W: nfswub=$nfswub: not a directory" >&2
