@@ -86,7 +86,10 @@ foreach my $holtdir (@holtdir) {
     diag "Saw feature branches: @dev_feat\n" if @dev_feat;
 }
 
-foreach my $dir (map {"/nfs/WWWdev/SANGER_docs/$_/otter"} qw( lib cgi-bin )) {
+my @dir = map {("/nfs/WWWdev/SANGER_docs/$_/otter",
+                "/nfs/anacode/WEBVM_docs.live/$_/otter",
+                "/nfs/anacode/WEBVM_docs.dev/$_/otter" )} qw( lib cgi-bin );
+foreach my $dir (@dir) {
     my @got  = sort grep { -d "$dir/$_" } read_dir($dir);
     my @want = sort keys %major;
     is_deeply(\@got, \@want, "Major versions in $dir (dev)");

@@ -76,7 +76,7 @@ sub main {
     local @ENV{qw{ otter_nfswub otter_swac SHOWVARS_TEST }}; # prevent outside influence
 
     my $swac = "\x2Fsoftware\x2Fanacode"; # hide from grep
-    my $nfswub = "\x2Fnfs\x2FWWWdev";
+    my $nfswub = "\x2Fnfs\x2Fanacode/WEBVM_docs";
 
     ### Release versions, pre- and post- 58
     #
@@ -91,8 +91,8 @@ otter install paths:
  otter_home=$swac/otter/otter_rel56.02
  bin=$swac/otter/otter_rel56.02/bin
  wrapperfile=$swac/bin/otterlace_rel56.02
- web_lib=$nfswub/SANGER_docs/lib/otter/56
- web_cgi=$nfswub/SANGER_docs/cgi-bin/otter/56
+ web_lib=$nfswub/lib/otter/56
+ web_cgi=$nfswub/cgi-bin/otter/56
 TXT
 
     with_temp({ version_major => 58, version_minor => '07' },
@@ -106,8 +106,8 @@ otter install paths:
  otter_home=$swac/otter/otter_rel58.07
  bin=$swac/otter/otter_rel58.07/bin
  wrapperfile=$swac/otter/otter_rel58.07/bin/otterlace
- web_lib=$nfswub/SANGER_docs/lib/otter/58
- web_cgi=$nfswub/SANGER_docs/cgi-bin/otter/58
+ web_lib=$nfswub/lib/otter/58
+ web_cgi=$nfswub/cgi-bin/otter/58
 TXT
 
 
@@ -124,8 +124,8 @@ otter install paths:
  otter_home=$swac/otter/otter_rel56
  bin=$swac/otter/otter_rel56/bin
  wrapperfile=$swac/bin/otterlace_rel56
- web_lib=$nfswub/SANGER_docs/lib/otter/56
- web_cgi=$nfswub/SANGER_docs/cgi-bin/otter/56
+ web_lib=$nfswub/lib/otter/56
+ web_cgi=$nfswub/cgi-bin/otter/56
 TXT
 
     my $more_tmp = tempdir('showvars.t.XXXXXX', CLEANUP => 1, TMPDIR => 1);

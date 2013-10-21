@@ -243,7 +243,7 @@ Plan B:
 
 Not yet implemented - discussion required, but
 
- cd /nfs/WWWdev/SANGER_docs/data/otter
+ cd /nfs/...mumble..._docs.../data/otter
  git pull --rebase
  
  # and if necessary
