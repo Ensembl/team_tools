@@ -42,10 +42,19 @@ Operation may be one of
   Dry-run of this operation will also show a "diff -ru"
 
  --dev
-  Update each host $( webhosts dev ) from the full WEBVM_docs.dev/
-
  --live
-  Update each host $( webhosts live ) from the full WEBVM_docs.live/
+  Update each host $( webhosts $FOO ) from the full WEBVM_docs.$FOO/
+  for FOO being dev or live.
+
+ --pull=dev
+ --pull=live
+  Update the Git repositories (webvm, server-config, webvm-deps)
+  in the offline copies WEBVM_docs.$FOO/
+
+  These operations do no change the Otter Server code, but may change
+  its dependencies and configuration.
+
+  You still need to send the changes to the webservers afterwards.
 
 
 This is currently intended as a makeshift solution, awaiting an easier
@@ -100,6 +109,42 @@ do_util() {
     smithssh $DRY_RUN $host utilities/$op
     # we lack a newline
     # returncode from smithssh(1)
+}
+
+do_pulls() {
+    echo "== do_pulls($HTYPE)"
+    status="Updating from Git:"
+    do_one_pull webvm         $SRCDIR                 master
+    do_one_pull server-config $SRCDIR/data/otter      $HTYPE
+    do_one_pull webvm-deps    $SRCDIR/apps/webvm-deps master
+}
+
+do_one_pull() {
+    local name dir want_branch got_branch
+    name="$1"
+    dir="$2"
+    want_branch="$3"
+    {
+        echo "=== $name"
+        cd $dir
+        got_branch="$( git symbolic-ref HEAD | sed -e 's|^refs/heads/||' )"
+        if [ "$got_branch" != "$want_branch" ]; then
+            echo "[e] In $dir for $name: expected to be on branch $want_branch, but am on $got_branch.  Leaving you to sort it out." >&2
+            exit 1
+        fi
+        if [ -z "$DRY_RUN" ]; then
+            echo + \
+            git pull --ff
+            git pull --ff
+        else
+            echo + \
+            git fetch -p
+            git fetch -p
+        fi
+        echo + \
+        git status -v
+        git status -v
+    }
 }
 
 maybe_dry() {
@@ -172,6 +217,16 @@ case "$oper" in
         SRCDIR=/nfs/anacode/WEBVM_docs.$HTYPE
         sync_to_legacy
         exit 0
+        ;;
+    --pull=dev)
+        HTYPE=dev
+        SRCDIR=/nfs/anacode/WEBVM_docs.$HTYPE
+        do_pulls
+        ;;
+    --pull=live)
+        HTYPE=live
+        SRCDIR=/nfs/anacode/WEBVM_docs.$HTYPE
+        do_pulls
         ;;
     --dev)
         HTYPE=dev
