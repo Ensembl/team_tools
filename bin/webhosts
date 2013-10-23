@@ -40,6 +40,16 @@ isn't configured anywhere.  This program patches over these holes, but
 of course the holes may move around...
 
 
+=head1 CAVEATS
+
+If the source HTTP service is down, this script will fail.
+You can point it at another source when invoking it directly,
+but this may need extending to use an environment variable and/or take
+an override host set to recover from failures.
+
+When this visited me, I just changed C<$source>.
+
+
 =head1 OPTIONS
 
 The C<type> is mandatory.
