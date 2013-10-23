@@ -32,9 +32,14 @@ The tree /nfs/anacode/WEBVM_docs.live/ must be updated manually
 
 Operation may be one of
 
- --import
-  Update WEBVM_docs.dev/ from $LEGACY_DIR,
-  just for {cgi-bin,lib,data}
+ --export
+  Update $LEGACY_DIR from WEBVM_docs.dev/ ,
+  just for {cgi-bin,lib}
+  because data/otter/ is updated by mca@deskpro cronjob
+
+    NB. you still need to webpublish
+
+  Dry-run of this operation will also show a "diff -ru"
 
  --dev
   Update each host $( webhosts dev ) from the full WEBVM_docs.dev/
@@ -58,22 +63,30 @@ send_files() {
     dest=$( smithssh -p webdir $host )
     echo "== send_files(webdir$part):" $srcdir$part/ to $host:$dest$part/
     # nb. "rsync -SWH" are not available
-    echo + rsync $DRY_RUN -v -ai --delete -e smithssh $srcdir$part/ $host:$dest$part/
+    echo + \
+    rsync $DRY_RUN -v -ai --delete -e smithssh $srcdir$part/ $host:$dest$part/
     rsync $DRY_RUN -v -ai --delete -e smithssh $srcdir$part/ $host:$dest$part/
     # returncode from rsync(1)
 }
 
-from_WWWdev() {
+to_WWWdev() {
     local old part srcdir
     old=$1
     srcdir=$2
     part=$3
-    echo "== from_WWWdev($part)"
-    echo + rsync $DRY_RUN -aiSWH --no-g --no-p -E --delete $old/$part/otter/ $srcdir/$part/otter/
+    echo "== to_WWWdev($part)"
     # --no-g : calling user cannot chgrp the resulting file
     # --no-p : calling user may not be able to chmod the file, even if he could replace it
     # --executability : patch over --no-perms
-    rsync $DRY_RUN -aiSWH --no-g --no-p -E --delete $old/$part/otter/ $srcdir/$part/otter/
+    # --omit-dir-times : cannot set times on SANGER_docs/cgi-bin/otter/77
+    if [ -n "$DRY_RUN" ]; then
+        diff -ru $old/$part/otter/ $srcdir/$part/otter/ && echo ' => no diff' || echo ' => some diff'
+    fi
+    echo + \
+    rsync $DRY_RUN -aiSWH --no-g --no-p -E --delete --omit-dir-times \
+        $old/$part/otter/ $srcdir/$part/otter/
+    rsync $DRY_RUN -aiSWH --no-g --no-p -E --delete --omit-dir-times \
+        $old/$part/otter/ $srcdir/$part/otter/
     # returncode from rsync(1)
 }
 
@@ -82,7 +95,8 @@ do_util() {
     host=$1
     op=$2
     echo === do_util: $host $op
-    echo + smithssh $DRY_RUN $host utilities/$op
+    echo + \
+    smithssh $DRY_RUN $host utilities/$op
     smithssh $DRY_RUN $host utilities/$op
     # we lack a newline
     # returncode from smithssh(1)
@@ -98,10 +112,10 @@ maybe_dry() {
 }
 
 
-sync_from_legacy() {
-    # Sync all three parts from legacy to our offline copy
-    for dir in cgi-bin lib data; do
-        from_WWWdev $LEGACY_DIR $SRCDIR $dir
+sync_to_legacy() {
+    # Sync code from our offline copy to legacy
+    for dir in cgi-bin lib; do
+        to_WWWdev $SRCDIR $LEGACY_DIR $dir
     done
 }
 
@@ -153,10 +167,10 @@ fi
 
 
 case "$oper" in
-    --import)
+    --export)
         HTYPE=dev
         SRCDIR=/nfs/anacode/WEBVM_docs.$HTYPE
-        sync_from_legacy
+        sync_to_legacy
         exit 0
         ;;
     --dev)
