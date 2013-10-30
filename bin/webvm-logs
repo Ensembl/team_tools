@@ -1,0 +1,68 @@
+#! /bin/sh
+
+
+fetch_all_logs() {
+    local host hosts dest
+    for HTYPE in live dev; do
+        echo "== fetch_all_logs: $HTYPE"
+        hosts=$( webhosts $HTYPE )
+        for host in $hosts; do
+            dest=/nfs/anacode/logs/webvm/$host
+            echo "=== $host -> $dest/"
+            echo + \
+            rsync $DRY_RUN -ai -e smithssh --chmod=g+rw,o-rwx $host:/www/tmp/www-$HTYPE/logs/ $dest
+            rsync $DRY_RUN -ai -e smithssh --chmod=g+rw,o-rwx $host:/www/tmp/www-$HTYPE/logs/ $dest
+            # our deliberate trailing / on logs/ is stripped remotely,
+            # so we have unwanted extra path on NFS
+        done
+    done
+    echo My return code is not informative
+}
+
+
+LOGSDIR=/nfs/anacode/logs/webvm
+SORT_K="-t/ -k7"
+
+case "$1" in
+    --get)
+        fetch_all_logs
+        ;;
+    --list)
+        ptn="${2:-*}"
+        find $LOGSDIR -type f -name "$ptn" -print  | sort    $SORT_K
+        ;;
+    --cat)
+        ptn="${2:-*}"
+        find $LOGSDIR -type f -name "$ptn" -print0 | sort -z $SORT_K \
+            | xargs -r0 -n1 webvm-logs --_show
+        ;;
+    --_show)
+        fn="$2"
+        case "$fn" in
+            *.bz2) bzcat "$fn" ;;
+            *.gz)   zcat "$fn" ;;
+            *)       cat "$fn" ;;
+        esac
+        ;;
+    *)
+        echo "Syntax: webvm-logs ...
+  --get
+    rsync(1) them all to $LOGSDIR
+
+  --list <find-pattern>
+    List files with -name matching given pattern,
+    attempting to sort in a useful way.
+
+    Default is '*'.
+
+  --cat <find-pattern>
+    Like --list but cat each file in turn,
+    decompressing as necessary.
+
+    Lines come from each file in turn, they are not interleaved by
+    time.
+
+  --tail # not implemented, but could be useful
+"
+        ;;
+esac
