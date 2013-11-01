@@ -46,7 +46,7 @@ sub main {
         get_sequencesets
                         );
 
-    my $outdir = tempdir("same_fetch.XXXXXX", TMPDIR => 1, CLEANUP => 0);
+    my $outdir = tempdir("same_fetch.XXXXXX", DIR => '/nfs/anacode/mca', CLEANUP => 0);
     my %qy; # key = query, value =
     # { orig => { $log_status => \@size },
     #   resp => { "$sha1_hex $http_status_code $leng" => $count },
@@ -74,6 +74,7 @@ sub main {
         next if m{/cgi-bin/selftest/}; # fetches made by selftests
         next unless $method eq 'GET'; # we lack the content
         next if $op eq 'test';
+        next if known_good($q); # already investigated
 
         unless (grep { $op eq $_ } @op_whitelist) {
             warn "Skip unknown op: $op\n";
@@ -133,6 +134,20 @@ sub main {
 }
 
 
+my %ok;
+foreach (<DATA>) {
+    s/^ *-? *//;
+    chomp;
+    next unless /\S/;
+    $ok{$_} = 1;
+}
+
+sub known_good {
+    my ($q) = @_;
+    return exists $ok{$q};
+}
+
+
 sub ensure_put {
     my ($outdir, $resp) = @_;
     my $sha = sha1_hex($resp->decoded_content);
@@ -156,3 +171,8 @@ sub HTTP::Async::clear_send_queue { # another local hack
 
 
 exit main();
+
+__DATA__
+
+  - /cgi-bin/otter/77/get_gff_genes?analysis=refine_all&client=otterlace&cs=chromosome&csver=Otter&dataset=mouse&end=24623164&gff_seqname=chr8-38&gff_source=ens_rnaseq_pipe_mouse_pool2&gff_version=2&log=1&metakey=mouse_rnaseq_run2&name=8&start=24375400&transcript_analyses=refine_all&type=chr8-38
+  - /cgi-bin/otter/77/get_gff_das_features?analysis=ucscRetroAli5&client=otterlace&cs=chromosome&csver=Otter&csver_remote=GRCh37&dataset=human&dsn=hg19&end=46778893&feature_kind=PredictionExon&gff_seqname=chr14-04&gff_source=das_UCSC_RetroAli5&gff_version=2&grouplabel=feature_label&log=1&name=14&source=http%3A%2F%2Fhgwdev-gencode.cse.ucsc.edu%2Fcgi-bin%2Fdas&start=44462035&type=chr14-04
