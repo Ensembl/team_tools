@@ -35,3 +35,5 @@ else
         echo "Beware, your push to $HEADref may be covered up soon - $0 merges to there"
     fi
 fi
+
+$TT/git-hooks/git-trac-update
