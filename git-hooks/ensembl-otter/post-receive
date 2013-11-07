@@ -14,3 +14,7 @@
 
 
 #. /usr/share/doc/git-core/contrib/hooks/post-receive-email
+
+TT="$( dirname $( readlink -e $0 ))/../.."
+
+$TT/git-hooks/git-trac-update
