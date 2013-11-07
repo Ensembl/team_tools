@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 12;
+use Test::More tests => 10;
 use YAML qw( Dump );
 use File::Slurp 'read_dir';
 
@@ -92,8 +92,7 @@ foreach my $holtdir (@holtdir) {
     diag "Saw feature branches: @dev_feat\n" if @dev_feat;
 }
 
-my @dir = map {("/nfs/WWWdev/SANGER_docs/$_/otter",
-                "/nfs/anacode/WEBVM_docs.live/$_/otter",
+my @dir = map {("/nfs/anacode/WEBVM_docs.live/$_/otter",
                 "/nfs/anacode/WEBVM_docs.dev/$_/otter" )} qw( lib cgi-bin );
 foreach my $dir (@dir) {
     my @got  = sort grep { -d "$dir/$_" } read_dir($dir);
