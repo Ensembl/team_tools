@@ -1,0 +1,69 @@
+#! /bin/sh
+
+BACKUP_DIR=/warehouse/humpub_wh01/anacode-trac
+LIVE_DIR=/repos/trac/environments/anacode
+
+# Expects git-yacontrib on PATH (for git-iec and git-qcommit)
+#
+# Might want to exclude the trac.db from Git if it balloons and also
+# doesn't delta nicely.  The .db.dump should be more diffable.
+#
+# Might also want to push the Git history back to intcvs1?
+#
+# Trac has no incremental 'hotcopy' or 'wiki dump' operations.
+
+
+extract_trac() { # noisy
+    # Clear up from previous, else trac-admin fails
+    rm -rf $BACKUP_DIR/hotcopied+ $BACKUP_DIR/wiki_dump+  $BACKUP_DIR/trac.db.dump+   &&
+
+    # Copy & unpack
+    trac-admin     $LIVE_DIR                          hotcopy     $BACKUP_DIR/hotcopied+    &&
+    trac-admin     $BACKUP_DIR/hotcopied+             wiki dump   $BACKUP_DIR/wiki_dump+    &&
+    sqlite3 -batch $BACKUP_DIR/hotcopied+/db/trac.db  .dump     > $BACKUP_DIR/trac.db.dump+ &&
+
+    # Put in place
+    rm -rf $BACKUP_DIR/hotcopied $BACKUP_DIR/wiki_dump        &&
+    mv -v $BACKUP_DIR/hotcopied+      $BACKUP_DIR/hotcopied   &&
+    mv -v $BACKUP_DIR/wiki_dump+    $BACKUP_DIR/wiki_dump     &&
+    mv -v $BACKUP_DIR/trac.db.dump+ $BACKUP_DIR/trac.db.dump  &&
+
+    true
+}
+
+send_to_git() {
+    # Create more history
+    cd $BACKUP_DIR
+    git add -A .
+    git qcommit -m "$0 ran"
+}
+
+# Ran once, 2013-11-07 mca
+do_setup() {
+    git init --shared=all $BACKUP_DIR
+    cd $BACKUP_DIR
+    git iec
+}
+
+
+do_backup() {
+    if extract_trac > $BACKUP_DIR/log 2>&1; then
+        send_to_git
+    else
+        echo "extract_trac failed (returned $?) - here is the logfile" >&2
+        stat $BACKUP_DIR/log >&2
+        cat $BACKUP_DIR/log  >&2
+        false
+    fi
+}
+
+if [ $(hostname -s) = 'intcvs1' ]; then
+    # Right place, do backup
+    do_backup
+elif [ "$1" = 'hop' ]; then
+    # Wrong place, try hopping
+    ssh intcvs1 $0
+else
+    echo "Wrong place, try with 'hop'" >&2
+    false
+fi
