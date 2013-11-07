@@ -1,0 +1,22 @@
+#! /bin/sh
+
+# This is a simple and not-so-efficient Git hook.
+#
+# It doesn't need the list of changed refs or commitid,
+# which is good because some callers have already eaten it.
+#
+# There are others which are more complex
+#   http://trac.edgewall.org/ticket/10730
+#   https://gist.github.com/kenaniah/5471280
+
+REPO_NAME=$( git config --get trac.name )
+if [ -n "$REPO_NAME" ]; then
+    printf 'Update trac repository "%s" ...' "$REPO_NAME"
+    if OUT="$( trac-admin /repos/trac/environments/anacode repository resync $REPO_NAME 2>&1 )"; then
+        printf "\n"
+    else
+        printf "\n\n\n[E] Trac update failed:\n%s\n\n\n" "$OUT"
+    fi
+else
+   echo '[i] No trac update configured'
+fi
