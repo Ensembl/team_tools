@@ -1,0 +1,92 @@
+#! /usr/bin/perl -n
+use strict;
+use warnings;
+use YAML 'Dump';
+
+my $DUMP = 0;
+
+
+# nb. implicit filter loop "-p"
+
+if (my ($h, $identd, $user_auth, $date_time_acc,
+        $method, $url, $hv, $status, $size_out,
+        $refer, $ua,
+        $rest) =
+    m{^(\S+)\ (\S+)\ (\S+)\ \[(\d{2}/\w{3}/\d{4}:\d{2}:\d{2}:\d{2}\ [-+]\d{4})\]
+      \ "(\S+)\ (\S+)\ HTTP/(\S+)"\ (\d{3})\ (-|\d+)
+      \ "([^"]*)"\ "([^"]*)"
+      \ (.*)$}x) {
+# access_log
+#
+# ztm1.sanger.ac.uk - - [11/Nov/2013:12:08:30 +0000] "GET /cgi-bin/visitations HTTP/1.1" 200 565 "-" "Liferea/1.6.2 (Linux; en_GB.utf8; http://liferea.sf.net/)" io<385in 768out 241191us +0> fwd<2001:630:206:1:222:64ff:fe16:25be>
+
+# LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" io<%Iin %Oout %Dus %X%k> fwd<%{x-forwarded-for}i>" combined_proxy
+# LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" io<%Dus %X%k> fwd<%{x-forwarded-for}i>" combined_proxy
+### latter is when logio_module is absent
+
+    next if $url eq '/cgi-bin/visitations'; # RSS reader
+    next if $url eq '*'
+      && $method eq 'OPTIONS' && $ua =~ m{^Apache/.*internal dummy connection};
+
+    next if $url eq '/cgi-bin/server-meta' && $ua =~ m{team_tool\.git/bin/webhosts};
+
+    $_ = Dump({ h => $h, identd => $identd, user_auth => $user_auth,
+                date_time_acc => $date_time_acc, method => $method,
+                url => $url, hv => $hv, status => $status, size_out => $size_out,
+                refer => $refer, ua => $ua, rest => $rest })
+      if $DUMP;
+
+
+} elsif (my ($date_time_err,
+             $tag,
+             $cli,
+             $script, $msg) =
+         m{^\[\w{3}\ (\w{3}\ \d{2}\ \d{2}:\d{2}:\d{2}\ \d{4})\]
+           \ \[(\S+)\]
+           (?:\ \[client\ (\S+)\])?
+           (?:\ \[(\S+)\])?\ (.*)$}x) {
+# error_log, CGI script
+#
+# [Fri Nov 08 14:18:14 2013] [error] [client 172.17.200.69] [test] Use of uninitialized value $ENV{"HTTP_CLIENTREALM"} in pattern match (m//) at /www/mca/www-dev/lib/otter/76/Bio/Otter/Auth/SSO.pm line 120.
+
+    next if $tag eq 'notice' &&
+      ($msg =~ m{^(?:
+                     (?-x:Apache/.* configured -- resuming normal operations)|
+                     (?-x:Graceful restart requested, doing restart)|
+                     (?-x:SIGHUP received\.  Attempting to restart)|
+                     (?-x:caught SIGTERM, shutting down))$}x);
+
+    next if $tag eq 'warn' &&
+      $msg =~ m{^PassEnv variable OTTER_PERL_EXE was undefined$};
+
+    next if $tag eq 'error' &&
+      $msg =~ m{^File does not exist: \S+/htdocs/favicon\.ico$};
+
+    next if $tag eq 'error' &&
+      $msg =~ m{^Use of uninitialized value in lc at \S+/apps/webvm-deps/SHARED\.core/SiteDecor.pm line \d+\.$};
+
+
+} elsif (my @old =
+         m{^(\S+)\ (\S+)\ (\S+)\ \[(\d{2}/\w{3}/\d{4}:\d{2}:\d{2}:\d{2}\ [-+]\d{4})\]
+           \ "(\S+)\ (\S+)\ HTTP/(\S+)"\ (\d{3})\ (-|\d+)$}x) {
+# access_log - old format, before webvm.git f2e86ac2
+# nothing interesting
+    next if $old[3] =~ m{/Sep/2013:};
+
+} else {
+    $_ = '?type?>|'.$_;
+}
+
+print;
+
+
+=head1 NAME
+
+webvm-logs-filter
+
+=head1 DESCRIPTION
+
+This filter is WYSIWYG, with the main aim of excluding some of the
+"noise".  You may need to edit it to get the "signal" you want.
+
+=cut
