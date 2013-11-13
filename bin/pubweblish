@@ -1,8 +1,23 @@
-#! /bin/sh
+#! /usr/bin/env perl
+use strict;
+use warnings;
+use Pod::Usage;
 
-info_txt() {
-cat <<INFO
-Syntax:  pubweblish [ -n ] <operation>
+
+=head1 NAME
+
+pubweblish - shove files from Git repositories to webservers
+
+=head1 SYNOPSIS
+
+ pubweblish [ -n ] <operation>+
+
+ # update and rsync the dev servers
+ pubweblish --pull=dev && pubweblish --dev
+
+=head1 DESCRIPTION
+
+=head2 Old, not updated from when this was a shell script
 
 This tool uses the directories
   WEBVM_docs.*/lib/otter/
@@ -32,15 +47,6 @@ The tree /nfs/anacode/WEBVM_docs.live/ must be updated manually
 
 Operation may be one of
 
- --export
-  Update $LEGACY_DIR from WEBVM_docs.dev/ ,
-  just for {cgi-bin,lib}
-  because data/otter/ is updated by mca@deskpro cronjob
-
-    NB. you still need to webpublish
-
-  Dry-run of this operation will also show a "diff -ru"
-
  --dev
  --live
   Update each host $( webhosts $FOO ) from the full WEBVM_docs.$FOO/
@@ -60,186 +66,163 @@ Operation may be one of
 This is currently intended as a makeshift solution, awaiting an easier
 way to run pull or build operations remotely.
 			-- mca 2013-09-16
-INFO
-}
 
+=cut
 
-send_files() {
-    local srcdir host part dest
-    srcdir=$1
-    host=$2
-    part=$3
-    dest=$( smithssh -p webdir $host )
-    echo "== send_files(webdir$part):" $srcdir$part/ to $host:$dest$part/
+our $DRY_RUN = 0;
+our $RETCODE = 0;
+our @TODO;
+
+sub send_files {
+    my ($srcdir, $host, $part) = @_;
+    my $dest = pipe_from(qw( smithssh -p webdir ), $host);
+    chomp $dest;
+    print "=== send_files(webdir$part): $srcdir$part/ to $host:$dest$part/\n";
     # nb. "rsync -SWH" are not available
-    echo + \
-    rsync $DRY_RUN -v -ai --delete -e smithssh $srcdir$part/ $host:$dest$part/
-    rsync $DRY_RUN -v -ai --delete -e smithssh $srcdir$part/ $host:$dest$part/
-    # returncode from rsync(1)
+    my $fail = run_showing(rsync => maybe_dry("-n"), qw( -v -ai --delete -e smithssh ),
+                           "$srcdir$part/", "$host:$dest$part/");
+    die "send_files failed: $fail" unless defined wantarray;
+    return $fail;
 }
 
-to_WWWdev() {
-    local old part srcdir
-    old=$1
-    srcdir=$2
-    part=$3
-    echo "== to_WWWdev($part)"
-    # --no-g : calling user cannot chgrp the resulting file
-    # --no-p : calling user may not be able to chmod the file, even if he could replace it
-    # --executability : patch over --no-perms
-    # --omit-dir-times : cannot set times on SANGER_docs/cgi-bin/otter/77
-    if [ -n "$DRY_RUN" ]; then
-        diff -ru $old/$part/otter/ $srcdir/$part/otter/ && echo ' => no diff' || echo ' => some diff'
-    fi
-    echo + \
-    rsync $DRY_RUN -aiSWH --no-g --no-p -E --delete --omit-dir-times \
-        $old/$part/otter/ $srcdir/$part/otter/
-    rsync $DRY_RUN -aiSWH --no-g --no-p -E --delete --omit-dir-times \
-        $old/$part/otter/ $srcdir/$part/otter/
-    # returncode from rsync(1)
+sub maybe_dry {
+    my ($flag) = @_;
+    return $DRY_RUN ? ($flag) : ();
 }
 
-do_util() {
-    local host op
-    host=$1
-    op=$2
-    echo === do_util: $host $op
-    echo + \
-    smithssh $DRY_RUN $host utilities/$op
-    smithssh $DRY_RUN $host utilities/$op
-    # we lack a newline
-    # returncode from smithssh(1)
+sub do_util {
+    my ($host, $op) = @_;
+    my $fail = run_showing(smithssh => maybe_dry("-n"), $host, "utilities/$op");
+    print "\n"; # we lack a newline
+    die "do_util($op) failed: $fail" unless defined wantarray;
+    return $fail;
 }
 
-do_pulls() {
-    echo "== do_pulls($HTYPE)"
-    status="Updating from Git:"
-    do_one_pull webvm         $SRCDIR                 master
-    do_one_pull server-config $SRCDIR/data/otter      $HTYPE
-    do_one_pull webvm-deps    $SRCDIR/apps/webvm-deps master
-}
-
-do_one_pull() {
-    local name dir want_branch got_branch
-    name="$1"
-    dir="$2"
-    want_branch="$3"
-    {
-        echo "=== $name"
-        cd $dir
-        got_branch="$( git symbolic-ref HEAD | sed -e 's|^refs/heads/||' )"
-        if [ "$got_branch" != "$want_branch" ]; then
-            echo "[e] In $dir for $name: expected to be on branch $want_branch, but am on $got_branch.  Leaving you to sort it out." >&2
-            exit 1
-        fi
-        if [ -z "$DRY_RUN" ]; then
-            echo + \
-            git pull --ff
-            git pull --ff
-        else
-            echo + \
-            git fetch -p
-            git fetch -p
-        fi
-        echo + \
-        git status -v
-        git status -v
+sub do_pulls() {
+    my ($htype, $srcdir) = @_;
+    my @pull =
+      (# [ repo-name, directory, branch ]
+       [ 'webvm', "$srcdir", 'master' ],
+       [ 'server-config', "$srcdir/data/otter", "$htype" ],
+       [ 'webvm-deps', "$srcdir/apps/webvm-deps", 'master' ]);
+    foreach my $pull (@pull) {
+        my ($name, $dir, $want_branch) = @$pull;
+        print "=== $name\n";
+        chdir $dir # we should be using no relative paths, so no need to fork first
+          or die "chdir $dir: $!";
+        my $got_branch = git_head();
+        if ($got_branch ne $want_branch) {
+            die "In $dir for $name: expected to be on branch $want_branch, ".
+              "but am on $got_branch.\n  Leaving you to sort it out.";
+        }
+        my @cmd = $DRY_RUN ? qw( git fetch --dry-run -p ) : qw( git pull --ff );
+        run_showing(@cmd);
+        run_showing(qw( git status -v ));
     }
 }
 
-maybe_dry() {
-    if [ "$1" = '-n' ]; then
-        DRY_RUN=-n
-        shift
-        return 0
-    fi
-    return 1
+sub git_head {
+    my $ref = pipe_from(qw( git symbolic-ref HEAD ));
+    return $1 if $ref =~ m{^refs/heads/(.+)$};
+    die "Branch lookup failed - what is $ref ?";
 }
 
+sub sync_to_vms {
+    my ($htype, $srcdir) = @_;
+    my @host = split /\s+/, pipe_from(webhosts => $htype)
+      or die "'webhosts $htype' was null";
 
-sync_to_legacy() {
-    # Sync code from our offline copy to legacy
-    for dir in cgi-bin lib; do
-        to_WWWdev $SRCDIR $LEGACY_DIR $dir
-    done
-}
-
-sync_to_vms() {
-    local status retcode
-    hosts=$( webhosts $HTYPE )
-    if [ -z "$hosts" ]; then
-        echo "[e] null 'webhosts $HTYPE'" >&2
-        exit 3
-    fi
-    status="rsync'ing for $HTYPE:"
-    retcode=0
-    for host in $hosts; do
+    my $status = "rsync'ing for $htype:\n";
+    foreach my $host (@host) {
         # Sync entire offline copy to webserver,
         # whichever nodes we can reach
-        if send_files $SRCDIR $host ''; then
-            if do_util $host restart; then
-                status="$(printf '%s\n  %s' "$status" "$host=OK" )"
-            else
-                retcode=$?
-                status="$(printf '%s\n  %s' "$status" "$host=rsync_ok,restart_fail($retcode)" )"
-            fi
-        else
-            retcode=$?
-            status="$(printf '%s\n  %s' "$status" "$host=rsync_fail($retcode)" )"
-        fi
-    done
-    printf '\nFinished %s\n' "$status"
-    return $retcode
+        my $fail = send_files($srcdir, $host, '');
+        if (!$fail) {
+            $fail = do_util($host, 'restart');
+            if ($fail) {
+                $RETCODE |= 4;
+                $status .= "  $host=rsync_ok, $fail\n";
+            } else {
+                my $dry = $DRY_RUN ? ' (dry run)' : '';
+                $status .= "  $host=OK$dry\n";
+            }
+        } else {
+            $RETCODE |= 8;
+            $fail =~ s/\n/\n      /g;
+            $status .= "  $host=$fail\n";
+        }
+    }
+    print "\nFinished $status";
+    return;
 }
 
 
+sub run_showing {
+    my @cmd = @_;
+    print "+ @cmd\n";
+    my $rc = system(@cmd);
+    my $fail = '';
+    $fail = "Failed @cmd: $!" if $rc < 0;
+    $fail = "Failed @cmd: returned code=$rc" if $rc > 0;
+    die $fail if $fail && !defined wantarray;
+    return $fail;
+}
 
-set -e
-umask 02
-LEGACY_DIR=/nfs/WWWdev/SANGER_docs
-
-unset DRY_RUN
-if maybe_dry "$@"; then
-    shift
-fi
-
-oper="$1"
-shift
-
-if maybe_dry "$@"; then
-    shift
-fi
+sub pipe_from {
+    my @cmd = @_;
+    open my $fh, '-|', @cmd
+      or die "Pipe from @cmd: $!";
+    my $txt = do { local $/ = undef; <$fh> };
+    close $fh
+      or die "Pipe from @cmd: returned $?/$!";
+    return $txt;
+}
 
 
-case "$oper" in
-    --export)
-        HTYPE=dev
-        SRCDIR=/nfs/anacode/WEBVM_docs.$HTYPE
-        sync_to_legacy
-        exit 0
-        ;;
-    --pull=dev)
-        HTYPE=dev
-        SRCDIR=/nfs/anacode/WEBVM_docs.$HTYPE
-        do_pulls
-        ;;
-    --pull=live)
-        HTYPE=live
-        SRCDIR=/nfs/anacode/WEBVM_docs.$HTYPE
-        do_pulls
-        ;;
-    --dev)
-        HTYPE=dev
-        SRCDIR=/nfs/anacode/WEBVM_docs.$HTYPE
-        sync_to_vms
-        ;;
-    --live)
-        HTYPE=live
-        SRCDIR=/nfs/anacode/WEBVM_docs.$HTYPE
-        sync_to_vms
-        ;;
-    *)
-        info_txt
-        exit 2
-        ;;
-esac
+sub main {
+    my @opt = @_;
+
+    umask 02;
+
+    my @bad;
+    while (@opt) {
+        my $sw = shift @opt;
+        if ($sw eq '-n') {
+            $DRY_RUN = 1;
+        } elsif ($sw =~ /^--(im|ex)port$/) {
+            die "Legacy operation $sw: no longer supported";
+        } elsif ($sw =~ /^--pull=(dev|live)$/) {
+            my $htype = $1;
+            my $srcdir = "/nfs/anacode/WEBVM_docs.$htype";
+            push @TODO, [ "git-pull into $sw offline copy",
+                        \&do_pulls, $htype, $srcdir ];
+        } elsif ($sw =~ /^--(dev|live)$/) {
+            my $htype = $1;
+            my $srcdir = "/nfs/anacode/WEBVM_docs.$htype";
+            push @TODO, [ "rsync $sw offline copy to webservers",
+                        \&sync_to_vms, $htype, $srcdir ];
+        } else {
+            push @bad, "Unknown option '$sw'";
+        }
+    }
+    push @bad, "Nothing to do" unless @TODO;
+    pod2usage(-verbose => 1, -exit => 2,
+              -msg => join "\n", @bad)
+      if @bad; # exits
+
+    while (@TODO) {
+        my ($descr, $code, @arg) = @{ shift @TODO };
+        print "== $descr\n";
+        $code->(@arg);
+    }
+
+    return $RETCODE;
+}
+
+END {
+    if (@TODO) {
+        warn join "\n", "Pending actions not attempted:", map { "  ".$_->[0] } @TODO;
+    }
+}
+
+exit main(@ARGV);
