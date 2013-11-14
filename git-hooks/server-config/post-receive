@@ -14,26 +14,55 @@ TT="$( dirname $( readlink -e $0 ))/../.."
 
 UPDATED="$( cat )"
 HEADref="$( git symbolic-ref HEAD )"
+unset did_merge
 
-pushed_head() {
-    printf '%s' "$UPDATED" | grep -q " $HEADref"
+pushed_to() {
+    printf '%s' "$UPDATED" | grep -q " $1"
 }
+
+do_pubweb() {
+    {
+        echo "=   Update webservers for $1"
+        cd /
+        # Clean the environment.  We need only a few things, and the
+        # hook environment contained GIT_DIR (which broke other repos)
+        # on top of user's (potentially arbitrary) env.
+        env -i \
+            "PATH=/software/perl-5.12.2/bin:/bin:/usr/bin:$TT/bin" \
+            "USER=$USER" \
+            "LANG=$LANG" \
+            "HOME=$HOME" \
+            $TT/bin/pubweblish --quiet --config=$1 || sleep 5
+        # Can't do much with pubweblish(1)'s exit code
+        # just give time to read the text if it fails
+    } |& sed -u -e 's/^/    /'
+}
+
 
 if printf '%s' "$UPDATED" | grep -qE ' refs/heads/([0-9]+|root)$'; then
      # on HEAD, which is most likely the dev branch
     printf "Have new content.  Auto-merge to %s:\n" "$HEADref"
+    did_merge=1
     "$TT/bin/server-config-op" merge 2>&1 || \
         printf "\nMerge failed, but refs were still pushed.\nPlease mail anacode@ the transcript if this is bad.\n"
 
-    if pushed_head; then
+    if pushed_to $HEADref; then
         echo "*** Your push to $HEADref was most likely covered up - push it alone to avoid this"
     fi
 else
     echo '[i] No auto-merge unless you push to ([0-9]+|root)'
 
-    if pushed_head; then
+    if pushed_to $HEADref; then
         echo "Beware, your push to $HEADref may be covered up soon - $0 merges to there"
     fi
 fi
 
 $TT/git-hooks/git-trac-update
+
+if [ -n "$did_merge" ] || pushed_to refs/heads/dev; then
+    do_pubweb dev
+fi
+
+if pushed_to refs/heads/live; then
+    do_pubweb live
+fi
