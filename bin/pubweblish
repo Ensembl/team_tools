@@ -112,7 +112,7 @@ sub send_files {
     my ($srcdir, $host, $part) = @_;
     my $dest = pipe_from(qw( smithssh -p webdir ), $host);
     chomp $dest;
-    print "=== send_files(webdir$part): $srcdir$part/ to $host:$dest$part/\n";
+    print "=== send_files $srcdir$part/ to $host:$dest$part/\n";
     # nb. "rsync -SWH" are not available
     my $fail = run_showing
       (rsync => maybe_dry("-n"),
