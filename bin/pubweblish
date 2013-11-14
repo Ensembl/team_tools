@@ -10,12 +10,65 @@ pubweblish - shove files from Git repositories to webservers
 
 =head1 SYNOPSIS
 
- pubweblish [ -n ] <operation>+
+ pubweblish [-q] [-n] <operation>+
 
  # update and rsync the dev servers
- pubweblish --pull=dev && pubweblish --dev
+ pubweblish --pull=dev && pubweblish --send=dev
+
+ # update just server-config.git
+ pubweblish --config=dev
 
 =head1 DESCRIPTION
+
+=head2 Operations
+
+This script can be given multiple operations.  They are executed in
+order.
+
+If a dry-run flag C<-n> is present anywhere, it affects all
+operations.
+
+=over 4
+
+=item --pull=dev | --pull=live
+
+Update all the Git repositories in the (dev or live) offline copy of
+the webserver files.
+
+Currently each offline copy contains (webvm, server-config,
+webvm-deps).
+
+This operation may change the dependencies and configuration of the
+Otter Server, but will not update its code.  Use L<otterlace_build(1)>
+for that.
+
+You need to send the changes to the webservers afterwards.
+
+=item --dev | --live  (old style)
+
+=item --send=dev | --send=live  (new style)
+
+L<rsync(1)> all files from the (dev or live) offline copy to each node
+of its respective backend webserver, and restart those servers.
+
+If some nodes are unavailable the others will be updated, and the exit
+code will be non-zero.
+
+=item --config=dev | --config=live
+
+This is a selective pull & rsync, like the operations above.
+
+It updates only the clone of server-config.git and L<rsync(1)> just
+those files, before restarting.
+
+=back
+
+=head2 Related commands
+
+The list of web server hostnames is obtained from L<webhosts(1)>.
+
+The L<rsync(1)> and restart operations require L<smithssh(1)>, which
+in turn requires that you have the relevant private key files.
 
 =head2 Old, not updated from when this was a shell script
 
@@ -44,25 +97,6 @@ The tree /nfs/anacode/WEBVM_docs.live/ must be updated manually
 (so far) and is considered read-only by this script.
 
 
-
-Operation may be one of
-
- --dev
- --live
-  Update each host $( webhosts $FOO ) from the full WEBVM_docs.$FOO/
-  for FOO being dev or live.
-
- --pull=dev
- --pull=live
-  Update the Git repositories (webvm, server-config, webvm-deps)
-  in the offline copies WEBVM_docs.$FOO/
-
-  These operations do no change the Otter Server code, but may change
-  its dependencies and configuration.
-
-  You still need to send the changes to the webservers afterwards.
-
-
 This is currently intended as a makeshift solution, awaiting an easier
 way to run pull or build operations remotely.
 			-- mca 2013-09-16
@@ -70,6 +104,7 @@ way to run pull or build operations remotely.
 =cut
 
 our $DRY_RUN = 0;
+our $QUIET = 0;
 our $RETCODE = 0;
 our @TODO;
 
@@ -79,8 +114,11 @@ sub send_files {
     chomp $dest;
     print "=== send_files(webdir$part): $srcdir$part/ to $host:$dest$part/\n";
     # nb. "rsync -SWH" are not available
-    my $fail = run_showing(rsync => maybe_dry("-n"), qw( -v -ai --delete -e smithssh ),
-                           "$srcdir$part/", "$host:$dest$part/");
+    my $fail = run_showing
+      (rsync => maybe_dry("-n"),
+       ($QUIET ? () : ('-iv')),
+       qw( -a --delete -e smithssh ),
+       "$srcdir$part/", "$host:$dest$part/");
     die "send_files failed: $fail" unless defined wantarray;
     return $fail;
 }
@@ -92,22 +130,30 @@ sub maybe_dry {
 
 sub do_util {
     my ($host, $op) = @_;
+    print "=== $op on $host\n";
     my $fail = run_showing(smithssh => maybe_dry("-n"), $host, "utilities/$op");
     print "\n"; # we lack a newline
     die "do_util($op) failed: $fail" unless defined wantarray;
     return $fail;
 }
 
-sub do_pulls() {
-    my ($htype, $srcdir) = @_;
+sub do_pulls {
+    my ($htype, $srcdir, @repo) = @_;
     my @pull =
       (# [ repo-name, directory, branch ]
        [ 'webvm', "$srcdir", 'master' ],
        [ 'server-config', "$srcdir/data/otter", "$htype" ],
        [ 'webvm-deps', "$srcdir/apps/webvm-deps", 'master' ]);
+    if (@repo) {
+        my %want;
+        @want{@repo} = (1) x @repo;
+        @pull = grep { $want{ $_->[0] } ? ($_) : () } @pull;
+        die "Oops - nothing to pull (wanted only @repo)" unless @pull;
+    }
+
     foreach my $pull (@pull) {
         my ($name, $dir, $want_branch) = @$pull;
-        print "=== $name\n";
+        print "=== $name\n" unless $QUIET && 1 == @pull;
         chdir $dir # we should be using no relative paths, so no need to fork first
           or die "chdir $dir: $!";
         my $got_branch = git_head();
@@ -116,8 +162,9 @@ sub do_pulls() {
               "but am on $got_branch.\n  Leaving you to sort it out.";
         }
         my @cmd = $DRY_RUN ? qw( git fetch --dry-run -p ) : qw( git pull --ff );
+        push @cmd, '--quiet' if $QUIET;
         run_showing(@cmd);
-        run_showing(qw( git status -v ));
+        run_showing(qw( git status -v )) unless $QUIET;
     }
 }
 
@@ -128,17 +175,21 @@ sub git_head {
 }
 
 sub sync_to_vms {
-    my ($htype, $srcdir) = @_;
+    my ($htype, $srcdir, $part) = @_;
+    my $also_restart = (!$part || $part ne 'data/otter');
+
     my @host = split /\s+/, pipe_from(webhosts => $htype)
       or die "'webhosts $htype' was null";
 
-    my $status = "rsync'ing for $htype:\n";
+    my $status = sprintf("rsync'ing%s for %s:\n",
+                         (defined $part ? " just $part" : ''), $htype);
     foreach my $host (@host) {
-        # Sync entire offline copy to webserver,
+        # Sync ( entire | $part ) of offline copy to webserver,
         # whichever nodes we can reach
-        my $fail = send_files($srcdir, $host, '');
+        my $fail = send_files($srcdir, $host, defined $part ? "/$part" : '');
         if (!$fail) {
-            $fail = do_util($host, 'restart');
+            $fail = do_util($host, 'restart')
+              if $also_restart;
             if ($fail) {
                 $RETCODE |= 4;
                 $status .= "  $host=rsync_ok, $fail\n";
@@ -159,7 +210,7 @@ sub sync_to_vms {
 
 sub run_showing {
     my @cmd = @_;
-    print "+ @cmd\n";
+    print "+ @cmd\n" unless $QUIET;
     my $rc = system(@cmd);
     my $fail = '';
     $fail = "Failed @cmd: $!" if $rc < 0;
@@ -173,9 +224,14 @@ sub pipe_from {
     open my $fh, '-|', @cmd
       or die "Pipe from @cmd: $!";
     my $txt = do { local $/ = undef; <$fh> };
-    close $fh
-      or die "Pipe from @cmd: returned $?/$!";
-    return $txt;
+    if (close $fh) {
+        return $txt;
+    } else {
+        if ($cmd[0] eq 'smithssh' && $? == 0x400) {
+            warn "\n\tsmithssh(1) failed, will not be able to update the webserver\n\n";
+        }
+        die "Pipe from @cmd: returned $?/$!";
+    }
 }
 
 
@@ -187,20 +243,30 @@ sub main {
     my @bad;
     while (@opt) {
         my $sw = shift @opt;
-        if ($sw eq '-n') {
+        if ($sw =~ /^(-n|--dry-?run)$/) {
             $DRY_RUN = 1;
+        } elsif ($sw =~ /^(-q|--quiet)$/) {
+            $QUIET = 1;
         } elsif ($sw =~ /^--(im|ex)port$/) {
             die "Legacy operation $sw: no longer supported";
         } elsif ($sw =~ /^--pull=(dev|live)$/) {
             my $htype = $1;
             my $srcdir = "/nfs/anacode/WEBVM_docs.$htype";
-            push @TODO, [ "git-pull into $sw offline copy",
+            push @TODO, [ "git-pull into $htype offline copy",
                         \&do_pulls, $htype, $srcdir ];
-        } elsif ($sw =~ /^--(dev|live)$/) {
+        } elsif ($sw =~ /^--(?:send=)?(dev|live)$/) {
             my $htype = $1;
             my $srcdir = "/nfs/anacode/WEBVM_docs.$htype";
-            push @TODO, [ "rsync $sw offline copy to webservers",
-                        \&sync_to_vms, $htype, $srcdir ];
+            push @TODO, [ "rsync offline copy to $htype webservers",
+                          \&sync_to_vms, $htype, $srcdir ];
+        } elsif ($sw =~ /^--config=(dev|live)$/) {
+            my $htype = $1;
+            my $srcdir = "/nfs/anacode/WEBVM_docs.$htype";
+            push @TODO,
+              ([ "git-pull into $htype offline copy of server-config",
+                 \&do_pulls, $htype, $srcdir, 'server-config' ],
+               [ "rsync offline copy of server-config to $htype webservers",
+                 \&sync_to_vms, $htype, $srcdir, 'data/otter' ]);
         } else {
             push @bad, "Unknown option '$sw'";
         }
