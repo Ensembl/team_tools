@@ -1,0 +1,76 @@
+#! /bin/sh
+
+# 1) check the Syntax: info about destructive clone cleaning
+# 2) run with something like
+#      otterlace_overnight --go-there lucid-dev32 ~mca/gitwk-anacode/eo-build ~zmap/BUILD.DEVELOPMENT
+
+
+die() {
+    rc=$1
+    shift
+    printf "$@" >&2
+    exit $rc
+}
+
+
+show_syntax() {
+    printf 'Syntax: %s [ --go-there <hostname> | --here ] <ensembl-otter-build-dir> <otterlace_build-options>
+
+The <otterlace_build-options> are probably just <zmap-tree>.
+
+Performs an overnight (otterlace_dev) build.
+
+Caveats:
+
+  Do NOT run this on your development ensembl-otter checkout,
+  it wants a clean HEAD on master,
+  and later might get that destructively.
+
+  The --go-there option will not preserve shell meta-characters
+  (including space) in following args.
+
+  The --go-there option requires a working $PATH during
+  non-interactive ssh.
+
+  It does no locking.  Maybe it should.\n' "$( basename "$0" )"
+    exit 2
+}
+
+
+do_build() {
+    # find the directory
+    eo_dir="$1"
+    shift
+
+    [ -d "$eo_dir" ] && [ -n "$eo_dir" ] && \
+        cd "$eo_dir" && [ -f dist/conf/version_major ] || \
+        die 3 '%s: not my ensembl-otter build source?\n' "$eo_dir"
+
+    # want it clean
+    local_changes="$( git status -s -uall )" || die 4 '%s' "Cannot git-status(1)"
+    [ -n "$local_changes" ] || \
+        die 5 'In %s, git-status showed local changes\n%s\n' \
+        "$eo_dir" "$local_changes"
+
+    # want it on master
+    git checkout -q master && git pull -q --ff-only || \
+        die 6 'In %s: need up-to-date master\n' "$eo_dir"
+
+    # do it
+    otterlace_build "$@" || \
+        die 7 'In %s, "otterlace_build %s": exit code %s\n' "$eo_dir" "$*" "$?"
+}
+
+
+echo I am $0 $*
+if [ "$1" = "--go-there" ]; then
+    shift
+    go_host="$1"
+    shift
+    ssh "$go_host" "otterlace_overnight --here $*"
+elif [ "$1" = '--here' ]; then
+    shift
+    do_build "$@"
+else
+    show_syntax
+fi
