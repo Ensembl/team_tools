@@ -13,10 +13,13 @@ pubweblish - shove files from Git repositories to webservers
  pubweblish [-q] [-n] <operation>+
 
  # update and rsync the dev servers
- pubweblish --pull=dev && pubweblish --send=dev
+ pubweblish --pull=dev --send=dev
 
  # update just server-config.git
  pubweblish --config=dev
+
+ # publish just one Otter Server version
+ pubweblish --send=dev:78
 
 =head1 DESCRIPTION
 
@@ -60,6 +63,16 @@ This is a selective pull & rsync, like the operations above.
 
 It updates only the clone of server-config.git and L<rsync(1)> just
 those files, before restarting.
+
+This is called by L<githooks(5)/post-receive> for the central
+server-config.git .
+
+=item --send=dev:<number> | --send=live:<number>
+
+L<rsync(1)> just the Otter Server of that major version number.
+
+This sends the files C<< lib/otter/<number> >> and
+C<< cgi-bin/otter/<number> >>.
 
 =back
 
@@ -176,7 +189,8 @@ sub git_head {
 
 sub sync_to_vms {
     my ($htype, $srcdir, $part) = @_;
-    my $also_restart = (!$part || $part ne 'data/otter');
+
+    my $also_restart = !$part; # i.e. if you want a restart, send all files
 
     my @host = split /\s+/, pipe_from(webhosts => $htype)
       or die "'webhosts $htype' was null";
@@ -249,16 +263,29 @@ sub main {
             $QUIET = 1;
         } elsif ($sw =~ /^--(im|ex)port$/) {
             die "Legacy operation $sw: no longer supported";
+
         } elsif ($sw =~ /^--pull=(dev|live)$/) {
             my $htype = $1;
             my $srcdir = "/nfs/anacode/WEBVM_docs.$htype";
             push @TODO, [ "git-pull into $htype offline copy",
                         \&do_pulls, $htype, $srcdir ];
+
         } elsif ($sw =~ /^--(?:send=)?(dev|live)$/) {
             my $htype = $1;
             my $srcdir = "/nfs/anacode/WEBVM_docs.$htype";
             push @TODO, [ "rsync offline copy to $htype webservers",
                           \&sync_to_vms, $htype, $srcdir ];
+
+        } elsif ($sw =~ /^--send=(dev|live):(\d{2,4})$/) {
+            my $htype = $1;
+            my $vsn = $2;
+            my $srcdir = "/nfs/anacode/WEBVM_docs.$htype";
+            foreach my $dir (qw( cgi-bin lib )) {
+                push @TODO,
+                  [ "rsync offline copy of v$vsn $dir/ to $htype webservers",
+                    \&sync_to_vms, $htype, $srcdir, "$dir/otter/$vsn" ];
+            }
+
         } elsif ($sw =~ /^--config=(dev|live)$/) {
             my $htype = $1;
             my $srcdir = "/nfs/anacode/WEBVM_docs.$htype";
@@ -267,11 +294,12 @@ sub main {
                  \&do_pulls, $htype, $srcdir, 'server-config' ],
                [ "rsync offline copy of server-config to $htype webservers",
                  \&sync_to_vms, $htype, $srcdir, 'data/otter' ]);
+
         } else {
             push @bad, "Unknown option '$sw'";
         }
     }
-    push @bad, "Nothing to do" unless @TODO;
+    push @bad, "Nothing to do.  Try perldoc $0" unless @TODO;
     pod2usage(-verbose => 1, -exit => 2,
               -msg => join "\n", @bad)
       if @bad; # exits

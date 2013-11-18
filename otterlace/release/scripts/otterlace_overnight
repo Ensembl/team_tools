@@ -5,7 +5,7 @@
 #      otterlace_overnight --go-there lucid-dev32 ~mca/gitwk-anacode/eo-build ~zmap/BUILD.DEVELOPMENT
 
 
-die() {
+die() { # also defined is 'bail'
     rc=$1
     shift
     printf "$@" >&2
@@ -43,8 +43,10 @@ do_build() {
     shift
 
     [ -d "$eo_dir" ] && [ -n "$eo_dir" ] && \
-        cd "$eo_dir" && [ -f dist/conf/version_major ] || \
+        cd "$eo_dir" && config_get version_major && [ -n "$version_major" ] || \
         die 3 '%s: not my ensembl-otter build source?\n' "$eo_dir"
+
+    printf "%s is building %s in %s\n\n" "$thisprog" "$version_major" "$eo_dir"
 
     # want it clean
     local_changes="$( git status -s -uall )" || die 4 '%s' "Cannot git-status(1)"
@@ -56,13 +58,21 @@ do_build() {
     git checkout -q master && git pull -q --ff-only || \
         die 6 'In %s: need up-to-date master\n' "$eo_dir"
 
-    # do it
+    # build otterlace_dev client and two Otter Servers
     otterlace_build "$@" || \
         die 7 'In %s, "otterlace_build %s": exit code %s\n' "$eo_dir" "$*" "$?"
+    otter_nfswub=/nfs/anacode/WEBVM_docs.live \
+        otterlace_build --server-only || \
+        die 8 'In %s, rebuild at live webservers: exit code %s\n' "$eo_dir" "$?"
+
+    # update webservers
+    pubweblish --send=dev:$version_major --send=live:$version_major || \
+        die 9 'pubweblish for v%s: exit code %s\n' "$version_major" "$?"
 }
 
 
-echo I am $0 $*
+. "$( dirname "$0" )/_otterlace.sh" || exit 1
+
 if [ "$1" = "--go-there" ]; then
     shift
     go_host="$1"
