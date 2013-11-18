@@ -32,8 +32,27 @@ Caveats:
   The --go-there option requires a working $PATH during
   non-interactive ssh.
 
-  It does no locking.  Maybe it should.\n' "$( basename "$0" )"
+  It does no locking (maybe it should), but
+  you can prevent it running by creating the file
+    /nfs/anacode/no_overnight@$USER \n' "$( basename "$0" )"
     exit 2
+}
+
+
+may_i_build() {
+    nobuild_fn="/nfs/anacode/no_overnight@$USER"
+    # currently, nothing will automatically create this file
+
+    if [ -f "$nobuild_fn" ]; then
+        {
+            echo; cat "$nobuild_fn"
+            echo; stat "$nobuild_fn"
+            echo
+        } | sed -e 's/^/| /'
+        die 22 'Blocked from building by presence of file %s\n' "$nobuild_fn"
+    else
+        echo "Checked to see file $nobuild_fn - absent, continuing"
+    fi
 }
 
 
@@ -73,6 +92,7 @@ do_build() {
 
 . "$( dirname "$0" )/_otterlace.sh" || exit 1
 
+may_i_build
 if [ "$1" = "--go-there" ]; then
     shift
     go_host="$1"
