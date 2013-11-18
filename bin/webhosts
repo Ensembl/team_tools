@@ -5,6 +5,7 @@ use warnings;
 use Getopt::Long;
 use Pod::Usage;
 
+use List::MoreUtils 'uniq';
 use LWP::UserAgent;
 use YAML qw( Dump Load );
 
@@ -183,6 +184,7 @@ sub show {
     my ($type, @host) = @_;
 
     @host = map { m{^([^.]+)(?:\.|$)} ? $1 : $_ } @host unless $opt{fqdn};
+    @host = uniq(@host);
     die "No hosts matched type '$type'" unless @host;
     print "@host\n";
 
