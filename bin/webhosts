@@ -45,10 +45,8 @@ of course the holes may move around...
 
 If the source HTTP service is down, this script will fail.
 You can point it at another source when invoking it directly,
-but this may need extending to use an environment variable and/or take
-an override host set to recover from failures.
-
-When this visited me, I just changed C<$source>.
+or by setting C<WEBHOSTS_WHENCE> to something like
+C<otter.sanger.ac.uk> or C<mca-otter.sandbox.sanger.ac.uk>.
 
 
 =head1 OPTIONS
@@ -97,7 +95,7 @@ my @TYPE = qw( sandbox dev staging live );
 my %opt;
 
 sub main {
-    do_getopt();
+    my @arg = do_getopt();
 
     # Get type
     my $type;
@@ -105,8 +103,8 @@ sub main {
         # list valid types
         print "@TYPE\n";
         return 0;
-    } elsif (@ARGV) {
-        $type = shift @ARGV;
+    } elsif (@arg) {
+        $type = shift @arg;
         die "Unknown host type '$type', valid are (@TYPE)\n"
           unless grep { $_ eq $type } @TYPE;
     } else {
@@ -117,10 +115,10 @@ sub main {
 
     # Get source, maybe
     my $source = 'otter.dev.sanger.ac.uk';
-    $source = shift @ARGV if @ARGV;
+    $source = shift @arg if @arg;
 
     # What?
-    die "Spare parameters (@ARGV) after optional source - rejected\n" if @ARGV;
+    die "Spare parameters (@arg) after optional source - rejected\n" if @arg;
 
     do_lookup($type, $source);
 
@@ -135,7 +133,13 @@ sub do_getopt {
         $opt{help} = 1;
     }
     show_help() if $opt{help};
-    return;
+
+    if (my $src = $ENV{WEBHOSTS_WHENCE} and 1 == @ARGV) {
+        push @ARGV, $src;
+#        $opt{debug} = 1;
+    }
+
+    return @ARGV;
 }
 
 
