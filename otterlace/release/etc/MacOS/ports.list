@@ -51,6 +51,8 @@ samtools
 # development
 #
 p5-test-perl-critic
+p5-test-differences
+p5-test-exception
 
 # ensembl testing
 #
