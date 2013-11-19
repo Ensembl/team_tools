@@ -4,6 +4,8 @@ match:
   distribution: "^CJFIELDS/BioPerl-\d"
 pl:
   expect:
+    - "live database tests. y/n"
+    - "n\n"
     - "Install .a.ll BioPerl scripts, .n.one"
     - "n\n"
     - "(likely to cause some failures)"
