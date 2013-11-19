@@ -37,7 +37,7 @@ fi
   --prefix="${install_base}" \
   --with-applications-dir="${install_base}/Applications" \
   --enable-readline \
-  --with-no-root-privileges 
+  --with-no-root-privileges
 
 make
 make install
