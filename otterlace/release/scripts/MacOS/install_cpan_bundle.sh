@@ -44,7 +44,7 @@ for src in ${cpan_prefs_src}/*.yml; do
     b=$( basename "${src}" )
     dest="${cpan_prefs_dst}/$b"
     if [ "${dest}" -nt "${src}" ]; then
-        echo "Skipping distroptef ${src}"
+        echo "Skipping distropref ${src}"
     else
         echo "Installing distropref ${src} -> ${dest}"
         sed -e "s|OTT_REL_MACOS_INSTALL_BASE|${install_base}|" \
