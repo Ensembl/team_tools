@@ -40,9 +40,9 @@ zmap_acedb_binaries='tace sgifaceserver xremote'
     install_binaries "bin.${acedb_machine}" "${stage_prefix}/bin" $zmap_acedb_binaries
 )
 
-if [ -d "${zmap_build_dir}/ZMap/src/libAceConn" ]; then
+if [ true ]; then
 
-    echo "looks like libAceConn is part of ZMap, so skipping it here."
+    echo "libAceConn is now part of ZMap, so skipping it here."
 
 else
 
