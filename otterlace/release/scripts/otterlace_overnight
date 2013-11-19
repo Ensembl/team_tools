@@ -55,6 +55,51 @@ may_i_build() {
     fi
 }
 
+FRESH_WAIT=45m
+is_zmap_valid() {
+    # we could (in theory) be passed some otterlace_build options
+    # before the zmap_tree.  worry about that if it happens.
+    attempt="$1"
+    zmap_tree="$2"
+
+    # Basic sanity check.
+    [ -d "$zmap_tree" ] || \
+        die 89 "%s attempt: Expected ZMap build tree at %s\n" \
+        "$attempt" "$zmap_tree"
+
+    # Does it look complete?
+    if [ -d "$zmap_tree/Dist" ] &&
+        [ -f "$zmap_tree"/Dist/zmap-*.tar.gz ] &&
+        [ -f "$zmap_tree"/Dist/seqtools-*.tar.gz ]; then
+
+        # OK
+        printf '\n\nHave a valid-looking ZMap tree\n'
+        {
+            echo; stat "$zmap_tree"
+            echo; ls -lart "$zmap_tree"
+            if [ -h "$zmap_tree" ]; then
+                # symlink - show contents
+                echo; stat "$zmap_tree/"
+                echo; ls -lart "$zmap_tree/"
+            fi
+            echo
+        } | sed -e 's/^/| /'
+        return 0
+    else
+        # Not OK
+        case "$attempt" in
+            *final)
+                echo 'No more waiting around' ;;
+            *)
+                printf "%s attempt: ZMap at %s is not fresh at %s.  Sleeping %s...\n" \
+                    "$attempt" "$zmap_tree" "$( date +%Ft%T )" "$FRESH_WAIT"
+                sleep $FRESH_WAIT
+                printf "Now it is %s\n" "$( date +%Ft%T )" ;;
+        esac
+        return 88
+    fi
+}
+
 
 do_build() {
     # find the directory
@@ -72,6 +117,14 @@ do_build() {
     [ -n "$local_changes" ] || \
         die 5 'In %s, git-status showed local changes\n%s\n' \
         "$eo_dir" "$local_changes"
+
+    # need a recent & complete ZMap build
+    if ! is_zmap_valid 1st "$@"; then
+        if ! is_zmap_valid 2nd "$@"; then
+            is_zmap_valid 3rd_final "$@" || \
+                die 90 "ZMap build looks broken\n"
+        fi
+    fi
 
     # want it on master
     git checkout -q master && git pull -q --ff-only || \
