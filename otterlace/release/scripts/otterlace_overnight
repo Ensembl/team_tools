@@ -114,7 +114,7 @@ do_build() {
 
     # want it clean
     local_changes="$( git status -s -uall )" || die 4 '%s' "Cannot git-status(1)"
-    [ -n "$local_changes" ] || \
+    [ -z "$local_changes" ] || \
         die 5 'In %s, git-status showed local changes\n%s\n' \
         "$eo_dir" "$local_changes"
 
@@ -177,6 +177,10 @@ if [ "$1" = "--go-there" ]; then
     ssh "$go_host" "otterlace_overnight --here $*"
 elif [ "$1" = '--here' ]; then
     shift
+
+    # prevent the Zircon tests, because t/exists.t is broken
+    unset DISPLAY
+
     do_build "$@"
 else
     show_syntax
