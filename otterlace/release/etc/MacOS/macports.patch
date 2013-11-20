@@ -1,30 +1,25 @@
---- ./etc/macports/macports.conf.default	2013-01-14 10:28:16.000000000 +0000
-+++ ./etc/macports/macports.conf	2013-01-14 10:40:08.000000000 +0000
-@@ -52,7 +52,7 @@
- # CPU architecture to compile for. Defaults to i386 or ppc on Mac OS X 10.5
- # and earlier, depending on the CPU type detected at runtime. On Mac OS X 10.6
- # the default is x86_64 if the CPU supports it, i386 otherwise.
--#build_arch			i386
-+build_arch			i386
- 
- # CPU architectures to use for Universal Binaries (+universal variant)
- universal_archs		x86_64 i386
-@@ -98,6 +98,7 @@
- #   rsync.macports.org        - California, USA (master)
- #   trd.no.rsync.macports.org - Trondheim, Norway
- #rsync_server		rsync.macports.org
+--- ./etc/macports/macports.conf.default	2013-11-18 10:53:23.000000000 +0000
++++ ./etc/macports/macports.conf	2013-11-18 11:03:44.000000000 +0000
+@@ -110,6 +110,7 @@
+ # https://trac.macports.org/wiki/Mirrors#MacPortsSource for a list of
+ # available servers.
+ #rsync_server        	rsync.macports.org
 +rsync_server            macports.internal.sanger.ac.uk
  
- # Rsync directory from which to pull the base/ component (infrastructure) of MacPorts
- # If this points to a .tar file, a signed .rmd160 must exist next to it
-@@ -159,3 +160,7 @@
- # linking and can rebuild affected ports. Possible values are
- #'rebuild' (default) or 'report'.
- #revupgrade_mode rebuild
+ # Location of MacPorts base sources on rsync_server. If this references
+ # a .tar file, a signed .rmd160 file must exist in the same directory
+@@ -197,3 +198,11 @@
+ # removing unnecessary files and directories prior to pkg or mpkg
+ # deployment.
+ #pkg_post_unarchive_deletions	include share/doc share/man
 +
-+# Target MacOS X 10.5 (Leopard) and above
++# Target MacOS X 10.6 (Snow Leopard) and above
 +#
-+macosx_deployment_target	  10.5
++macosx_deployment_target	  10.6
++
++# TEMP https://trac.macports.org/ticket/39850
++#
++sandbox_enable no
 --- ./etc/macports/sources.conf.default	2013-01-14 10:28:16.000000000 +0000
 +++ ./etc/macports/sources.conf	2013-01-14 10:41:07.000000000 +0000
 @@ -28,4 +28,6 @@

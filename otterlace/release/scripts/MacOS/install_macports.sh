@@ -10,7 +10,7 @@ if [ ! -d "${resources_path}" ]; then
 fi
 
 macports_url_base="https://distfiles.macports.org/MacPorts"
-macports_ver="2.1.2"
+macports_ver="2.2.1"
 
 macports_name="MacPorts-${macports_ver}"
 macports_tarball="${macports_name}.tar.bz2"
