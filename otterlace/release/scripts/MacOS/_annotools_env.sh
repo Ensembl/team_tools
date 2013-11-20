@@ -30,18 +30,15 @@ set_stage_dir () {
 # leaves build_root set, goes there and leaves us there
 # also sets stage_dir & stage_prefix
 goto_build_root () {
-    local target_arch alt_arch
+    local target_arch
 
     set_stage_dir
 
-    target_arch="Darwin_i386"
-    alt_arch="Darwin_x86_64"
+    target_arch="Darwin_x86_64"
     stage_prefix="${stage_dir}/${target_arch}"
 
     mkdir -v -p "${build_root}"
     mkdir -v -p "${stage_prefix}"
-
-    ( cd "${stage_dir}" && ln -v -s -f -n "./${target_arch}" "${alt_arch}" )
 
     cd "${build_root}"
     echo "Working in ${build_root}"
@@ -49,10 +46,10 @@ goto_build_root () {
     /usr/bin/true
 }
 
-# These ensure we build for 10.5, i386.
+# These ensure we build for 10.6, x86_64.
 
-extra_cflags="-arch i386 -mmacosx-version-min=10.5 -isysroot /Developer/SDKs/MacOSX10.5.sdk"
-export MACOSX_DEPLOYMENT_TARGET=10.5
+extra_cflags="-arch x86_64 -mmacosx-version-min=10.6 -isysroot /Developer/SDKs/MacOSX10.6.sdk"
+export MACOSX_DEPLOYMENT_TARGET=10.6
 
 # Specify which X libraries to use
 

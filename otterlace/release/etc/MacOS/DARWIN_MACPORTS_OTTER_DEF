@@ -48,7 +48,7 @@ LINKER = cc $(COPT) -bind_at_load
 
 
 ### Linux uses flex to emulate the standard 'lex' program
-LEX_LIBS = -ll
+LEX_LIBS = -lfl
 ### flex -l emulates AT&T lex as accurately as possible
 LEX = flex
 LEX_OPTIONS = -l
