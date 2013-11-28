@@ -14,21 +14,6 @@
 # / TO DO
 
 
-# NB
-
-# We must build the binary XRemote module with the same version of
-# Perl that our scripts use, because binary modules are installed to
-# version-dependent locations.  Therefore we start the $PATH with
-# (location of preferred Perl).
-
-# But Perl will try to build the binary XRemote module with the same
-# version of gcc that it was built with, which is not the version of
-# gcc on modern hosts.  Therefore we set CC and LD to gcc, so that
-# Perl will use the local gcc.
-
-# / NB
-
-
 
 # Process commandline args & optional variables passed in environment.
 # May chdir un-scoped, or exit or exec
@@ -431,41 +416,15 @@ otterlace_client_install_zmap() {
         # build_lib__zircon will die, until 982293f5 or 2281067c e-o
         build_lib__zircon
     fi &&
-    if [ -z "$( git branch -a --merged | grep '\<feature/zircon\>$' )" ] ; then
-        build_lib__xremote
-    fi &&
     cp -- ${zmap_prefix}/bin/{zmap,tace,sgifaceserver,blixemh,dotter,belvu} "$bin_dir" &&
     cp -r -- "${zmap_prefix}/share" "$install_dir" &&
     true
 }
 
-build_lib__xremote() {
-    local build_dir
-    build_dir="/tmp/otterlace_xremote_build/$$"
-    rm -rf -- "$build_dir" &&
-    mkdir -p -- "$build_dir" &&
-    (
-        [ "$( lsb_release -sc 2>/dev/null )" = 'precise' ] && PATH=/software/gcc-4.8.1/bin:$PATH
-        cd "$build_dir" &&
-        cp -r -- "${zmap_build}/ZMap/src/perl/X11-XRemote-0.01" . &&
-        cd X11-XRemote-0.01 &&
-        perl Makefile.PL \
-            INSTALL_BASE=${install_dir} \
-            CC=gcc \
-            LD=gcc \
-            --with-zmap-libs "${zmap_prefix}/lib" \
-            --with-zmap-inc  "${zmap_prefix}/include" \
-            --with-symbols \
-            &&
-        make &&
-        make test &&
-        make install &&
-        rm -rf -- "$build_dir" &&
-        true ) &&
-    cp -- ${zmap_prefix}/bin/xremote "$bin_dir" &&
-    true
-}
 
+# We build with the same version of Perl that our scripts use.  This
+# was because binary modules are installed to version-dependent
+# locations.  If we should need to go there again, check vc history!
 build_lib__zircon() {
     local build_dir gitsrc zircon_version
 
