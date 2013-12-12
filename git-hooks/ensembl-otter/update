@@ -2,6 +2,6 @@
 
 # uncomment any of the sub-hooks to disable it
 
-hooks/update.perlcritic "$@" &&
+# hooks/update.perlcritic "$@" &&
 
 true
