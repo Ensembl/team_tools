@@ -264,7 +264,7 @@ sub main {
 sub get_cookies {
     my $cookiefn = "$ENV{HOME}/.otter/ns_cookie_jar";
     my @out;
-    if (open my $fh, $cookiefn) {
+    if (open my $fh, '<', $cookiefn) {
         while (<$fh>) {
             next if /^\s*(#|$)/;
             my @f = split /\s+/;
