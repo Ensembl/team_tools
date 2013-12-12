@@ -182,8 +182,8 @@ sub main {
         die "Conflicting --query && --strip-query given" if exists $opt{query};
         $opt{query} = $1 if $cgi_script =~ s{\?(.*)$}{};
     }
-    die "cgi_script=$cgi_script: not an executable file"
-      unless -f $cgi_script && -x _;
+    -f $cgi_script or die "cgi_script=$cgi_script: no such file";
+    -x $cgi_script or die "cgi_script=$cgi_script: file is not executable";
     $cgi_script = File::Spec->rel2abs($cgi_script);
 
     # Find webdir.  Otter::Paths needs it absolute, to locate libs
