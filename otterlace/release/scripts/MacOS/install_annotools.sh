@@ -37,8 +37,12 @@ xremote_src_pattern="${zmap_build_dir}/${xremote_rel_src_loc}/X11-XRemote-*"
 xremote_src_dir=$( echo ${xremote_src_pattern} ) # glob expansion
 xremote_dest="${stage_dir}/${xremote_rel_src_loc}"
 
-mkdir -v -p "${xremote_dest}"
-echo "${xremote_src_dir} -> ${xremote_dest}"
-cp -r "${xremote_src_dir}" "${xremote_dest}"
+if [ -d "${xremote_src_dir}" ]; then
+    mkdir -v -p "${xremote_dest}"
+    echo "${xremote_src_dir} -> ${xremote_dest}"
+    cp -r "${xremote_src_dir}" "${xremote_dest}"
+else
+    echo "XRemote not found in this ZMap build, so nothing more left to do."
+fi
 
 exit 0
