@@ -18,6 +18,7 @@ use Bio::Otter::Server::Config;
 
 my $desig = Bio::Otter::Server::Config->designations;
 my %major; # set of versions with clients, key = major
+diag "Taking BOSConfig from ".Bio::Otter::Server::Config->data_dir;
 
 my @holtdir = map {"/software/noarch/$_/anacode/otter"}
   qw( linux-i386 linux-x86_64 precise-x86_64 ); # XXX: This trick will stop working after Lenny+Lucid
@@ -75,11 +76,6 @@ foreach my $holtdir (@holtdir) {
     my %want_nondes = map {( $_ => $desig->{$_} )}
       grep { /^\d+$/ } keys %$desig;
 
-    if ($holtdir =~ /precise-x86_64/) { # XXX: special case not required after 73 is gone ~ 2014-02
-        delete @want_nondes{qw{ 70 71 72 73 }};
-        diag "On $holtdir, skipping 70..73 (old editions not built)";
-    }
-
     my $pass = 1;
     $pass = 0 unless is_deeply(\%got_ln, \%want_ln, "Symlinks in $holtdir");
     $pass = 0 unless is_deeply(\%got_nondes, \%want_nondes, "Non-designated in $holtdir");
@@ -97,5 +93,6 @@ my @dir = map {("/nfs/anacode/WEBVM_docs.live/$_/otter",
 foreach my $dir (@dir) {
     my @got  = sort grep { -d "$dir/$_" } read_dir($dir);
     my @want = sort keys %major;
-    is_deeply(\@got, \@want, "Major versions in $dir");
+    is_deeply(\@got, \@want, "Major versions in $dir")
+      or diag explain { got => \@got, want => \@want, in => $dir };
 }
