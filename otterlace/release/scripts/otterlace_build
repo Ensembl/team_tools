@@ -372,12 +372,6 @@ otterlace_client_install_perl_modules() {
             checkout -P -r "$cvs_humpub_release" \
             PerlModules/Hum &&
 
-        if [ "${version_major}" -le 70 ]; then # ensembl-analysis not required after v70
-            cvs -Q -f -d "$ensembl_cvsroot" \
-                checkout -P -r "$cvs_humpub_release" \
-                ensembl-analysis/modules
-        fi &&
-
         mkdir -p -- ensembl-otter &&
         cp -r \
             ${ensembl_otter_root}/{modules,scripts,tk} \
