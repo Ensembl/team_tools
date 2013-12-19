@@ -287,7 +287,6 @@ cvs_update_repo() {
 
 cvs_update() {
     cvs_update_repo "$anacode_cvs_repo" PerlModules      &&
-    cvs_update_repo "$ensembl_cvs_repo" ensembl-analysis &&
     true
 }
 
