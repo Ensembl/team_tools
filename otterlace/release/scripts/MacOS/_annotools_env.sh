@@ -68,12 +68,14 @@ _do_config_make () {
 
     # use a subshell to avoid permanent cd
     (
+        set -e # bail out on error
+
 	cd "${src_dir}"
 
 	CFLAGS="${extra_cflags}" ./configure --prefix="${prefix}" "${config_x_includes}" "${config_x_libraries}"
 	make
 
-    )
+    ) || exit $?
 
     /usr/bin/true
 }
@@ -85,11 +87,14 @@ _do_config_make_install () {
 
     # use a subshell to avoid permanent cd
     (
+        set -e # bail out on error
+
 	cd "${src_dir}"
 
 	_do_config_make "${PWD}" "${prefix}"
 	make install
-    )
+
+    ) || exit $?
 
     /usr/bin/true
 }

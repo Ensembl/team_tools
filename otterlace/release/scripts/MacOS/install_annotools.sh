@@ -16,6 +16,13 @@ echo "In ${PWD}"
 echo "Removing previous zmap and seqtools builds, if any"
 rm -rf zmap-* seqtools-*
 
+annotools_binaries='belvu blixem blixemh dotter gffparser remotecontrol simpleclient simpletest xml_writer zmap'
+if [ -d "${stage_prefix}/bin" ]; then
+    for prog in ${annotools_binaries}; do
+        rm -f "${stage_prefix}/bin/${prog}"
+    done
+fi
+
 # ZMap
 
 zmap_tarball="${zmap_dist_dir}/zmap-*.tar.gz"
