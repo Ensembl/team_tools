@@ -28,6 +28,14 @@ fi
 zmap_tarball="${zmap_dist_dir}/zmap-*.tar.gz"
 unpack_matching_tarball "${zmap_tarball}" "zmap-"
 zmap_src="${unpacked_tarball}"
+
+# # Tmp fix
+# missing="${zmap_dist_dir}/../ZMap/src/zmapGFF/zmapGFFStringUtils.h"
+# if [ -f "${missing}" ]; then
+#     cp -v "${missing}" "${zmap_src}/zmapGFF/"
+# fi
+# # end tmp fix
+
 stage_config_make_install "${zmap_src}"
 
 # Seqtools
