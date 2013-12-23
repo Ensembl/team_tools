@@ -60,7 +60,7 @@ zircon_git_repo=${ANACODE_ZIRCON:-git:/repos/git/anacode/zircon}
 
 # Dummy repositories for script testing.
 _create_dummy_repos_cvs() {
-    dummies="$( mktemp -t -d DUMMY_REPOS.XXXXXX )" || bail "Failed to mktemp -d"
+    dummies="$( mktemp -d -t DUMMY_REPOS.XXXXXX )" || bail "Failed to mktemp -d"
         # Serious because caller does not want to do real operations
 
     printf "\n*** Creating and running with dummy repos,\n    dummies=%s\n    these will NOT be cleaned up\n    you can use them again by setting the variable and flag\n\n" "$dummies"
@@ -393,7 +393,7 @@ main() {
         return 3
     fi
 
-    tmp_dir="$( mktemp -t -d "$( basename "$0" ).XXXXXX" )" || bail "mktemp failed"
+    tmp_dir="$( mktemp -d -t "$( basename "$0" ).XXXXXX" )" || bail "mktemp failed"
 
     if [ -n "$with_dummy" ]; then
         _use_dummy_repos_cvs
