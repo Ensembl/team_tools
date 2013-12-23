@@ -9,10 +9,17 @@ port_sanity_check || exit 3
 check_set_zmap_build_dir_from_arg "$@"
 goto_build_root
 
+zmap_acedb_binaries='tace sgifaceserver xremote'
+
 # Cleanup
 
 echo "Removing previous ACEDB and libAceConn builds, if any"
 rm -rf ACEDB-* libAceConn-*
+if [ -d "${stage_prefix}/bin" ]; then
+    for prog in ${zmap_acedb_binaries}; do
+        rm -f "${stage_prefix}/bin/${prog}"
+    done
+fi
 
 # ACEDB
 
@@ -29,8 +36,6 @@ sed -e "s|OTT_REL_MACOS_INSTALL_BASE|${install_base}|"   \
     -e "s|OTT_REL_MACOS_EXTRA_CFLAGS|${extra_cflags}|"   \
    "${acedb_wmake_defs_src}" \
  > "${acedb_wmake_defs_dst}"
-
-zmap_acedb_binaries='tace sgifaceserver xremote'
 
 (
     cd "$acedb_src" &&
