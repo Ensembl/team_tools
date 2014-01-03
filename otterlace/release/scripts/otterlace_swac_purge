@@ -147,8 +147,20 @@ sub cleanup {
             # can deal with the Lenny->Lucid migration scheme, should
             # that recur, but ignores the suffix part
             my $desig = $1;
-            my ($major) = $to =~ m{^otter_rel(\d{2,3})(?:\.\d{2})?(?:-\w+)?$}
-              or die "Designation symlink $fn -> $to format incomprehensible";
+
+            my ($major) = $to =~ m{^otter_rel(\d{2,3})(?:\.\d{2})?(?:-\w+)?$};
+            # $3 was the -lenny or -lucid suffix; presumably should match $2 of $leaf
+
+            if (!defined $major && $to =~ m{^otter_rel(\d{2,3})_(\w+)$}) {
+                # feature branch of dev
+                my ($feat_maj, $feature) = ($1, $2);
+                die "Feature name mismatch ($desig != $feature) on designation symlink $fn -> $to"
+                  unless $feature eq $desig;
+                warn "[i] Noticed feature branch designation $fn -> $to\n";
+                $major = $feat_maj;
+            } elsif (!defined $major) {
+                die "Designation symlink $fn -> $to format incomprehensible";
+            }
 
             # Need the same designation->major version for all arch
             die "Designation $desig: version conflict (@{$desig{$desig}}) but $fn -> $to"
@@ -238,9 +250,14 @@ sub whittle {
     foreach my $fn (@fn) {
         next if -l $fn;
 
-        my ($major, $minor) = $fn =~ m{/otter_rel(\d{2,3})(?:\.(\d{2}))?(?:-\w+)?$};
+        my ($major, $minor, $feat) = $fn =~
+          m{/otter_rel(\d{2,3})(?:\.(\d{2}))?(?:_(\w+))?(?:-\w+)?$};
+
         if (!-d $fn || !defined $major) {
             warn "[w] Skipping incomprehensible $fn\n";
+            push @$keep, $fn;
+        } elsif (defined $feat) {
+            warn "[w] Skipping feature '$feat' for $fn\n";
             push @$keep, $fn;
         } elsif ($major >= $old || grep { $major == $_ } @$keep_major) {
             # has a designation symlink - keep all
