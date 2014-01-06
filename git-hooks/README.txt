@@ -1,11 +1,8 @@
 These Git hooks are to control other repositories, on intcvs1.
 
-They need to be checked out somewhere, and then symlinked from the
-relevant bare repository.
-
-"Somewhere" needs to be accessible when repositories are written,
-preferably "local" storage.  See RT#275599 [intcvs1: Storage for Git
-checkouts of hooks?]
+They are checked out at intcvs1:/repos/git/anacode/~githooks/tt/, and
+then symlinked from the relevant bare repository.  See RT#275599
+[intcvs1: Storage for Git checkouts of hooks?]
 
 
 
@@ -32,17 +29,12 @@ Q: where are git-hooks/server-config/ documented?
 A: bin/server-config-op
 
 
-Let's use
-  /software/noarch/linux-i386/anacode/team_tools.git-hooks/git-hooks
-
-  Beware, ten minute lag to intcvs1 !
-
-until we have local storage, since /software (netapp6b or another
-nearby) has generally good availability.
 
 Installation,
   ssh lenny-dev32  # currently has newer Git
   TTGH=/software/noarch/linux-i386/anacode/team_tools.git-hooks
+# NB. since this happened, I have moved the directory
+# and extended the hooks collection.
   iRGA=intcvs1:/repos/git/anacode
   umask 02
   git init --shared=all $TTGH
