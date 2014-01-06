@@ -1,0 +1,104 @@
+#! /usr/bin/perl
+use strict;
+use warnings;
+use Getopt::Long;
+use YAML qw( LoadFile Dump );
+
+
+=head1 NAME
+
+anacode_source_repo - return URL for repository
+
+=head1 SYNOPSIS
+
+ $ anacode_source_repo ensembl-otter ensembl
+ intcvs1:/repos/git/anacode/ensembl-otter.git
+ https://github.com/Ensembl/ensembl.git
+
+ $ anacode_source_repo -O github_push ensembl-otter
+ git@github.com:Anacode/ensembl-otter.git
+
+=head1 DESCRIPTION
+
+Team-central configuration of the URLs for Git repositories, so that
+we can stop hardwiring them into scripts.
+
+=head2 Configuration
+
+Configuration is manual, and should be done after reading the relevant
+code - at least until we're clear what we need.
+
+This snippet can keep the file neat,
+
+ perl -MYAML=Dump,LoadFile -e 'print Dump(LoadFile(shift()))' config/source-repositories.yaml
+
+We shall assume that this script and its config live together and
+honour atomic commits which change both.
+
+=cut
+
+
+sub main {
+    my %opt = ( filename => config_filename() );
+
+    GetOptions \%opt, 'order|O=s', 'help|h', 'path|p', 'debug|D'
+      or $opt{help} = 'Bad option';
+
+    if ($opt{help}) {
+        return show_syntax();
+    } elsif ($opt{path}) {
+        print $opt{filename}, "\n";
+        return 0;
+    } else {
+        $opt{config} = LoadFile( $opt{filename} );
+        die "[e] Bad config $opt{filename}"
+          unless $opt{config}{_default_order};
+        $opt{order} = (defined $opt{order}
+                       ? [ split /:/, $opt{order} ]
+                       : $opt{config}{_default_order});
+
+        die Dump({ opt => \%opt }) if $opt{debug};
+        return show_urls(\%opt, @ARGV);
+    }
+}
+
+sub config_filename {
+    my $fn = $0;
+    die "[e] Cannot make config filename from $fn" unless
+      $fn =~ s{bin/anacode_source_repo$}{config/source-repositories.yaml};
+    die "[e] Config $fn, name derived from $0: not a file" unless -f $fn;
+    return $fn;
+}
+
+sub show_syntax {
+    print "Syntax: $0 --path
+        $0 [ --order foo:bar ] <repo-name>*
+
+Print to stdout the URL for requested repositories.\n";
+    return 1;
+}
+
+sub show_urls {
+    my ($opt, @name) = @_;
+
+    my $config = $opt->{config};
+    my @order = @{ $opt->{order} }
+      or die "[e] Null source-collection ordering";
+
+    my $find = sub {
+        my ($name) = @_;
+        my @found = grep { defined }
+          map { $config->{$_}->{$name} } @order;
+        warn join "\n  ", "[w] Repo $name is shadowed:", @found if @found > 1;
+        die "[e] No repo found for $name in ordering (@order)" unless @found;
+        return $found[0];
+    };
+
+    my @out = map { $find->($_) } @name;
+    die "[e] Nothing to do?" unless @out;
+
+    print "$_\n" foreach @out;
+    return 0;
+}
+
+exit main();
