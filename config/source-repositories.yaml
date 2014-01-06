@@ -1,0 +1,23 @@
+# Data for bin/anacode_source_repo
+---
+_default_order:
+  - internal
+  - github
+github:
+  ensembl: https://github.com/Ensembl/ensembl.git
+  ensembl-pipeline: https://github.com/Ensembl/ensembl-pipeline.git
+  ensembl-variation: https://github.com/Ensembl/ensembl-variation.git
+github_push:
+  cron2rss: git@github.com:Anacode/cron2rss.git
+  ensembl: git@github.com:Ensembl/ensembl.git
+  ensembl-otter: git@github.com:Anacode/ensembl-otter.git
+internal:
+  ensembl-otter: intcvs1:/repos/git/anacode/ensembl-otter.git
+  PerlModules: intcvs1:/repos/git/anacode/PerlModules.git
+  server-config: intcvs1:/repos/git/anacode/server-config.git
+  team_tools: intcvs1:/repos/git/anacode/team_tools.git
+  webvm: intcvs1:/repos/git/anacode/webvm.git
+  webvm-deps: intcvs1:/repos/git/anacode/webvm-deps.git
+  zircon: intcvs1:/repos/git/anacode/zircon.git
+mg13:
+  ensembl: https://github.com/mjg17/ensembl.git
