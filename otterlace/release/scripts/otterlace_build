@@ -219,13 +219,22 @@ setup_globals() {
         exit 1
     fi
 
-    # EXTERNAL PARAMETERS
+    ### EXTERNAL PARAMETERS
+    #
+
     : ${build_log:=/nfs/anacode/otterlace/ensembl_otter_build_log}
+    # on some Macs and in VM, /nfs/anacode cannot be reached
+
     cvs_user="${cvs_user}${cvs_user:+@}" # append @ to cvs_user, else empty
+    # cvs_user : when building in VM, real username is arbitrary and different
+
+    #
+    ### / EXTERNAL PARAMETERS
+
+    # source code
     anacode_cvsroot=":ext:${cvs_user}cvs.internal.sanger.ac.uk:/repos/cvs/anacode"
     ensembl_cvsroot=":ext:${cvs_user}cvs.sanger.ac.uk:/cvsroot/ensembl"
     default_zircon="${cvs_user}git.internal.sanger.ac.uk:/repos/git/anacode/zircon.git"
-    # / EXTERNAL PARAMETERS
 
     # Other values accepted
     #   ANACODE_ZIRCON    to source it from local git clone
