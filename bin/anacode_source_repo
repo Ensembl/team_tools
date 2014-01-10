@@ -74,6 +74,14 @@ This is currently ignored.  Callers may provide it to explain what
 they're trying to do, in the hope that it can be used to avoid or
 debug incorrect repository sources.
 
+=item --isclean
+
+If a discovered source repository is not bare, then check that it has
+no staged or unstaged modifications.  If it is modified, complain and
+fail.
+
+Currently this check only operates for local directories.
+
 =cut
 
 
@@ -83,6 +91,7 @@ sub main {
     GetOptions(\%opt,
                'help|h', 'path|p', 'debug|D',
                'purpose=s',
+               'isclean',
                'order|O=s')
       or $opt{help} = 'Bad option';
 
@@ -136,11 +145,55 @@ sub show_urls {
         return $found[0];
     };
 
-    my @out = map { $find->($_) } @name;
-    die "[e] Nothing to do?" unless @out;
+    my @repo = map { $find->($_) } @name;
+    die "[e] Nothing to do?" unless @repo;
 
-    print "$_\n" foreach @out;
+    for (my $i=0; $i<@name; $i++) {
+        my ($repo, $name) = ($repo[$i], $name[$i]);
+        if (!is_remote($repo) && !-d $repo) {
+            warn sprintf("[w] %s is not a local directory, %s",
+                         $repo, cfg_source($opt, $name));
+        }
+        clean_check($opt, $name, $repo) if $opt->{isclean};
+    }
+
+    print "$_\n" foreach @repo;
     return 0;
+}
+
+sub cfg_source {
+    my ($opt, $name) = @_;
+    my $origin = sprintf("configured as %s in %s", $name, $opt->{filename});
+    $origin .= sprintf(" for the purpose '%s'", $opt->{purpose})
+      if defined $opt->{purpose};
+    return $origin;
+}
+
+sub is_remote {
+    my ($repo) = @_;
+    return $repo =~ m{^([-a-z0-9.])+:} ? $1 : undef;
+}
+
+sub clean_check {
+    my ($opt, $name, $repo) = @_;
+
+    return () if is_remote($repo); # not implemented, but could be done
+
+    my @prob;
+    if (chdir $repo) {
+        system(qw( git diff --cached --quiet )) &&
+          push @prob, "contains staged changes";
+        system(qw( git diff --quiet )) &&
+          push @prob, "contains unstaged changes";
+        @prob = "contains staged and unstaged changes" if 2 == @prob;
+    } else {
+        push @prob, "chdir: $!";
+    }
+
+    die sprintf("[e] %s: %s, %s", $repo, $prob[0], cfg_source($opt, $name))
+      if @prob;
+
+    return ();
 }
 
 exit main();
