@@ -35,13 +35,55 @@ This snippet can keep the file neat,
 We shall assume that this script and its config live together and
 honour atomic commits which change both.
 
+=head2 Where are the clones?
+
+This tool does nothing to solve the problem of finding the directory
+in which a developer has checked out some code, either
+
+=over 2
+
+=item 1. for other developers hunting the unpushed feature branch, or
+
+=item 2. code trying to automagically meet dependencies.
+
+=back
+
+
+=head1 OPTIONS
+
+=over 4
+
+=item --order | -O <order_list>
+
+The order_list is a colon-separated list of names of keys to use, when
+looking up in the data structure from the configuration file.
+
+The default for this list is under the C<_default_order> key.
+
+=item --path | -p
+
+Print the filename of the configuration file, then exit.
+
+=item --debug | -D
+
+Dump out the program state before showing URLs, then die.
+
+=item --purpose <string>
+
+This is currently ignored.  Callers may provide it to explain what
+they're trying to do, in the hope that it can be used to avoid or
+debug incorrect repository sources.
+
 =cut
 
 
 sub main {
     my %opt = ( filename => config_filename() );
 
-    GetOptions \%opt, 'order|O=s', 'help|h', 'path|p', 'debug|D'
+    GetOptions(\%opt,
+               'help|h', 'path|p', 'debug|D',
+               'purpose=s',
+               'order|O=s')
       or $opt{help} = 'Bad option';
 
     if ($opt{help}) {
