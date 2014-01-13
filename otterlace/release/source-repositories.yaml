@@ -3,6 +3,9 @@
 _default_order:
   - internal
   - github
+_pushable_remotes:
+  - intcvs1
+  - git@github.com
 github:
   ensembl: https://github.com/Ensembl/ensembl.git
   ensembl-pipeline: https://github.com/Ensembl/ensembl-pipeline.git
