@@ -105,7 +105,7 @@ sub main {
             $ohost2dir{$ohost} = $dir;
         }
     }
-    my @unk_zhost = sort
+    my @unk_zhost = sort # returned by zhosts, but not in our config
       grep { !exists $CONFIG{zhost2ohost}{$_} } keys %zhost2dir;
     die "$0: unknown (new?) zmap build hosts\n".
       "  Please tell me about: @unk_zhost\nby adding to $cfg_fn" if @unk_zhost;
@@ -135,6 +135,7 @@ sub main {
     return 0;
 }
 
+# Return list of build hosts, extracted from the ZMap tree's symlinks
 sub zhosts {
     my @dir = @_;
     my %h2d; # output
