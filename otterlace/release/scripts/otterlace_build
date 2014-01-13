@@ -234,10 +234,10 @@ setup_globals() {
     # source code
     anacode_cvsroot=":ext:${cvs_user}cvs.internal.sanger.ac.uk:/repos/cvs/anacode"
     ensembl_cvsroot=":ext:${cvs_user}cvs.sanger.ac.uk:/cvsroot/ensembl"
-    default_zircon="${cvs_user}git.internal.sanger.ac.uk:/repos/git/anacode/zircon.git"
 
-    # Other values accepted
+    # Other values previously accepted
     #   ANACODE_ZIRCON    to source it from local git clone
+    [ -n "$ANACODE_ZIRCON" ] && bail "Found ANACODE_ZIRCON=$ANACODE_ZIRCON but feature was withdrawn, please use anacode_source_repo(1) instead"
 
     # check early, else it will be too late
     [ -d "$build_log" ] && [ -w "$build_log" ] || \
@@ -434,13 +434,8 @@ build_lib__zircon() {
     config_get zircon_version zircon
     build_dir="$( mktemp -d -t otterlace_build.zircon.XXXXXX )" || \
         bail "Failed to mktemp -d"
-    if [ -n "$ANACODE_ZIRCON" ]; then
-        ( cd "$ANACODE_ZIRCON" && git diff --cached --quiet && git diff --quiet ) || \
-            bail "Would source HEAD of ANACODE_ZIRCON=$ANACODE_ZIRCON but it has uncommitted changes"
-        gitsrc="$ANACODE_ZIRCON"
-    else
-        gitsrc="$default_zircon"
-    fi
+
+    gitsrc="$( anacode_source_repo --isclean --purpose otterlace_build,build_lib__zircon zircon )" || bail "Can't get zircon gitsrc"
     git clone -q "$gitsrc" "$build_dir" &&
     (
         cd "$build_dir" &&
@@ -581,7 +576,6 @@ otterlace_install_all() {
         export zmap_build="$( _otterlace_build_config.pl -host $host $zmap_trees )" \
             || bail "No zmap_build for $host ..?"
         env_reexport env_cmd \
-            ANACODE_ZIRCON \
             otter_swac otter_nfswub otter_suffix \
             ensembl_otter_root zmap_build build_log
         unset zmap_build
