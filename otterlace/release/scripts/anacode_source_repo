@@ -82,6 +82,20 @@ fail.
 
 Currently this check only operates for local directories.
 
+=item --pushable
+
+Assert that we want URLs to which it makes sense to push changes
+(commits or tags) that will be shared among the team.
+
+Currently generates an error if repos are found that do not have a
+prefix listed in C<_pushable_remotes>, in order to prevent surprises.
+It could be modified to skip the non-pushable ones where they are
+shadowing a URL which is pushable.
+
+Also implies C<--isclean> since we would not push onto a non-clean
+working copy; but this is ineffective while that check does not reach
+remotes.
+
 
 =head1 CAVEATS
 
@@ -98,9 +112,12 @@ sub main {
     GetOptions(\%opt,
                'help|h', 'path|p', 'debug|D',
                'purpose=s',
+               'pushable|p',
                'isclean',
                'order|O=s')
       or $opt{help} = 'Bad option';
+
+    $opt{isclean} ||= 1 if $opt{pushable};
 
     if ($opt{help}) {
         return show_syntax();
@@ -130,7 +147,7 @@ sub config_filename {
 
 sub show_syntax {
     print "Syntax: $0 --path
-        $0 [ --order foo:bar ] <repo-name>*
+        $0 [ --order foo:bar ] [ --pushable | --isclean ] <repo-name>*
 
 Print to stdout the URL for requested repositories.\n";
     return 1;
@@ -162,6 +179,7 @@ sub show_urls {
                          $repo, cfg_source($opt, $name));
         }
         clean_check($opt, $name, $repo) if $opt->{isclean};
+        pushable_check($opt, $name, $repo) if $opt->{pushable};
     }
 
     print "$_\n" foreach @repo;
@@ -178,7 +196,7 @@ sub cfg_source {
 
 sub is_remote {
     my ($repo) = @_;
-    return $repo =~ m{^([-a-z0-9.])+:} ? $1 : undef;
+    return $repo =~ m{^([-a-z0-9.]+):} ? $1 : undef;
 }
 
 sub clean_check {
@@ -199,6 +217,19 @@ sub clean_check {
 
     die sprintf("[e] %s: %s, %s", $repo, $prob[0], cfg_source($opt, $name))
       if @prob;
+
+    return ();
+}
+
+sub pushable_check {
+    my ($opt, $name, $repo) = @_;
+
+    my $pushables = $opt->{config}{_pushable_remotes};
+    my $rem = is_remote($repo);
+
+    die sprintf("[e] %s: host prefix is not listed as pushable, %s",
+                $repo, cfg_source($opt, $name))
+      unless grep { $rem eq $_ } @$pushables;
 
     return ();
 }

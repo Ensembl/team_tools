@@ -10,6 +10,9 @@
 #
 # Leaves repositories in a state from which you could VCS-export code
 # to build a specific release ($MAJOR-$MINOR)
+#
+# nb. there are indpendent options for dry-run and operating on dummy
+# (scratch) repos
 
 
 # The plan for bumping the major version:
@@ -49,13 +52,18 @@
 #       but this will not push a tag to zircon.git
 
 
+. "$( dirname "$0" )/_otterlace.sh" || exit 1
+
+[ -n "$ANACODE_ZIRCON" ] && bail "Found ANACODE_ZIRCON=$ANACODE_ZIRCON but feature was withdrawn, please use anacode_source_repo(1) instead"
+
 # CVSROOTs need to be suitable for use both with "cvs -d" and scp
 ensembl_cvs_repo=cvs.sanger.ac.uk:/cvsroot/ensembl
 anacode_cvs_repo=cvs.internal.sanger.ac.uk:/repos/cvs/anacode
-ensembl_otter_git_repo=git:/repos/git/anacode/ensembl-otter
-zircon_git_repo=${ANACODE_ZIRCON:-git:/repos/git/anacode/zircon}
 
-. "$( dirname "$0" )/_otterlace.sh" || exit 1
+ensembl_otter_git_repo="$( anacode_source_repo --pushable --purpose otterlace_release_tag ensembl-otter )" \
+    || bail "Can't get ensembl_otter_git_repo"
+zircon_git_repo="$(        anacode_source_repo --pushable --purpose otterlace_release_tag zircon )" \
+    || bail "Can't get zircon_git_repo"
 
 
 # Dummy repositories for script testing.
