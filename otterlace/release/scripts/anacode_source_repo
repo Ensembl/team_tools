@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#! /usr/bin/env perl
 use strict;
 use warnings;
 use Getopt::Long;
@@ -116,7 +116,7 @@ sub main {
 sub config_filename {
     my $fn = $0;
     die "[e] Cannot make config filename from $fn" unless
-      $fn =~ s{bin/anacode_source_repo$}{config/source-repositories.yaml};
+      $fn =~ s{otterlace/release/scripts/anacode_source_repo$}{otterlace/release/source-repositories.yaml};
     die "[e] Config $fn, name derived from $0: not a file" unless -f $fn;
     return $fn;
 }
