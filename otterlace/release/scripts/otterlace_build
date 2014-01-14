@@ -225,19 +225,18 @@ setup_globals() {
     : ${build_log:=/nfs/anacode/otterlace/ensembl_otter_build_log}
     # on some Macs and in VM, /nfs/anacode cannot be reached
 
-    cvs_user="${cvs_user}${cvs_user:+@}" # append @ to cvs_user, else empty
-    # cvs_user : when building in VM, real username is arbitrary and different
-
     #
     ### / EXTERNAL PARAMETERS
 
     # source code
-    anacode_cvsroot=":ext:${cvs_user}cvs.internal.sanger.ac.uk:/repos/cvs/anacode"
-    ensembl_cvsroot=":ext:${cvs_user}cvs.sanger.ac.uk:/cvsroot/ensembl"
+    anacode_cvsroot=":ext:cvs.internal.sanger.ac.uk:/repos/cvs/anacode"
+    ensembl_cvsroot=":ext:cvs.sanger.ac.uk:/cvsroot/ensembl"
 
     # Other values previously accepted
     #   ANACODE_ZIRCON    to source it from local git clone
+    #   cvs_user          when building in VM, real username is arbitrary and different
     [ -n "$ANACODE_ZIRCON" ] && bail "Found ANACODE_ZIRCON=$ANACODE_ZIRCON but feature was withdrawn, please use anacode_source_repo(1) instead"
+    [ -n "$cvs_user"       ] && bail             "Found cvs_user=$cvs_user but feature was withdrawn, please set 'Host foo\nUser bar\n' stanzas in ~/.ssh/config"
 
     # check early, else it will be too late
     [ -d "$build_log" ] && [ -w "$build_log" ] || \
