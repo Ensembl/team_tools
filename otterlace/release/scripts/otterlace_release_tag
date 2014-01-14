@@ -57,7 +57,6 @@
 [ -n "$ANACODE_ZIRCON" ] && bail "Found ANACODE_ZIRCON=$ANACODE_ZIRCON but feature was withdrawn, please use anacode_source_repo(1) instead"
 
 # CVSROOTs need to be suitable for use both with "cvs -d" and scp
-ensembl_cvs_repo=cvs.sanger.ac.uk:/cvsroot/ensembl
 anacode_cvs_repo=cvs.internal.sanger.ac.uk:/repos/cvs/anacode
 
 ensembl_otter_git_repo="$( anacode_source_repo --pushable --purpose otterlace_release_tag ensembl-otter )" \
@@ -76,13 +75,12 @@ _create_dummy_repos_cvs() {
     # Make fake repos
     #  ens-ott is deliberately != ensembl-otter
     #  humscripts is a canary module, should not be changed
-    #  ensembl-analysis is a copy of the real module, transplanted into a fresh CVS repo
     (
         set -e
         cd "$dummies"
         # set -e, cd : local to the ( ... )
 
-        mkdir -p $dummies/{ensembl/ensembl-analysis,anacode}
+        mkdir -p $dummies/anacode
         echo ': ensembl-otter'
         git clone -q --bare "$ensembl_otter_git_repo" ens-ott.git
         echo ': zircon'
@@ -90,11 +88,6 @@ _create_dummy_repos_cvs() {
 
         echo ': anacode (part)'
         scp -rpq ${anacode_cvs_repo}/{CVSROOT,PerlModules,humscripts} "$dummies/anacode"
-
-        # avoid copying ensembl's CVSROOT, it has huge history
-        cvs -d "$dummies/ensembl" init
-        echo ': ensembl-analysis'
-        scp -rpq ${ensembl_cvs_repo}/ensembl-analysis "$dummies/ensembl/"
 
         # CVS repos use separate LockDir, which we don't have or want
         perl -i~ -pe 's{(LockDir=.*)}{#### $1}' $dummies/anacode/CVSROOT/config
@@ -113,7 +106,6 @@ _use_dummy_repos_cvs() {
     # Replace the "upstream" repositories, so we can perform real VCS
     # operations on them.
     set -x
-    ensembl_cvs_repo="$dummies/ensembl"
     anacode_cvs_repo="$dummies/anacode"
     ensembl_otter_git_repo="$dummies/ens-ott.git"
     zircon_git_repo="$dummies/zircon.git"
