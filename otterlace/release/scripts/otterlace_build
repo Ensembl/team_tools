@@ -227,9 +227,6 @@ setup_globals() {
     #
     ### / EXTERNAL PARAMETERS
 
-    # source code
-    anacode_cvsroot=":ext:cvs.internal.sanger.ac.uk:/repos/cvs/anacode"
-
     # Other values previously accepted
     #   ANACODE_ZIRCON    to source it from local git clone
     #   cvs_user          when building in VM, real username is arbitrary and different
@@ -348,6 +345,7 @@ otterlace_client_install_perl_modules() {
     local install_dir client_ensembl_version perlmodules_version
     install_dir="$1"
 
+    config_get PerlModules_version PerlModules
     config_get client_ensembl_version
     # (ensembl libs on the server are provided by the webvm-deps.git)
 
@@ -356,10 +354,7 @@ otterlace_client_install_perl_modules() {
 
     ( cd "$install_dir" &&
 
-        cvs -Q -f -d "$anacode_cvsroot" \
-            checkout -P -r "$cvs_humpub_release" \
-            PerlModules/Hum &&
-
+        _anacode_build_lib__perlmodules "$install_dir" $PerlModules_version &&
         _anacode_build_lib__ensembl     "$install_dir" "$client_ensembl_version" &&
 
         mkdir -p -- ensembl-otter &&
