@@ -409,44 +409,15 @@ otterlace_client_install_scripts() {
 }
 
 otterlace_client_install_zmap() {
-    local install_dir bin_dir
+    local install_dir bin_dir zircon_version
     install_dir="$1"
     bin_dir="${install_dir}/bin"
+    config_get zircon_version zircon
+
     mkdir -p -- "$bin_dir" &&
-    if [ -f dist/conf/zircon ]; then
-        # Zircon is required any time since 3ab9871550f4235fa8eb2ad0a34714ac8cc75f7e e-o
-        # build_lib__zircon will die, until 982293f5 or 2281067c e-o
-        build_lib__zircon
-    fi &&
+    _anacode_build_lib__zircon "$install_dir" $zircon_version &&
     cp -- ${zmap_prefix}/bin/{zmap,tace,sgifaceserver,blixemh,dotter,belvu} "$bin_dir" &&
     cp -r -- "${zmap_prefix}/share" "$install_dir" &&
-    true
-}
-
-
-# We build with the same version of Perl that our scripts use.  This
-# was because binary modules are installed to version-dependent
-# locations.  If we should need to go there again, check vc history!
-build_lib__zircon() {
-    local build_dir gitsrc zircon_version
-
-    config_get zircon_version zircon
-    build_dir="$( mktemp -d -t otterlace_build.zircon.XXXXXX )" || \
-        bail "Failed to mktemp -d"
-
-    gitsrc="$( anacode_source_repo --isclean --purpose otterlace_build,build_lib__zircon zircon )" || bail "Can't get zircon gitsrc"
-    git clone -q "$gitsrc" "$build_dir" &&
-    (
-        cd "$build_dir" &&
-        git checkout -qb _build "$zircon_version" &&
-        (echo Zircon is; git log -1 | sed -e 's/^/    /') &&
-        perl Makefile.PL INSTALL_BASE="${install_dir}" \
-            INSTALLMAN3DIR=none &&
-        make &&
-        make test &&
-        make install &&
-        rm -rf -- "$build_dir" &&
-        true ) &&
     true
 }
 
