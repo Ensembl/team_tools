@@ -7,7 +7,7 @@ _pushable_remotes:
   - intcvs1
   - git@github.com
 github:
-  ensembl: https://github.com/Ensembl/ensembl.git
+  ensembl: https://github.com/Anacode/ensembl.git
   ensembl-pipeline: https://github.com/Ensembl/ensembl-pipeline.git
   ensembl-variation: https://github.com/Ensembl/ensembl-variation.git
 github_push:
