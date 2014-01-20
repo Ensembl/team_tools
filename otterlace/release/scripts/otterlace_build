@@ -197,7 +197,6 @@ setup_globals() {
 
     config_get version_major
     config_get version_minor
-    config_get client_ensembl_version
 
     check_remove_existing_directories=true
 
@@ -230,7 +229,6 @@ setup_globals() {
 
     # source code
     anacode_cvsroot=":ext:cvs.internal.sanger.ac.uk:/repos/cvs/anacode"
-    ensembl_cvsroot=":ext:cvs.sanger.ac.uk:/cvsroot/ensembl"
 
     # Other values previously accepted
     #   ANACODE_ZIRCON    to source it from local git clone
@@ -243,17 +241,6 @@ setup_globals() {
         bail "build_log=$build_log: should be a writable directory (was a create/append-forever file, see RT#223520)"
 
     otter_ipath_get otter_home
-
-
-    if [[ "${client_ensembl_version}" =~ ^[0-9]+$ ]]
-    then
-        # ordinarily just a verson number, so turn it into a tag
-        ensembl_cvs_flags="-r branch-ensembl-${client_ensembl_version}"
-    else
-        # for anything else, we assume it's the whole tag
-        ensembl_cvs_flags="-r ${client_ensembl_version}"
-    fi
-    # (ensembl libs on the server are provided by the web team)
 }
 
 
@@ -358,21 +345,22 @@ otterlace_server_install() {
 
 
 otterlace_client_install_perl_modules() {
-    local install_dir
+    local install_dir client_ensembl_version perlmodules_version
     install_dir="$1"
+
+    config_get client_ensembl_version
+    # (ensembl libs on the server are provided by the webvm-deps.git)
 
     echo &&
     echo "installing perl modules" &&
 
     ( cd "$install_dir" &&
 
-        cvs -Q -f -d "$ensembl_cvsroot" \
-            checkout -P $ensembl_cvs_flags \
-            ensembl/modules &&
-
         cvs -Q -f -d "$anacode_cvsroot" \
             checkout -P -r "$cvs_humpub_release" \
             PerlModules/Hum &&
+
+        _anacode_build_lib__ensembl     "$install_dir" "$client_ensembl_version" &&
 
         mkdir -p -- ensembl-otter &&
         cp -r \
