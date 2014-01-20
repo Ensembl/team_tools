@@ -1,6 +1,7 @@
 #! /usr/bin/env perl
 use strict;
 use warnings;
+use Cwd qw( abs_path );
 use Getopt::Long;
 use YAML qw( LoadFile Dump );
 
@@ -138,7 +139,7 @@ sub main {
 }
 
 sub config_filename {
-    my $fn = $0;
+    my $fn = abs_path($0);
     die "[e] Cannot make config filename from $fn" unless
       $fn =~ s{otterlace/release/scripts/anacode_source_repo$}{otterlace/release/source-repositories.yaml};
     die "[e] Config $fn, name derived from $0: not a file" unless -f $fn;
