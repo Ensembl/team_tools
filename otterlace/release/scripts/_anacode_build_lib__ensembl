@@ -1,0 +1,59 @@
+#! /bin/sh
+
+# was    cd "$install_dir" &&
+#        cvs -Q -f -d "$ensembl_cvsroot" \
+#            checkout -P $ensembl_cvs_flags \
+#            ensembl/modules &&
+
+_do_build() {
+    local build_dir gitsrc
+
+    build_dir="$( mktemp -d "$install_dir/ensembl.XXXXXX" )" || \
+        bail "Failed to mktemp -d"
+
+    gitsrc="$( anacode_source_repo --isclean --purpose build_lib__ensembl ensembl )" || bail "Can't get ensembl gitsrc"
+    git clone -q "$gitsrc" "$build_dir" &&
+    (
+        cd "$build_dir" &&
+        git checkout -qb _build "$src_version" &&
+        (echo Ensembl is; git log --decorate -1 | sed -e 's/^/    /') &&
+        mkdir "$install_dir/ensembl" &&
+        if [ -f "Makefile.PL" ]; then
+            bail "ensembl/Makefile.PL: probably a good idea, but not yet supported"
+        elif [ -d "modules" ]; then
+            mv -vi modules "$install_dir/ensembl/modules"
+        else
+            bail "don't know how to build ensembl $src_version"
+        fi &&
+        true ) &&
+    rm -rf -- "$build_dir" &&
+    true
+}
+
+install_dir="$1"
+src_version=$2
+
+# shared config and functions
+. "$( dirname "$0" )/_otterlace.sh" || exit 1
+
+[ "$#" = 2 ] && [ -d "$install_dir" ] && [ -n "$src_version" ] || \
+    bail "Syntax: _anacode_build_lib__ensembl <install_dir> <src_version>
+
+  src_version = < release number | commitid | name of ref on remote >
+
+bad args
+  $*"
+
+
+if [[ "$src_version" =~ ^[0-9][0-9][0-9]?$ ]]; then
+    # ordinarily just a verson number, so turn it into a branch name
+    src_version="origin/release/$src_version"
+elif [[ "$src_version" =~ ^[0-9a-f]{6,40}$ ]]; then
+    # commitid is fine by itself
+    :
+else
+    # for anything else, we assume it's the whole symbolic name
+    src_version="origin/$src_version"
+fi
+
+_do_build

@@ -3,15 +3,15 @@
 _do_build() {
     local build_dir gitsrc
 
-    build_dir="$( mktemp -d -t otterlace_build.zircon.XXXXXX )" || \
+    build_dir="$( mktemp -d "$install_dir/zircon.XXXXXX" )" || \
         bail "Failed to mktemp -d"
 
-    gitsrc="$( anacode_source_repo --isclean --purpose otterlace_build,build_lib__zircon zircon )" || bail "Can't get zircon gitsrc"
+    gitsrc="$( anacode_source_repo --isclean --purpose build_lib__zircon zircon )" || bail "Can't get zircon gitsrc"
     git clone -q "$gitsrc" "$build_dir" &&
     (
         cd "$build_dir" &&
         git checkout -qb _build "$src_version" &&
-        (echo Zircon is; git log -1 | sed -e 's/^/    /') &&
+        (echo Zircon is; git log --decorate -1 | sed -e 's/^/    /') &&
         perl Makefile.PL INSTALL_BASE="${install_dir}" \
             INSTALLMAN3DIR=none &&
         make &&
@@ -28,9 +28,22 @@ src_version=$2
 # shared config and functions
 . "$( dirname "$0" )/_otterlace.sh" || exit 1
 
-[ -d "$install_dir" ] && [ -n "$src_version" ] || \
+[ "$#" = 2 ] && [ -d "$install_dir" ] && [ -n "$src_version" ] || \
     bail "Syntax: _anacode_build_lib__zircon <install_dir> <src_version>
+
+  src_version = < commitid | name of ref on remote >
 
 bad args
   $*"
+
+
+if [[ "$src_version" =~ ^[0-9a-f]{6,40}$ ]]; then
+    # commitid is fine by itself
+    :
+else
+    # for anything else, we assume it's the whole symbolic name
+    :
+    src_version="origin/$src_version"
+fi
+
 _do_build
