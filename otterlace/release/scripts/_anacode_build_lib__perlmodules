@@ -1,0 +1,64 @@
+#! /bin/sh
+
+_do_build() {
+    local build_dir gitsrc
+
+# was    cd "$install_dir" &&
+#        cvs -Q -f -d "$anacode_cvsroot" \
+#            checkout -P -r "$cvs_humpub_release" \
+#            PerlModules/Hum &&
+
+    build_dir="$( mktemp -d "$install_dir/PerlModules.XXXXXX" )" || \
+        bail "Failed to mktemp -d"
+
+    gitsrc="$( anacode_source_repo --isclean --purpose build_lib__perlmodules PerlModules )" || bail "Can't get PerlModules gitsrc"
+    git clone -q "$gitsrc" "$build_dir" &&
+    (
+        cd "$build_dir" &&
+        git checkout -qb _build "$src_version" &&
+        (echo PerlModules are; git log --decorate -1 | sed -e 's/^/    /') &&
+        if [ -e  "$install_dir/PerlModules/Hum" ]; then
+            bail "$install_dir/PerlModules/Hum exists already, what made it?"
+        elif [ -f "Makefile.PL" ]; then
+            bail "PerlModules/Makefile.PL: probably a good idea, but not yet supported"
+        elif [ -d "lib/Hum" ]; then
+            # does not exist (2014-01) but should probably happen
+            mkdir -p       "$install_dir/PerlModules"
+            mv -vi lib/Hum "$install_dir/PerlModules/Hum"
+        elif [ -d "Hum" ]; then
+            # as imported from CVS to Git 2014-01
+            mkdir -p       "$install_dir/PerlModules"
+            mv -vi Hum     "$install_dir/PerlModules/Hum"
+        else
+            bail "don't know how to build PerlModules $src_version"
+        fi &&
+        true ) &&
+    rm -rf -- "$build_dir" &&
+    true
+}
+
+install_dir="$1"
+src_version=$2
+
+# shared config and functions
+. "$( dirname "$0" )/_otterlace.sh" || exit 1
+
+[ "$#" = 2 ] && [ -d "$install_dir" ] && [ -n "$src_version" ] || \
+    bail "Syntax: _anacode_build_lib__perlmodules <install_dir> <src_version>
+
+  src_version = < commitid | name of ref on remote >
+
+bad args
+  $*"
+
+
+if [[ "$src_version" =~ ^[0-9a-f]{6,40}$ ]]; then
+    # commitid is fine by itself
+    :
+else
+    # for anything else, we assume it's the whole symbolic name
+    :
+    src_version="origin/$src_version"
+fi
+
+_do_build
