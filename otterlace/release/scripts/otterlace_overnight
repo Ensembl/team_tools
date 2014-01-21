@@ -164,7 +164,7 @@ if [ "$1" = "--go-there" ]; then
 
     if [ -n "$otter_nfswub" ] ||
         [ -n "$otter_swac" ] ||
-        [ -n "$ANACODE_ZIRCON" ] ||
+        [ -n "$ANACODE_ZIRCON" ] || # obsolete since eb9c97ec
         [ -n "$otter_suffix" ] ||
         [ -n "$client_build_hosts" ]; then
         {

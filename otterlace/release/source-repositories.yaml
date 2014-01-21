@@ -22,5 +22,6 @@ internal:
   webvm: intcvs1:/repos/git/anacode/webvm.git
   webvm-deps: intcvs1:/repos/git/anacode/webvm-deps.git
   zircon: intcvs1:/repos/git/anacode/zircon.git
-mg13:
-  ensembl: https://github.com/mjg17/ensembl.git
+mca:
+  ensembl-otter: /nfs/users/nfs_m/mca/gitwk-anacode/ensembl-otter
+  team_tools: /nfs/users/nfs_m/mca/gitwk--bg/team_tools
