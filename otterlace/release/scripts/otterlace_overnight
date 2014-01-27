@@ -14,7 +14,7 @@ die() { # also defined is 'bail'
 
 
 show_syntax() {
-    printf 'Syntax: %s [ --go-there <hostname> | --here ] <ensembl-otter-build-dir> <otterlace_build-options>
+    printf 'Syntax: %s [ --go-there <hostname> | --here ] <ensembl-otter-build-dir> <eo-branch> <otterlace_build-options>
 
 The <otterlace_build-options> are probably just <zmap-tree>.
 
@@ -23,7 +23,7 @@ Performs an overnight (otterlace_dev) build.
 Caveats:
 
   Do NOT run this on your development ensembl-otter checkout,
-  it wants a clean HEAD on master,
+  it wants a clean HEAD on <eo-branch>,
   and later might get that destructively.
 
   The --go-there option will not preserve shell meta-characters
@@ -108,6 +108,9 @@ do_build() {
     eo_dir="$1"
     shift
 
+    eo_branch="$1"
+    shift
+
     [ -d "$eo_dir" ] && [ -n "$eo_dir" ] && \
         cd "$eo_dir" && config_get version_major && [ -n "$version_major" ] || \
         die 3 '%s: not my ensembl-otter build source?\n' "$eo_dir"
@@ -128,9 +131,9 @@ do_build() {
         fi
     fi
 
-    # want it on master
-    git checkout -q master && git pull -q --ff-only || \
-        die 6 'In %s: need up-to-date master\n' "$eo_dir"
+    # want it on $eo_branch
+    git checkout -q $eo_branch && git pull -q --ff-only || \
+        die 6 'In %s: need up-to-date %s\n' "$eo_dir" "$eo_branch"
 
     # build otterlace_dev client and two Otter Servers
     otterlace_build "$@" || \
