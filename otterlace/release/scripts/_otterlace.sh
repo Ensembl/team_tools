@@ -132,6 +132,7 @@ _whatami() {
 otter_ipath_get() {
     local __varname __key __out \
         version_major version_minor full_version swac nfswub otterhome_suffixing \
+        feature webfeat \
         _oig_holtdir _oig_otter_home _oig_bin _oig_wrapperfile
 
     __varname="$1"
@@ -141,6 +142,7 @@ otter_ipath_get() {
     config_get version_major
     config_get version_minor
     feature="$( _feature_get )"
+    webfeat="${feature:+_}$feature"
     full_version="$version_major"
     [ -n "$version_minor" ] && full_version="${full_version}.${version_minor}"
     [ -n "$feature" ] && full_version="${full_version}_${feature}"
@@ -167,8 +169,8 @@ otter_ipath_get() {
     printf -v _oig_holtdir         %s/otter       "$swac"
     printf -v _oig_otter_home      %s/otter_rel%s "$_oig_holtdir" "$full_version"
     printf -v _oig_bin             %s/bin         "$_oig_otter_home"
-    printf -v _oig_web_lib        %s/lib/otter/%s "$nfswub" "$version_major"
-    printf -v _oig_web_cgi    %s/cgi-bin/otter/%s "$nfswub" "$version_major"
+    printf -v _oig_web_lib      %s/lib/otter/%s%s "$nfswub" "$version_major" "$webfeat"
+    printf -v _oig_web_cgi  %s/cgi-bin/otter/%s%s "$nfswub" "$version_major" "$webfeat"
     printf -v _oig_wrapperfile     %s/otterlace   "$_oig_bin"
 
     if [[ "$otterhome_suffixing" =~ 'arch' ]]; then
@@ -217,8 +219,13 @@ otter_ipath_get() {
 
 
 _feature_get() {
-    git branch |
-    sed -n -e 's|^\*[[:blank:]]\+feature/\([-_[:alnum:]]\+\).*$|\1|p'
+    if git symbolic-ref -q HEAD >/dev/null; then
+        # we are on a branch
+        git branch |
+        sed -n -e 's|^\*[[:blank:]]\+feature/\([-_[:alnum:]]\+\).*$|\1|p'
+    else
+        bail "With a detached HEAD, would not know if this should be a feature branch"
+    fi
 }
 
 
