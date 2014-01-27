@@ -63,9 +63,11 @@ is_zmap_valid() {
     zmap_tree="$2"
 
     # Basic sanity check.
-    [ -d "$zmap_tree" ] || \
-        die 89 "%s attempt: Expected ZMap build tree at %s\n" \
-        "$attempt" "$zmap_tree"
+    if ! [ -d "$zmap_tree" ]; then
+        printf "%s attempt: Expected ZMap build tree at %s\n" \
+            "$attempt" "$zmap_tree" >&2
+        return 89
+    fi
 
     # Does it look complete?
     if [ -d "$zmap_tree/Dist" ] &&
