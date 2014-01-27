@@ -1,0 +1,70 @@
+#!/software/bin/perl
+
+use strict;
+use warnings;
+
+use Term::ReadKey qw( ReadMode ReadLine );
+use DBI;
+
+my $user = "ottadmin";
+
+print STDERR "Enter password for ${user}: ";
+ReadMode("noecho");
+my $password = ReadLine(0);
+print STDERR "\n";
+chomp $password;
+ReadMode("normal");
+
+my $schema_version_count_hash;
+
+for (
+    [ qw( otterlive  3324 ) ],
+    [ qw( otterpipe1 3322 ) ],
+    [ qw( otterpipe2 3323 ) ],
+    ) {
+
+    my ($host, $port) = @{$_};
+
+    my $dsn = "DBI:mysql:host=$host;port=$port";
+    my $dbh =
+        DBI->connect($dsn, $user, $password,
+                     { RaiseError => 1, AutoCommit => 0 });
+
+    my $database_list = $dbh->selectcol_arrayref("show databases");
+    for my $database (@{$database_list}) {
+        database_is_selected($database) or next;
+        my $schema_version_sql = schema_version_sql_make($database);
+        my ($schema_version) = @{$dbh->selectcol_arrayref($schema_version_sql)};
+        unless (defined $schema_version) {
+            warn sprintf "no schema version found in %s", $database;
+            next;
+        }
+        $schema_version_count_hash->{$schema_version}++;
+    }
+
+    $dbh->disconnect;
+}
+
+for my $schema_version ( sort keys %{$schema_version_count_hash} ) {
+    my $count = $schema_version_count_hash->{$schema_version};
+    printf "%3s: %3d\n", $schema_version, $count;
+}
+
+sub schema_version_sql_make {
+    my ($database) = @_;
+    my $sql = "select meta_value from ${database}.meta where meta_key = 'schema_version'";
+    return $sql;
+}
+
+sub database_is_selected {
+    my ($database) = @_;
+    my $selected =
+        ( 0
+          || $database =~ /^loutre_/
+          || $database =~ /^pipe_/
+          || $database =~ /^jgrg_human_/
+          || $database eq 'chromoDB'
+        ) 
+        && $database ne 'pipe_queue';
+    return $selected;
+}
