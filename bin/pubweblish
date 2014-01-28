@@ -18,8 +18,8 @@ pubweblish - shove files from Git repositories to webservers
  # update just server-config.git
  pubweblish --config=dev
 
- # publish just one Otter Server version
- pubweblish --send=dev:78
+ # publish just one Otter Server version, which is a feature branch
+ pubweblish --send=dev:80_gff3
 
 =head1 DESCRIPTION
 
@@ -67,12 +67,14 @@ those files, before restarting.
 This is called by L<githooks(5)/post-receive> for the central
 server-config.git .
 
-=item --send=dev:<number> | --send=live:<number>
+=item --send=dev:<number><suffix> | --send=live:<number><suffix>
 
-L<rsync(1)> just the Otter Server of that major version number.
+L<rsync(1)> just the Otter Server with that major version number, with
+optional feature name suffix.  This part is called C<majfeat> in
+L<otterlace_showvars(1)>.
 
-This sends the files C<< lib/otter/<number> >> and
-C<< cgi-bin/otter/<number> >>.
+This sends the files C<< lib/otter/<number><suffix> >> and
+C<< cgi-bin/otter/<number><suffix> >>.
 
 =back
 
@@ -179,6 +181,8 @@ sub do_pulls {
         run_showing(@cmd);
         run_showing(qw( git status -v )) unless $QUIET;
     }
+
+    return;
 }
 
 sub git_head {
@@ -276,14 +280,15 @@ sub main {
             push @TODO, [ "rsync offline copy to $htype webservers",
                           \&sync_to_vms, $htype, $srcdir ];
 
-        } elsif ($sw =~ /^--send=(dev|live):(\d{2,4})$/) {
+        } elsif ($sw =~ /^--send=(dev|live):(\d{2,4}.*)$/) {
             my $htype = $1;
-            my $vsn = $2;
+            my $vsn_sfx = $2;
             my $srcdir = "/nfs/anacode/WEBVM_docs.$htype";
             foreach my $dir (qw( cgi-bin lib )) {
+                my $subdir = "$dir/otter/$vsn_sfx";
                 push @TODO,
-                  [ "rsync offline copy of v$vsn $dir/ to $htype webservers",
-                    \&sync_to_vms, $htype, $srcdir, "$dir/otter/$vsn" ];
+                  [ "rsync offline copy of $subdir to $htype webservers",
+                    \&sync_to_vms, $htype, $srcdir, $subdir ];
             }
 
         } elsif ($sw =~ /^--config=(dev|live)$/) {
@@ -320,3 +325,10 @@ END {
 }
 
 exit main(@ARGV);
+
+
+=head1 AUTHOR
+
+mca@sanger.ac.uk
+
+=cut
