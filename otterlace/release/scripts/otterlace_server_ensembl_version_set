@@ -19,6 +19,7 @@
 server_ensembl_version="$1"
 [ -n "$server_ensembl_version" ] || bail "usage: $( basename "$0" ) <server_ensembl_version>"
 
+# SangerPaths edit: no effect since ensembl-otter v80 a654da097965a1b22e7907a96a0312f5cf44b5f4
 config_set server_ensembl_version "$server_ensembl_version" &&
 sed -i \
     -e "/\<SangerPaths\>/s/\<ensembl[[:alnum:]]*\>/ensembl${server_ensembl_version}/" \
