@@ -6,6 +6,7 @@ version_major="$1"
 [ -n "$version_major" ] ||
 bail "usage: $( basename "$0" ) <version>"
 
+# SangerPaths edit: no effect since ensembl-otter v80 955258c1816dc6dc9ae8aa819ae7a5dc2892a715
 config_set version_major "$version_major" &&
 sed -i \
     -e "/\<SangerPaths\>/s/\<otter[[:alnum:]]*\>/otter${version_major}/" \
