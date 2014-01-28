@@ -13,7 +13,7 @@ _do_build() {
         cd "$build_dir" &&
         git remote add origin "$gitsrc" &&
         git fetch -q --depth 1 origin $src_version:_build $src_version:refs/remotes/$rem_version &&
-        git checkout _build &&
+        git checkout -q _build &&
         (echo Ensembl is; git log --decorate -1 | sed -e 's/^/    /') &&
         mkdir "$install_dir/ensembl" &&
         if [ -f "Makefile.PL" ]; then
