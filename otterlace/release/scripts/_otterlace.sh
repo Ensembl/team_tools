@@ -132,7 +132,7 @@ _whatami() {
 otter_ipath_get() {
     local __varname __key __out \
         version_major version_minor full_version swac nfswub otterhome_suffixing \
-        feature webfeat \
+        _oig_feature _oig_sfxfeat \
         _oig_holtdir _oig_otter_home _oig_bin _oig_wrapperfile
 
     __varname="$1"
@@ -141,11 +141,11 @@ otter_ipath_get() {
 
     config_get version_major
     config_get version_minor
-    feature="$( _feature_get )"
-    webfeat="${feature:+_}$feature"
+    _oig_feature="$( _feature_get )"
+    _oig_majfeat="${version_major}${_oig_feature:+_}$_oig_feature"
     full_version="$version_major"
     [ -n "$version_minor" ] && full_version="${full_version}.${version_minor}"
-    [ -n "$feature" ] && full_version="${full_version}_${feature}"
+    [ -n "$_oig_feature" ] && full_version="${full_version}_${_oig_feature}"
 
     if [ -n "$otter_suffix" ]; then
         # override from environment; slightly deprecated, but probably
@@ -169,8 +169,8 @@ otter_ipath_get() {
     printf -v _oig_holtdir         %s/otter       "$swac"
     printf -v _oig_otter_home      %s/otter_rel%s "$_oig_holtdir" "$full_version"
     printf -v _oig_bin             %s/bin         "$_oig_otter_home"
-    printf -v _oig_web_lib      %s/lib/otter/%s%s "$nfswub" "$version_major" "$webfeat"
-    printf -v _oig_web_cgi  %s/cgi-bin/otter/%s%s "$nfswub" "$version_major" "$webfeat"
+    printf -v _oig_web_lib        %s/lib/otter/%s "$nfswub" "$_oig_majfeat"
+    printf -v _oig_web_cgi    %s/cgi-bin/otter/%s "$nfswub" "$_oig_majfeat"
     printf -v _oig_wrapperfile     %s/otterlace   "$_oig_bin"
 
     if [[ "$otterhome_suffixing" =~ 'arch' ]]; then
@@ -212,6 +212,13 @@ otter_ipath_get() {
         web_cgi)
             # The /cgi-bin/otter/$major/ directory
             printf -v "$__varname" %s "$_oig_web_cgi" ;;
+        feature)
+            # The name of the feature branch, or empty string if none
+            printf -v "$__varname" %s "$_oig_feature" ;;
+        majfeat)
+            # ${version_major} or ${version_major}_${feature}
+            # as used with cgi-bin/otter/$majfeat
+            printf -v "$__varname" %s "$_oig_majfeat" ;;
         *) bail "otter_ipath_get: unknown key '$__key'"
     esac
     [ "$__varname" = '__out' ] && printf %s "$__out"
