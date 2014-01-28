@@ -115,7 +115,8 @@ do_build() {
         cd "$eo_dir" && config_get version_major && [ -n "$version_major" ] || \
         die 3 '%s: not my ensembl-otter build source?\n' "$eo_dir"
 
-    printf "%s is building %s in %s\n\n" "$thisprog" "$version_major" "$eo_dir"
+    printf "//== %s is building %s (branch %s) in %s\n\n" \
+        "$thisprog" "$version_major" "$eo_branch" "$eo_dir"
 
     # want it clean
     local_changes="$( git status -s -uall )" || die 4 '%s' "Cannot git-status(1)"
@@ -145,8 +146,9 @@ do_build() {
             die 8 'In %s, rebuild at live webservers: exit code %s\n' "$eo_dir" "$?"
 
         # update webservers
-        pubweblish --send=dev:$version_major --send=live:$version_major || \
-            die 9 'pubweblish for v%s: exit code %s\n' "$version_major" "$?"
+        otter_ipath_get majfeat
+        pubweblish --send=dev:$majfeat --send=live:$majfeat || \
+            die 9 'pubweblish for v%s: exit code %s\n' "$majfeat" "$?"
 
     else
         printf "\n\n *** $0 not building live Otter Server or rsyncing to webservers,
