@@ -51,7 +51,8 @@ C<otter.sanger.ac.uk> or C<mca-otter.sandbox.sanger.ac.uk>.
 
 =head1 OPTIONS
 
-The C<type> is mandatory.
+The C<type> is mandatory.  The shortcut C<:all> may be given, to
+repeat the query for all valid C<type>s.
 
 The C<source> defaults to C<otter.dev.sanger.ac.uk> but can be pointed
 at another hostname, C<host:port> or a full URL.
@@ -106,7 +107,7 @@ sub main {
     } elsif (@arg) {
         $type = shift @arg;
         die "Unknown host type '$type', valid are (@TYPE)\n"
-          unless grep { $_ eq $type } @TYPE;
+          unless $type eq ':all' || grep { $_ eq $type } @TYPE;
     } else {
         warn "Required parameter <type> was not given\n";
         show_help();
@@ -120,7 +121,13 @@ sub main {
     # What?
     die "Spare parameters (@arg) after optional source - rejected\n" if @arg;
 
-    do_lookup($type, $source);
+    if ($type eq ':all') {
+        foreach my $type (@TYPE) {
+            do_lookup($type, $source, 1);
+        }
+    } else {
+        do_lookup($type, $source);
+    }
 
     return 0;
 }
@@ -144,7 +151,7 @@ sub do_getopt {
 
 
 sub do_lookup {
-    my ($type, $source) = @_;
+    my ($type, $source, $ignore_none) = @_;
 
     # Fetcher
     my $ua = LWP::UserAgent->new;
@@ -178,7 +185,7 @@ sub do_lookup {
     my @host = map { $_->{hostname} } @srv;
 
     # Show
-    show($type => @host);
+    show($type => @host) unless $ignore_none && !@host;
     return;
 
 }
