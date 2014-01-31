@@ -92,6 +92,7 @@ my @dir = map {("/nfs/anacode/WEBVM_docs.live/$_/otter",
                 "/nfs/anacode/WEBVM_docs.dev/$_/otter" )} qw( lib cgi-bin );
 foreach my $dir (@dir) {
     my @got  = sort grep { -d "$dir/$_" } read_dir($dir);
+    @got = grep { not /^\d+_/ } @got; # ignore feature branches, they are not designated
     my @want = sort keys %major;
     is_deeply(\@got, \@want, "Major versions in $dir")
       or diag explain { got => \@got, want => \@want, in => $dir };
