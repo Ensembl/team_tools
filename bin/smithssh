@@ -207,7 +207,7 @@ sub main {
     if ($opt{path}) {
         push @error, "--path $opt{path}: Expected 'tmp' or 'webdir'"
           unless $opt{path} =~ m{^(tmp|webdir)$};
-        $opt{keyname} = 'restart-server' # irrelevant for this action
+        $opt{keyname} = 'scp-ssh' # irrelevant for this action
           unless $opt{keyname} || $opt{keyfile};
     }
 
