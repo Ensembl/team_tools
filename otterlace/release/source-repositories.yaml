@@ -10,6 +10,8 @@ github:
   ensembl: intcvs1:/repos/git/anacode/github-mirror-ro/Anacode/ensembl.git
   ensembl-pipeline: https://github.com/Ensembl/ensembl-pipeline.git
   ensembl-variation: https://github.com/Ensembl/ensembl-variation.git
+  ensembl-compara: https://github.com/Ensembl/ensembl-compara.git
+  ensembl-funcgen: https://github.com/Ensembl/ensembl-funcgen.git
 github_push:
   cron2rss: git@github.com:Anacode/cron2rss.git
   ensembl: git@github.com:Ensembl/ensembl.git
