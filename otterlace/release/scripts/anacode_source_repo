@@ -197,7 +197,7 @@ sub cfg_source {
 
 sub is_remote {
     my ($repo) = @_;
-    return $repo =~ m{^([-a-z0-9.]+):} ? $1 : undef;
+    return $repo =~ m{^([-a-z0-9.@]+):} ? $1 : undef;
 }
 
 sub clean_check {
