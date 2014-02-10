@@ -18,9 +18,15 @@ _do_build() {
     (
         cd "$build_dir" &&
         git remote add origin "$gitsrc" &&
-        git fetch -q --depth 1 origin $src_version:_build $src_version:refs/remotes/$rem_version &&
+        git fetch -q --depth 1 origin $src_version:refs/remotes/$rem_version &&
+        git fetch -q --depth 1 origin $src_version:_build &&
+        # fetch in two bites, should be just one packfile download
+        #  message-id <20140210153925.GC10127@sanger.ac.uk> to ensembl-campus
         git checkout -q _build &&
-        (printf "Ensembl '%s' from %s is\n" "$reponame" "$gitsrc"; git log --decorate -1 | sed -e 's/^/    /') &&
+        CI_INFO="$( git log --decorate -1 | sed -e 's/^/    /' )" &&
+        printf "Ensembl '%s' %s from %s is\n%s\n" "$reponame" $src_version "$gitsrc" "$CI_INFO" &&
+        printf "Ensembl '%s' %s from %s is\n%s\n" "$reponame" $src_version "$gitsrc" "$CI_INFO" \
+            > "$install_dir/$reponame.txt" &&
         mkdir "$install_dir/$reponame" &&
         if [ -f "Makefile.PL" ]; then
             bail "$reponame/Makefile.PL: probably a good idea, but not yet supported"
@@ -68,4 +74,8 @@ else
     rem_version="origin/$src_version"
 fi
 
-_do_build
+_do_build || {
+    err=$?
+    echo " *** Build $reponame: failed, exit code $err" >&2
+    exit $err
+}
