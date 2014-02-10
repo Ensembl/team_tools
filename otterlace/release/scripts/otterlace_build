@@ -355,7 +355,7 @@ otterlace_client_install_perl_modules() {
     ( cd "$install_dir" &&
 
         _anacode_build_lib__perlmodules "$install_dir" $PerlModules_version &&
-        _anacode_build_lib__ensembl     "$install_dir" "$client_ensembl_version" &&
+        _anacode_build_lib__ensembl ensembl "$install_dir" "$client_ensembl_version" &&
 
         mkdir -p -- ensembl-otter &&
         cp -r \

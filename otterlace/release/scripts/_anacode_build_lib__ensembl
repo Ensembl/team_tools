@@ -1,42 +1,53 @@
 #! /bin/sh
 
+# Putting the ensembl sub-projects's modules/ into silos, probably for
+# historical reasons descending from how the webteam did it on legacy
+# servers.
+#
+# Affects both client (otterlace_build) & server (webvm-deps.git).
+
 _do_build() {
     local build_dir gitsrc
 
-    build_dir="$( mktemp -d "$install_dir/ensembl.XXXXXX" )" || \
+    build_dir="$( mktemp -d "$install_dir/$reponame.XXXXXX" )" || \
         bail "Failed to mktemp -d"
 
-    gitsrc="$( anacode_source_repo --isclean --purpose build_lib__ensembl ensembl )" || bail "Can't get ensembl gitsrc"
+    gitsrc="$( anacode_source_repo --isclean --purpose build_lib__ensembl $reponame )" || bail "Can't get $reponame gitsrc"
 
-    git init "$build_dir" &&
+    git init -q "$build_dir" &&
     (
         cd "$build_dir" &&
         git remote add origin "$gitsrc" &&
         git fetch -q --depth 1 origin $src_version:_build $src_version:refs/remotes/$rem_version &&
         git checkout -q _build &&
-        (echo Ensembl is; git log --decorate -1 | sed -e 's/^/    /') &&
-        mkdir "$install_dir/ensembl" &&
+        (printf "Ensembl '%s' from %s is\n" "$reponame" "$gitsrc"; git log --decorate -1 | sed -e 's/^/    /') &&
+        mkdir "$install_dir/$reponame" &&
         if [ -f "Makefile.PL" ]; then
-            bail "ensembl/Makefile.PL: probably a good idea, but not yet supported"
+            bail "$reponame/Makefile.PL: probably a good idea, but not yet supported"
         elif [ -d "modules" ]; then
             rm -rf modules/t
-            mv -vi modules "$install_dir/ensembl/modules"
+            mv -vi modules "$install_dir/$reponame/modules"
         else
-            bail "don't know how to build ensembl $src_version"
+            bail "don't know how to build $reponame $src_version"
         fi &&
         true ) &&
     rm -rf -- "$build_dir" &&
     true
 }
 
-install_dir="$1"
-src_version=$2
+
+# This calling convention is used from webvm-deps.git/fetch-ensemblNN
+reponame="$1"
+install_dir="$2"
+src_version=$3
 
 # shared config and functions
 . "$( dirname "$0" )/_otterlace.sh" || exit 1
 
-[ "$#" = 2 ] && [ -d "$install_dir" ] && [ -n "$src_version" ] || \
-    bail "Syntax: _anacode_build_lib__ensembl <install_dir> <src_version>
+[ "$#" = 3 ] && [ -d "$install_dir" ] && [ -n "$src_version" ] || \
+    bail "Syntax: _anacode_build_lib__ensembl <reponame> <install_dir> <src_version>
+
+  install_dir must be absolute, because this script does chdir(2)
 
   src_version = < release number | commitid | name of ref on remote >
 
