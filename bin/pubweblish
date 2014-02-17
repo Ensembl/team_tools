@@ -129,6 +129,10 @@ sub send_files {
     chomp $dest;
     print "=== send_files $srcdir$part/ to $host:$dest$part/\n";
     # nb. "rsync -SWH" are not available
+    #
+    # Also for creating new directory trees, the remote trailing /
+    # must be omitted.  js5 said the resulting "permission denied" when this goes wrong is rsync's doing, not RT#377744
+
     my $fail = run_showing
       (rsync => maybe_dry("-n"),
        ($QUIET ? () : ('-iv')),
