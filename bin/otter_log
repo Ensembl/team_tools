@@ -1,0 +1,62 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+my $user = getpwuid($<);
+my $nth = 0;
+my $op = 'less';
+
+while (@ARGV) {
+    my $sw = shift @ARGV;
+    if ($sw =~ m{^(\d+)$}) {
+        $nth = $1;
+    } elsif ($sw =~ m{^--(less|grep|ls)$}) {
+        $op = $1;
+    } elsif ($sw =~ m{^(--help|-h)$}) {
+        warn "Syntax: $0 [ --less | --grep | --ls ] [ <username> | <number> ]* [ -- <args for next op> ]
+
+Display Otterlace client logfile for specified user, and/or for the
+Nth most recent.
+
+Default is
+  0th (most recent) logfile
+  belonging to yourself
+  sent to less(1)\n";
+        exit 2;
+    } elsif ($sw eq '--') {
+        last;
+    } else {
+        $user = $sw;
+    }
+}
+
+my $home = (getpwnam($user))[7]
+  or die "Unknown user $user: $!";
+my $logdir = "$home/.otter";
+die "Logdir $logdir: not a directory\n" unless -d $logdir;
+
+opendir my $ld, $logdir or die "Can't opendir $logdir: $!";
+
+my $N = my @log =
+  sort { -M $a <=> -M $b }
+  map { "$logdir/$_" }
+  grep { m{^otterlace\..*\.log$} }
+  readdir($ld);
+
+my $many = "Logdir $logdir has $N logfiles\n";
+warn $many if !$nth;
+die $many if !$log[$nth];
+
+my @arg = @ARGV; # leftovers following "--"
+
+# Default args chosen arbitrarily & open for improvement
+if (!@arg) {
+    @arg = qw( -l ) if $op eq 'ls';
+    @arg = qw( -MS ) if $op eq 'less';
+    @arg = ('--color=auto', '-E', 'git HEAD|, pid [0-9]*$|Process .* exited|: ===') if $op eq 'grep';
+}
+
+my @cmd = ($op, @arg, $log[$nth]);
+warn sprintf("Run:  %s\n", join ' ', map {/ / ? qq{'$_'} : $_} @cmd);
+exec @cmd;
