@@ -62,6 +62,8 @@ is_zmap_valid() {
     attempt="$1"
     zmap_tree="$2"
 
+    date +%Ft%T
+
     # Basic sanity check.
     if ! [ -d "$zmap_tree" ]; then
         printf "%s attempt: Expected ZMap build tree at %s\n" \
