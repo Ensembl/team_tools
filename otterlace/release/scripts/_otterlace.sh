@@ -278,7 +278,7 @@ print join q{ }, @out;
 unset CDPATH
 
 # Assumes we were called by script in this directory.  $0 is not this file!
-dist_scripts="$( dirname "$0" )"
+dist_scripts="$( dirname "${BASH_SOURCE[0]}" )"
 
 # "What we're operating upon" is now another repo
 thisprog="$( _whatami )"
