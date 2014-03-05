@@ -77,9 +77,6 @@ sub main {
     my @zmapdirs = @ARGV;
 
     # Sane?
-    if (my @bad = grep { ! -d $_ || ! -d "$_/ZMap" || ! -d "$_/Dist" } @zmapdirs) {
-        die "$0: not ZMap build directories: @bad\n";
-    }
     if (!@zmapdirs && !$op) {
         die "Syntax: $0 [ -host <otterlace_buildhost> ] <ZMap_build_tree>*
 \t$0 -list\n
@@ -88,6 +85,10 @@ sub main {
   When given a buildhost (which must be from that set), return the one
   ZMap tree which should be used on the host.\n";
     }
+    my @missing_dir = grep { ! -d $_ }
+      map {($_, "$_/ZMap", "$_/Dist")} # should exist in valid build; mca inferred
+        @zmapdirs;
+    die "$0: ZMap build directories (@zmapdirs) are missing some component directories (@missing_dir)\n";
 
     # Read config
     my $cfg_fn = "$RealBin/../build-config.yaml"; # TODO: a flag
