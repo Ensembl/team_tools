@@ -6,11 +6,19 @@ version_major="$1"
 [ -n "$version_major" ] ||
 bail "usage: $( basename "$0" ) <version>"
 
-# SangerPaths edit: no effect since ensembl-otter v80 955258c1816dc6dc9ae8aa819ae7a5dc2892a715
+
 config_set version_major "$version_major" &&
+
+# SangerPaths edit: no effect intended since
+# ensembl-otter v80 955258c1816dc6dc9ae8aa819ae7a5dc2892a715
+#
+# Requesting tag otter$N still works, but is not required in the case
+# that Otter::Paths::_otter_auto can derive the version number from
+# the script name =~ m{/cgi-bin/otter/(.*)/}
 sed -i \
-    -e "/\<SangerPaths\>/s/\<otter[[:alnum:]]*\>/otter${version_major}/" \
+    -e "/\<SangerPaths\>/s/\<otter[[:alnum:]]+\>/otter${version_major}/" \
     scripts/apache/* &&
+
 sed -i \
     -e "/\\\$VERSION[[:blank:]]*=>/s/=>.*/=> ${version_major};/" \
     modules/Bio/Otter/Version.pm &&
