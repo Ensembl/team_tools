@@ -88,7 +88,8 @@ sub main {
     my @missing_dir = grep { ! -d $_ }
       map {($_, "$_/ZMap", "$_/Dist")} # should exist in valid build; mca inferred
         @zmapdirs;
-    die "$0: ZMap build directories (@zmapdirs) are missing some component directories (@missing_dir)\n";
+    die "$0: ZMap build directories (@zmapdirs) are missing some component directories (@missing_dir)\n"
+      if @missing_dir;
 
     # Read config
     my $cfg_fn = "$RealBin/../build-config.yaml"; # TODO: a flag
