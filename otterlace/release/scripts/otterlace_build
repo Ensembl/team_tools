@@ -362,6 +362,13 @@ otterlace_client_install_perl_modules() {
             ${ensembl_otter_root}/{modules,scripts,tk} \
             ensembl-otter &&
 
+        if [ -d ${ensembl_otter_root}/dev ]; then
+            # need dev/subshell.sh for "otterlace -S", since v81
+            cp -r $ensembl_otter_root/dev ensembl-otter
+        else
+            true
+        fi &&
+
         true ) &&
 
     git_cache_create "${install_dir}/ensembl-otter/modules" &&
