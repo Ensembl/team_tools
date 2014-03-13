@@ -31,4 +31,5 @@ script_sections = AUTHOR
 
 [Anacode::ProhibitRebless]
 excepted_filename = (^|/)[^/]+\.t$
+method = ^sub (new|_new|TIEHANDLE)$
 # tests are excused
