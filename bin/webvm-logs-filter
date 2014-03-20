@@ -2,12 +2,16 @@
 use strict;
 use warnings;
 use YAML 'Dump';
+use List::Util qw( sum );
+use Date::Format 'time2str';
+use Date::Parse 'str2time';
 
-my $DUMP = 0;
+my $DUMP = 1;
 
 
-# nb. implicit filter loop "-p"
+# nb. implicit filter loop "-n"
 
+my %parsed;
 if (my ($h, $identd, $user_auth, $date_time_acc,
         $method, $url, $hv, $status, $size_out,
         $refer, $ua,
@@ -30,24 +34,53 @@ if (my ($h, $identd, $user_auth, $date_time_acc,
 
     next if $url eq '/cgi-bin/server-meta' && $ua =~ m{team_tool\.git/bin/webhosts};
 
-    $_ = Dump({ h => $h, identd => $identd, user_auth => $user_auth,
-                date_time_acc => $date_time_acc, method => $method,
-                url => $url, hv => $hv, status => $status, size_out => $size_out,
-                refer => $refer, ua => $ua, rest => $rest })
-      if $DUMP;
+    %parsed =
+      (T => 'access', ut => str2time($date_time_acc),
+       host => $h, identd => $identd, user_auth => $user_auth,
+       date_time => $date_time_acc, method => $method,
+       url => $url, hv => $hv, status => $status, size_out => $size_out,
+       refer => $refer, ua => $ua, rest => $rest);
 
 
 } elsif (my ($date_time_err,
              $tag,
-             $cli,
-             $script, $msg) =
+             $cli, $script, $pid,
+             $msg) =
          m{^\[\w{3}\ (\w{3}\ \d{2}\ \d{2}:\d{2}:\d{2}\ \d{4})\]
            \ \[(\S+)\]
-           (?:\ \[client\ (\S+)\])?
-           (?:\ \[(\S+)\])?\ (.*)$}x) {
+           (?:\ \[client\ (\S+)\])?(?:\ \[(\S+)\]|\ pid\ (\d+):|)
+           \ (.*)$}x) {
 # error_log, CGI script
 #
+#     Old, or not using Otter::LoadReport
 # [Fri Nov 08 14:18:14 2013] [error] [client 172.17.200.69] [test] Use of uninitialized value $ENV{"HTTP_CLIENTREALM"} in pattern match (m//) at /www/mca/www-dev/lib/otter/76/Bio/Otter/Auth/SSO.pm line 120.
+#
+#     New since 2014-03-20
+# [Thu Mar 20 11:34:47 2014] [notice] SIGHUP received.  Attempting to restart
+# [Thu Mar 20 11:34:47 2014] [warn] PassEnv variable OTTER_PERL_EXE was undefined
+# [Thu Mar 20 11:34:47 2014] [notice] Apache/2.2.22 (Ubuntu) mod_perl/2.0.5 Perl/v5.14.2 configured -- resuming normal operations
+# [Thu Mar 20 11:39:36 2014] [error] [client 193.62.203.125] pid 20615: at BEGIN loadavg (0.02 0.06 0.05) script /cgi-bin/otter/79/authenticate_me fwd 172.20.10.220
+# [Thu Mar 20 11:39:36 2014] [error] [client 193.62.203.125] pid 20615: at END loadavg (0.02 0.06 0.05) wallclock 0.19s cpu (0.16 0.03 0 0)s ps (rss:18 vsz:78)MiB
+# [Thu Mar 20 12:06:47 2014] [error] [client 193.62.203.124] pid 28625: at BEGIN loadavg (0.02 0.09 0.08) script /cgi-bin/otter/79/get_sequencesets fwd 172.20.10.220
+# [Thu Mar 20 12:06:50 2014] [error] [client 193.62.203.124] pid 28625: For loutre_human there is a difference in the software release (74) and the database release (73). You should update one of these to ensure that your script does not crash.
+# [Thu Mar 20 12:06:50 2014] [error] [client 193.62.203.124] pid 28625: at END loadavg (0.02 0.09 0.08) wallclock 3.20s cpu (0.58 0.1 0 0)s ps (rss:43 vsz:191)MiB
+
+    my %loadreport;
+    if ($msg =~ m{^at (BEGIN|END) (loadavg .*)$}) {
+        # Otter::LoadReport "key value" pairs
+        my ($when, $kvp) = ($1, $2);
+        my @kvp = $kvp =~ m{(?:^|\G)(\S+) (\([^()]*\)\S*|[^() ]+)(?: |$)}g;
+        my $kvp_len = $#kvp + sum(map { length } @kvp);
+        if (length($kvp) == $kvp_len) {
+            %loadreport = (when => $when, @kvp);
+        } else {
+            die "PARSE FAIL for LoadReport >>$kvp<<@kvp>> kvp_len:$kvp_len txt_len:".length($kvp);
+        }
+    } elsif ($msg =~ m{^/cgi-bin/\S+ (BEGIN|END): pid \d+ loadavg}) {
+        # Otter::LoadReport before webvm.git 37d37940 2014-03-19
+        #
+        # not interested just now
+    }
 
     next if $tag eq 'notice' &&
       ($msg =~ m{^(?:
@@ -64,6 +97,17 @@ if (my ($h, $identd, $user_auth, $date_time_acc,
 
     next if $tag eq 'error' &&
       $msg =~ m{^Use of uninitialized value in lc at \S+/apps/webvm-deps/SHARED\.core/SiteDecor.pm line \d+\.$};
+    # fixed webvm-deps.git f5d63909 2014-03-19
+
+    %parsed =
+      (T => 'error', ut => str2time($date_time_err),
+       date_time => $date_time_err,
+       tag => $tag,
+       client => $cli,
+       (defined $script  ? (script => $script) : ()),
+       (defined $pid     ? (pid => $pid) : ()),
+       (keys %loadreport ? (LoadReport => \%loadreport) : ()),
+       msg => $msg);
 
 
 } elsif (my @old =
@@ -73,8 +117,56 @@ if (my ($h, $identd, $user_auth, $date_time_acc,
 # nothing interesting
     next if $old[3] =~ m{/Sep/2013:};
 
+
+} elsif (my ($tail_fn) =
+         m{^==> (\S+) <==\n}) {
+    # tail(1) header
+    if ($ARGV eq $tail_fn) {
+        $. = 1E6;
+        $ARGV = $tail_fn;
+    }
+    next;
+
+} elsif ($_ eq "\n") {
+    # blank line, as between tail(1) sections
+    next;
+
 } else {
     $_ = '?type?>|'.$_;
+}
+
+if (keys %parsed) {
+    @parsed{qw{ fn ln }} = ($ARGV, $.);
+    $parsed{server} = $1 if $parsed{fn} =~ m{^/nfs/anacode/logs/webvm/([^/])/logs/}; # could also get this from access_log
+
+    if (0) { # sanity check the unixtime conversion
+        my $txt =
+          time2str($parsed{T} eq 'access'
+                   ? '%d/%b/%Y:%T %z' # [11/Nov/2013:12:08:30 +0000]
+                   : '%b %d %T %Y',   # Mar 20 11:39:36 2014]
+                   $parsed{ut});
+        die "DTdiff: '$txt' ne '$parsed{date_time}'"
+          if $txt ne $parsed{date_time};
+    }
+
+# Given this information, can we link together the matching access_log and error_log lines?
+#
+#    /nfs/anacode/logs/webvm/web-otterdev-02/logs/access_log:ztm2.sanger.ac.uk - - [20/Mar/2014:11:22:15 +0000] "GET /cgi-bin/otter/81/get_gff_features?analysis=EST2Genome_human&client=otterlace&cs=chromosome&csver=Otter&dataset=human_test&end=2864370&feature_kind=DnaDnaAlignFeature&gff_seqname=chr6-18&gff_source=EST_Human&gff_version=3&log=1&name=6&sequence_db=emblnew%2Cemblrelease&start=2696324&swap_strands=1&type=chr6-18 HTTP/1.1" 200 99647 "-" "/Users/mg13/Work/git/ensembl-otter/scripts/client/filter_get" io<780in 100010out 32966881us +0> fwd<172.20.245.115>
+#    /nfs/anacode/logs/webvm/web-otterdev-02/logs/error_log:[Thu Mar 20 11:22:15 2014] [error] [client 193.62.203.125] pid 5857: at BEGIN loadavg (0.26 0.11 0.09) script /cgi-bin/otter/81/get_gff_features fwd 172.20.245.115
+#    /nfs/anacode/logs/webvm/web-otterdev-02/logs/error_log:[Thu Mar 20 11:22:48 2014] [error] [client 193.62.203.125] pid 5857: at END loadavg (0.22 0.11 0.09) wallclock 32.87s cpu (0.94 0.16 0 0)s ps (rss:51 vsz:199)MiB
+#
+# Matching fields (access_log == error_log) will be
+#   server          == server (hostname comes from log filename)
+#   time            == BEGIN time (possible delta)
+#   io<us>          == 1E6* END wallclock sec (likely delta, might include transit time?)
+#   URL script name == BEGIN script
+#   client hostname == [client IP] (but 50:50 chance of false +ve)
+#   fwd<>           == BEGIN fwd (after decode)
+#
+# A better way would be to use https://httpd.apache.org/docs/2.2/mod/mod_unique_id.html
+# which would need support in httpd.conf, Otter::LoadReport and here
+
+    $_ = Dump(\%parsed) if $DUMP;
 }
 
 print;
@@ -86,7 +178,9 @@ webvm-logs-filter
 
 =head1 DESCRIPTION
 
-This filter is WYSIWYG, with the main aim of excluding some of the
-"noise".  You may need to edit it to get the "signal" you want.
+This filter is WYSIWYG, with the main aim of parsing out the regular
+information and excluding some of the "noise".
+
+You may need to edit it to get the "signal" you want.
 
 =cut
