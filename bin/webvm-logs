@@ -1,21 +1,31 @@
 #! /bin/sh
 
 
+logdent() {
+    local pfx
+    pfx="$1"
+    sed -e "s/^/$pfx/"
+}
+
 fetch_all_logs() {
     local host hosts dest
+    set -m
     for HTYPE in live dev; do
-        echo "== fetch_all_logs: $HTYPE"
         hosts=$( webhosts $HTYPE )
         for host in $hosts; do
+          (
             dest=/nfs/anacode/logs/webvm/$host
             echo "=== $host -> $dest/"
             echo + \
             rsync $DRY_RUN -ai -e smithssh --chmod=g+rw,o-rwx $host:/www/tmp/www-$HTYPE/logs/ $dest
-            rsync $DRY_RUN -ai -e smithssh --chmod=g+rw,o-rwx $host:/www/tmp/www-$HTYPE/logs/ $dest
+            rsync $DRY_RUN -ai -e smithssh --chmod=g+rw,o-rwx $host:/www/tmp/www-$HTYPE/logs/ $dest \
+                && echo "    done" || echo " >>> RSYNC FAILED exit code $? <<<" >&2
             # our deliberate trailing / on logs/ is stripped remotely,
             # so we have unwanted extra path on NFS
+          ) 2>&1 | logdent "$( printf "%18s| " "$host" )" &
         done
     done
+    wait
     echo My return code is not informative
 }
 
