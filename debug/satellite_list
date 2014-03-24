@@ -1,0 +1,203 @@
+#! /usr/bin/env perl
+
+use strict;
+use warnings;
+use YAML 'Dump';
+use Bio::Otter::Server::Config;
+use Try::Tiny;
+
+=head1 NAME
+
+satellite_list - munge the species.dat
+
+=head1 DESCRIPTION
+
+Quick bodge.  Do not maintain.
+
+=cut
+
+
+sub main {
+    my $species_dat = Bio::Otter::Server::Config->SpeciesDat;
+    my %out;
+    my %dbspec;
+    foreach my $ds (@{ $species_dat->datasets }) {
+        my $dsname = $ds->name;
+        try {
+            my $ot_dba = $ds->otter_dba;
+
+            my $sats = $ot_dba->dbc->db_handle->selectcol_arrayref
+              (q{ select meta_key from meta where
+                    meta_value rlike 'dbname' or meta_value rlike '-host' });
+
+            foreach my $sat (@$sats) {
+                my $opt = $ds->_satellite_dba_options($sat);
+                my %hash = text_to_list("ds=$dsname, sat=$sat", $opt);
+                foreach my $k (qw( -dnadb_host -host )) {
+                    $hash{$k} =~
+                      s{^(ens-livemirror|genebuild\d+)$}{$1.internal.sanger.ac.uk}
+                        if defined $hash{$k};
+                }
+                $out{dataset}{"$dsname.$sat"} = \%hash;
+
+                # Extract a comprehensive set of database servers.
+                # Give them names.
+                foreach my $spec (ds2dbspec($ds), opt2dbspec(%hash)) {
+                    my $name = spec2name($spec);
+                    my $T = h2txt($spec);
+                    if (!defined $out{dbspec}{$name}) {
+                        $out{dbspec}{$name} = $T;
+                        $out{dbspec_raw}{$name} = $spec;
+                    } elsif ($T eq $out{dbspec}{$name}) {
+                        # match, ok
+                    } else {
+                        die "Name conflict: dbspec{$name} =\n  $out{dbspec}{$name}\n  $T\n";
+                    }
+                }
+            }
+        } catch {
+            $out{error}{$dsname} = "ERR:$_";
+        }
+    }
+
+    $out{dbspec} = delete $out{dbspec_raw};
+    # because text is easier to dup-check the names
+
+    while (my ($sat, $spec) = each %{ $out{dataset} }) {
+        my $name = spec2name($spec);
+        my $dna_name = spec2name($spec, 'dnadb_');
+        my $new = dbspecify($spec, $name     => $out{dbspec}{$name}, '');
+        $new = dbspecify   ($new,  $dna_name => $out{dbspec}{$dna_name}, 'dnadb_')
+          if $dna_name;
+        $out{dataset_by_dbspec}{$sat} = $new;
+    }
+
+    print Dump(\%out);
+}
+
+main();
+
+
+sub text_to_list {
+    my ($what, $opt) = @_;
+
+    my $check_opt = $opt;
+    if ($check_opt =~ s{my ?\$h=('ens-livemirror\.internal\.sanger\.ac\.uk');}{}) {
+        my $h = $1;
+        $check_opt =~ s{\$h}{$h}g;
+    }
+    die "$what: $opt\n  check_opt=$check_opt\n" unless
+      $check_opt =~ m{^[-_.'"a-zA-Z0-9 =>,\n]+$};
+
+    return eval $opt;
+}
+
+sub opt2dbspec {
+    my (%opt) = @_;
+    my (%db, %dna);
+    @db{qw{ -host -port -user }} = delete @opt{qw{ -host -port -user }};
+    $db{-pass} = delete $opt{-pass} if exists $opt{-pass};
+    @dna{qw{ -host -port -user }} =
+      delete @opt{qw{ -dnadb_host -dnadb_port -dnadb_user }};
+    $dna{-pass} = delete $opt{-dnadb_pass} if exists $opt{-dnadb_pass};
+    my @t = (\%db);
+    push @t, \%dna if grep { defined } values %dna;
+    return @t;
+}
+
+sub spec2txt {
+    my ($pfx, %old) = @_;
+    my %hash = map {
+        my ($okey, $key) = ($_, $_);
+        if (s{^-dnadb_}{-} ? $pfx : !$pfx) {
+            ($key, $old{$okey});
+        } else {
+            ();
+        }
+    }
+      keys %old;
+    return h2txt(\%hash);
+}
+
+# without dbnames
+sub ds2dbspec {
+    my ($ds) = @_;
+    my $P = $ds->params;
+    my @s = { -host    => $P->{HOST},
+              -port    => $P->{PORT},
+              -user    => $P->{USER},
+              -pass    => $P->{PASS} };
+    push @s, { -host    => $P->{DNA_HOST},
+               -port    => $P->{DNA_PORT},
+               -user    => $P->{DNA_USER},
+               -pass    => $P->{DNA_PASS} }
+      if defined $P->{DNA_HOST};
+    return @s;
+}
+
+sub h2txt {
+    my ($h) = @_;
+    return () unless $h && keys %$h;
+    return join ', ', map {"$_ => $$h{$_}"} sort keys %$h;
+}
+
+sub spec2name {
+    my ($spec, $pfx) = @_;
+    $pfx = '' unless defined $pfx;
+    my $name = $spec->{"-${pfx}host"};
+    return () unless defined $name;
+    my $port = $spec->{"-${pfx}port"};
+
+    # special cases
+    if ($name eq 'vm-mii-otlp') {
+        $name = 'otterlive';
+    } elsif ($name eq 'lutra6') {
+        $name = 'otp1_slave' if $port eq 3322;
+        $name = 'otp2_slave' if $port eq 3323;
+    } elsif ($name eq 'otterslave') {
+        # translate or otherwise pacify old port numbers
+        if ($port eq 3311) {
+            $name = 'otterlive_BROKEN';
+        } elsif ($port eq 3312) {
+            $name = 'otp1_slave_BROKEN';
+        } elsif ($port eq 3313) {
+            $name = 'otp2_slave_BROKEN';
+        } else {
+            $name = "${name}_${port}__WEIRD";
+        }
+    }
+    $name =~ s{\.internal\.sanger\.ac\.uk$}{};
+    $name .= '_rw' unless $spec->{"-${pfx}user"} =~ /ro$/;
+    return $name;
+}
+
+sub dbspecify {
+    my ($old, $name, $dbspec, $pfx) = @_;
+    my %new = %$old;
+
+    return $old if $pfx && !exists $old->{-dnadb_host}; # nothing there, don't try
+
+    my @bad;
+    my @k = ('-pass', keys %$dbspec);
+    foreach my $k (@k) {
+        my $pk = $k;
+        $pk =~ s{^-}{-$pfx} if $pfx;
+        push @bad, [ $pk, $dbspec->{$k}, $old->{$pk} ]
+          if (( exists($dbspec->{$k}) xor  exists($old->{$pk})) ||
+              (defined($dbspec->{$k}) xor defined($old->{$pk})) ||
+              (defined($dbspec->{$k}) &&  defined($old->{$pk}) &&
+               $dbspec->{$k} ne $old->{$pk}));
+    }
+    if (@bad) {
+        warn "Cannot dbspecify ".Dump
+          ({ name => $name, old => $old, bad => \@bad });
+    } else {
+        $new{$pfx ? 'dnadb' : 'db'} = $name;
+        my @pk = @k;
+        foreach (@pk) {
+            s{^-}{-$pfx} if $pfx;
+        }
+        delete @new{@pk};
+    }
+    return \%new;
+}
