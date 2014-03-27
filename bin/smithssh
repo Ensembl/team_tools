@@ -84,7 +84,7 @@ So code operating on remote directories can avoid magic strings.
 Logic for these functions is provided by inspection of the remote
 code.
 
-See also L<webhosts(1)>.
+See also L<webvm-hosts(1)>.
 
 
 =head1 OPTIONS

@@ -80,7 +80,7 @@ C<< cgi-bin/otter/<number><suffix> >>.
 
 =head2 Related commands
 
-The list of web server hostnames is obtained from L<webhosts(1)>.
+The list of web server hostnames is obtained from L<webvm-hosts(1)>.
 
 The L<rsync(1)> and restart operations require L<smithssh(1)>, which
 in turn requires that you have the relevant private key files.
@@ -200,8 +200,8 @@ sub sync_to_vms {
 
     my $also_restart = !$part; # i.e. if you want a restart, send all files
 
-    my @host = split /\s+/, pipe_from(webhosts => $htype)
-      or die "'webhosts $htype' was null";
+    my @host = split /\s+/, pipe_from('webvm-hosts' => $htype)
+      or die "'webvm-hosts $htype' was null";
 
     my $status = sprintf("rsync'ing%s for %s:\n",
                          (defined $part ? " just $part" : ''), $htype);

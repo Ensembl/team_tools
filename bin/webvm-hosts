@@ -12,16 +12,16 @@ use YAML qw( Dump Load );
 
 =head1 NAME
 
-webhosts - enumerate webservers, by asking one for its config
+webvm-hosts - enumerate webservers, by asking one for its config
 
 
 =head1 SYNTAX
 
-  webhosts <type> [ <source> ]
+  webvm-hosts <type> [ <source> ]
 
 =head2 Example
 
-  for h in $( webhosts dev ); do
+  for h in $( webvm-hosts dev ); do
     echo Poking $h
     smithssh -u $h restart
     sleep 15
@@ -48,6 +48,8 @@ You can point it at another source when invoking it directly,
 or by setting C<WEBHOSTS_WHENCE> to something like
 C<otter.sanger.ac.uk> or C<mca-otter.sandbox.sanger.ac.uk>.
 
+(This is an emergency escape hatch.  If it needs using regularly then
+something else needs to be fixed.)
 
 =head1 OPTIONS
 
@@ -157,7 +159,7 @@ sub do_lookup {
     my $ua = LWP::UserAgent->new;
     $ua->timeout(10);
     $ua->env_proxy if $opt{proxy};
-    $ua->agent( $ua->agent . ' team_tool.git/bin/webhosts' );
+    $ua->agent( $ua->agent . ' team_tool.git/bin/webvm-hosts' );
 
     # Source
     my $uri;
