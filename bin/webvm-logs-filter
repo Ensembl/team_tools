@@ -32,7 +32,8 @@ if (my ($h, $identd, $user_auth, $date_time_acc,
     next if $url eq '*'
       && $method eq 'OPTIONS' && $ua =~ m{^Apache/.*internal dummy connection};
 
-    next if $url eq '/cgi-bin/server-meta' && $ua =~ m{team_tool\.git/bin/webhosts};
+    next if $url eq '/cgi-bin/server-meta'
+      && $ua =~ m{team_tool\.git/bin/(?:webhosts|webvm-hosts)};
 
     %parsed =
       (T => 'access', ut => str2time($date_time_acc),
