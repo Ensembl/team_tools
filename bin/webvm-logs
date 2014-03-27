@@ -11,7 +11,7 @@ fetch_all_logs() {
     local host hosts dest
     set -m
     for HTYPE in live dev; do
-        hosts=$( webhosts $HTYPE )
+        hosts=$( webvm-hosts $HTYPE )
         for host in $hosts; do
           (
             dest=/nfs/anacode/logs/webvm/$host
