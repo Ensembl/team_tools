@@ -173,6 +173,14 @@ sub do_lookup {
 
     # Document
     my $resp = $ua->get($uri);
+    my $retry = 3; # may hit a different backend and get the same cold-cache delay
+    while (!$resp->is_success && $retry--) {
+        my $stat = $resp->status_line;
+        warn "webvm-hosts lookup failed $stat, will retry (then $retry more)...";
+        sleep 15; # arbitrary / seemed like a good idea
+        print $resp->decoded_content if $opt{debug};
+        $resp = $ua->get($uri);
+    }
     die "$0: $uri returned ".$resp->status_line unless $resp->is_success;
     my $doc = $resp->decoded_content;
     print $doc if $opt{debug};
