@@ -16,10 +16,10 @@ while (@ARGV) {
     my $sw = shift @ARGV;
     if ($sw =~ m{^(\d+)$}) {
         $log_finder->nth($1);
-    } elsif ($sw =~ m{^--(less|grep|ls)$}) {
+    } elsif ($sw =~ m{^--(less|grep|ls|sessions)$}) {
         $op = $1;
     } elsif ($sw =~ m{^(--help|-h)$}) {
-        warn "Syntax: $0 [ --less | --grep | --ls ] [ <username> | <number> ]* [ -- <args for next op> ]
+        warn "Syntax: $0 [ --less | --grep | --ls | --sessions ] [ <username> | <number> ]* [ -- <args for next op> ]
 
 Display Otterlace client logfile for specified user, and/or for the
 Nth most recent.
@@ -36,9 +36,19 @@ Default is
     }
 }
 
-my $logfile = $log_finder->log_file;
-
 my @arg = @ARGV; # leftovers following "--"
+
+if ($op eq 'sessions') {
+    $log_finder->log_file_warn('Searching');
+    my $sessions = $log_finder->sessions;
+    my $index = 0;
+    foreach my $path (sort keys %$sessions) {
+        my $status = $sessions->{$path};
+        print "${index}: ${path}\t[${status}]\n";
+        $index++;
+    }
+    exit;
+}
 
 # Default args chosen arbitrarily & open for improvement
 if (!@arg) {
@@ -47,6 +57,6 @@ if (!@arg) {
     @arg = ('--color=auto', '-E', 'git HEAD|, pid [0-9]*$|Process .* exited|: ===') if $op eq 'grep';
 }
 
-my @cmd = ($op, @arg, $logfile);
+my @cmd = ($op, @arg, $log_finder->log_file);
 warn sprintf("Run:  %s\n", join ' ', map {/ / ? qq{'$_'} : $_} @cmd);
 exec @cmd;
