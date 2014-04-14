@@ -5,10 +5,16 @@ use warnings;
 
 use Carp;
 use English;
+use List::MoreUtils qw{ uniq };
 use Readonly;
 
-Readonly my $DOT_OTTER => '.otter';
+Readonly my $DOT_OTTER       => '.otter';
 Readonly my $OTTERLOG_SEARCH => qr{^otterlace\..*\.log$};
+
+Readonly my $SESSION_STEM    => '/var/tmp/lace_';
+Readonly my $SESSION_SEARCH  => qr{($SESSION_STEM\d+\.\w+\.\d+\.\d+)}o;
+Readonly my $SESSION_DONE    => '.done';
+
 
 sub new {
     my ($pkg, @opts) = @_;
@@ -81,13 +87,64 @@ sub log_file {
     my $N = my @log = $self->logs;
 
     my $log_dir = $self->log_dir;
-    my $many = "Logdir '$log_dir' has $N logfiles\n";
+    my $many = "Logdir $log_dir has $N logfiles\n";
 
     my $nth = $self->nth;
-    warn  $many if not $nth;
+    $self->_n_warn_once($many) if not $nth;
     croak $many if not $log[$nth];
 
     return $log[$nth];
+}
+
+sub _n_warn_once {
+    my ($self, $warning) = @_;
+    return if $self->{'_n_warned'}++;
+    warn $warning;
+    return;
+}
+
+sub log_file_warn {
+    my ($self, $prefix) = @_;
+    $prefix //= '';
+    $prefix .= ' ' if $prefix and $prefix !~ /\s$/;
+    my $log_file = $self->log_file;
+    warn "${prefix}$log_file\n";
+    return;
+}
+
+sub session_mentions {
+    my ($self) = @_;
+    my $log_file = $self->log_file;
+    open my $fh, '<', $log_file or croak "Cannot open '$log_file': $!";
+    my @matches;
+    while (<$fh>) {
+        my ($session) = m/$SESSION_SEARCH/;
+        push @matches, $session if $session;
+    }
+    return uniq @matches;
+}
+
+sub sessions {
+    my ($self) = @_;
+    my %results;
+    my @sessions = $self->session_mentions;
+    my $status;
+    foreach my $session (@sessions) {
+        my $done = "${session}${SESSION_DONE}";
+        $status = 'NOT FOUND';
+        if (-d $session) {
+            $status = 'active';
+            next;
+        }
+        if (-d $done ) {
+            $session = $done;
+            $status = 'finished';
+            next;
+        }
+    } continue {
+        $results{$session} = $status;
+    }
+    return \%results;
 }
 
 1;
