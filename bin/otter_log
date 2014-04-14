@@ -1,16 +1,21 @@
-#! /usr/bin/perl
+#! /usr/bin/env perl
 
 use strict;
 use warnings;
 
-my $user = getpwuid($<);
-my $nth = 0;
+use FindBin;
+use lib "$FindBin::Bin/../perl/lib";
+
+use TeamTools::Otter::Logs;
+
+my $log_finder = TeamTools::Otter::Logs->new;
+
 my $op = 'less';
 
 while (@ARGV) {
     my $sw = shift @ARGV;
     if ($sw =~ m{^(\d+)$}) {
-        $nth = $1;
+        $log_finder->nth($1);
     } elsif ($sw =~ m{^--(less|grep|ls)$}) {
         $op = $1;
     } elsif ($sw =~ m{^(--help|-h)$}) {
@@ -27,26 +32,11 @@ Default is
     } elsif ($sw eq '--') {
         last;
     } else {
-        $user = $sw;
+        $log_finder->user($sw);
     }
 }
 
-my $home = (getpwnam($user))[7]
-  or die "Unknown user $user: $!";
-my $logdir = "$home/.otter";
-die "Logdir $logdir: not a directory\n" unless -d $logdir;
-
-opendir my $ld, $logdir or die "Can't opendir $logdir: $!";
-
-my $N = my @log =
-  sort { -M $a <=> -M $b }
-  map { "$logdir/$_" }
-  grep { m{^otterlace\..*\.log$} }
-  readdir($ld);
-
-my $many = "Logdir $logdir has $N logfiles\n";
-warn $many if !$nth;
-die $many if !$log[$nth];
+my $logfile = $log_finder->log_file;
 
 my @arg = @ARGV; # leftovers following "--"
 
@@ -57,6 +47,6 @@ if (!@arg) {
     @arg = ('--color=auto', '-E', 'git HEAD|, pid [0-9]*$|Process .* exited|: ===') if $op eq 'grep';
 }
 
-my @cmd = ($op, @arg, $log[$nth]);
+my @cmd = ($op, @arg, $logfile);
 warn sprintf("Run:  %s\n", join ' ', map {/ / ? qq{'$_'} : $_} @cmd);
 exec @cmd;
