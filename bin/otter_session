@@ -1,0 +1,128 @@
+#! /usr/bin/env perl
+
+use strict;
+use warnings;
+
+use FindBin;
+use lib "$FindBin::Bin/../perl/lib";
+
+use File::Spec;
+use Getopt::Long;
+use Readonly;
+
+use TeamTools::Otter::Sessions;
+
+Readonly my @MODES => qw( list ls gfflog sqlite );
+
+Readonly my %MODE_SETTINGS => (
+    ls     => { command => 'ls',      args => [ qw( -lt ) ] },
+    gfflog => { command => 'less',    args => [ qw( -MS ) ], file => 'gff_log.txt'  },
+    sqlite => { command => 'sqlite3', args => [           ], file => 'otter.sqlite' },
+    );
+
+sub main {
+    my ($opts, $args) = options();
+    my $mode = delete $opts->{mode};
+
+    my $sf = TeamTools::Otter::Sessions->new(%$opts);
+
+    my $session_path = $sf->session_path || '';
+    unless ($mode) {
+        $mode = $session_path ? 'ls' : 'list';
+    }
+
+    if ($mode eq 'list') {
+        list_sessions($sf);
+        exit 0;
+    }
+
+    die "Cannot find a session.\n" unless $session_path;
+
+    my $settings = $MODE_SETTINGS{$mode};
+    $args = $settings->{args} unless @$args;
+
+    my $path = $session_path;
+    $path = File::Spec->catfile($path, $settings->{file}) if $settings->{file};
+
+    my @cmd = ($settings->{command}, @$args, $path);
+    warn sprintf("Run:  %s\n", join ' ', map {/ / ? qq{'$_'} : $_} @cmd);
+    exec @cmd;
+}
+
+sub list_sessions {
+    my ($sf) = @_;
+    my $sessions = $sf->sessions;
+    my @paths = keys %$sessions;
+    @paths = sort { -M $a <=> -M $b } @paths unless $sf->log_search; # newest first
+    foreach my $path (@paths) {
+        my $details = $sessions->{$path};
+        next if $details->{status} ne 'active' and not $sf->all;
+        printf "%s\t[%s]\n", $path, $details->{status};
+    }
+    return;
+}
+
+sub options {
+    my %opt = (
+        (map { $_ => 0 } @MODES),
+
+        all          => 0,
+        log_search   => undef,
+        session_path => undef,
+        index        => undef,
+
+        help => 0,
+        );
+
+    help() unless GetOptions(
+        \%opt,
+        @MODES,
+        'all|a',
+        'help|h',
+        'log_search|search=s',
+        'session_path|session|path|s=s',
+        'index|i=i',
+        );
+
+    help() if $opt{help};
+    help("Only one of --session and --search may be specified")   if ($opt{session_path} and $opt{log_search});
+    help("'--index <n>' may only be used with '--search <file>'") if ($opt{index} and not $opt{log_search});
+
+    my $i;
+    foreach my $mode (@MODES) {
+        if ($opt{$mode}) {
+            delete $opt{mode};
+            $opt{mode} = $mode;
+            ++$i;
+        };
+    }
+    help("Only one of " . join(', ', map { "--$_" } @MODES) . " may be specified") if ($i and $i > 1);
+
+    my @args = @ARGV;
+    return (\%opt, \@args);
+}
+
+sub help {
+    my $reason = shift;
+    warn "$reason\n" if $reason;
+    warn <<"__EO_SYN__";
+Syntax: $0 \
+\t[ --list | --ls | --gfflog | --sqlite ] [ --all ] \
+\t[ --search <file> [ --index <n> ] | --session <dir> ]   \
+\t[ -- <args for next op> ]
+
+Display or operate on Otterlace session directory, specified either by
+<dir> path; or extracted by searching for likely paths in <file>,
+optionally with index <index>; or defaulting to active sessions in
+/var/tmp.
+
+Default action is --list if no --session <dir> is given, or if
+multiple candidates are found via --search; otherwise --ls to show
+session directory contents.
+__EO_SYN__
+    exit 2;
+}
+
+main();
+
+__END__
