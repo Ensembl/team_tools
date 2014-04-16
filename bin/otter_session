@@ -86,13 +86,16 @@ sub options {
 
     my @args = @ARGV;
 
-    if (defined $args[0] and not $opt{session_path} and not $opt{log_search}) {
+    if (defined $args[0] and not $opt{session_path}) {
       SWITCH: {
           # As a special case, allow a single path to specify the session_path...
-          if (-d $args[0])         { $opt{session_path} = shift @args; last SWITCH; }
+          if (-d $args[0] and not $opt{log_search}) { $opt{session_path} = shift @args; last SWITCH; }
 
-          # ...or a single digit to specify the nth session directory
-          if ($args[0] =~ /^\d+$/) { $opt{nth}          = shift @args; last SWITCH; }
+          # ...or a single digit to specify the nth session directory, or if searching a log, the index
+          if ($args[0] =~ /^\d+$/) {
+              if ($opt{log_search}) { $opt{index} = shift @args; last SWITCH; }
+              else                  { $opt{nth}   = shift @args; last SWITCH; }
+          }
         }
     }
 
@@ -115,7 +118,7 @@ sub help {
     warn <<"__EO_SYN__";
 Syntax: $0 \
 \t[ --list | --ls | --gfflog | --sqlite ] [ --all ] \
-\t[ --search <file> [ --index <n> ] | [ --session ] <dir> | <nth> ] \
+\t[ --search <file> [ [ --index ] <n> ] | [ --session ] <dir> | <nth> ] \
 \t[ -- <args for next op> ]
 
 Display or operate on Otterlace session directory, specified either by
