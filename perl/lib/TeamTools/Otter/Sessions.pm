@@ -74,8 +74,9 @@ sub _path_from_log_search {
 sub _nth_path {
     my ($self) = @_;
     my @sessions = $self->_classify_sessions($self->glob_sessions);
-    return unless @sessions;
-    return $sessions[0]->{path};
+    my $n = $self->nth;
+    return unless $sessions[$n];
+    return $sessions[$n]->{path};
 }
 
 sub log_search {
