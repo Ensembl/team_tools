@@ -51,13 +51,9 @@ sub main {
 
 sub list_sessions {
     my ($sf) = @_;
-    my $sessions = $sf->sessions;
-    my @paths = keys %$sessions;
-    @paths = sort { -M $a <=> -M $b } @paths unless $sf->log_search; # newest first
-    foreach my $path (@paths) {
-        my $details = $sessions->{$path};
-        next if $details->{status} ne 'active' and not $sf->all;
-        printf "%s\t[%s]\n", $path, $details->{status};
+    my @sessions = $sf->sessions;
+    foreach my $s (@sessions) {
+        printf "%s\t[%s]\n", $s->{path}, $s->{status};
     }
     return;
 }
@@ -88,17 +84,28 @@ sub options {
     help("Only one of --session and --search may be specified")   if ($opt{session_path} and $opt{log_search});
     help("'--index <n>' may only be used with '--search <file>'") if ($opt{index} and not $opt{log_search});
 
+    my @args = @ARGV;
+
+    if (defined $args[0] and not $opt{session_path} and not $opt{log_search}) {
+      SWITCH: {
+          # As a special case, allow a single path to specify the session_path...
+          if (-d $args[0])         { $opt{session_path} = shift @args; last SWITCH; }
+
+          # ...or a single digit to specify the nth session directory
+          if ($args[0] =~ /^\d+$/) { $opt{nth}          = shift @args; last SWITCH; }
+        }
+    }
+
     my $i;
     foreach my $mode (@MODES) {
         if ($opt{$mode}) {
-            delete $opt{mode};
+            delete $opt{$mode};
             $opt{mode} = $mode;
             ++$i;
         };
     }
     help("Only one of " . join(', ', map { "--$_" } @MODES) . " may be specified") if ($i and $i > 1);
 
-    my @args = @ARGV;
     return (\%opt, \@args);
 }
 
@@ -108,7 +115,7 @@ sub help {
     warn <<"__EO_SYN__";
 Syntax: $0 \
 \t[ --list | --ls | --gfflog | --sqlite ] [ --all ] \
-\t[ --search <file> [ --index <n> ] | --session <dir> ]   \
+\t[ --search <file> [ --index <n> ] | [ --session ] <dir> | <nth> ] \
 \t[ -- <args for next op> ]
 
 Display or operate on Otterlace session directory, specified either by
@@ -116,12 +123,11 @@ Display or operate on Otterlace session directory, specified either by
 optionally with index <index>; or defaulting to active sessions in
 /var/tmp.
 
-Default action is --list if no --session <dir> is given, or if
-multiple candidates are found via --search; otherwise --ls to show
-session directory contents.
+Default action is --list if no --session <dir> or <nth> index is
+given, or if multiple candidates are found via --search; otherwise
+default action is --ls to show session directory contents.
 __EO_SYN__
-    exit 2;
-}
+exit 2; }
 
 main();
 
