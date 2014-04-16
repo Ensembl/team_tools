@@ -12,13 +12,14 @@ Readonly my $SESSION_GLOB    => "${SESSION_STEM}*";
 Readonly my $SESSION_SEARCH  => qr{($SESSION_STEM\d+\.\w+\.\d+\.\d+)}o;
 Readonly my $SESSION_DONE    => '.done';
 Readonly my $SESSION_INDEX   => qr{\.(\d+)(?:\.done)?$};
+Readonly my $SESSION_DB      => 'otter.sqlite';
 
 
 sub new {
     my ($pkg, %opt) = @_;
     my $self = {};
     while (my ($key, $value) = each %opt) {
-        if ($value) {
+        if (defined $value) {
             $key =~ s/^--?//;   # strip - or -- from --options
             $self->{$key} = $value;
         }
@@ -37,6 +38,7 @@ sub session_path {
 
     if ($session_path) {
         -d $session_path or croak "Cannot read session directory '$session_path': $!";
+        -f "${session_path}/${SESSION_DB}" or croak "'$session_path' does not look like a session directory";
     }
 
     return $session_path;
@@ -45,26 +47,35 @@ sub session_path {
 sub _build_session_path {
     my ($self) = @_;
 
-    my $log_search = $self->log_search;
-    return unless $log_search;
+    return $self->_path_from_log_search if $self->log_search;
+    return $self->_nth_path             if defined $self->nth;
+    return;
+}
+
+sub _path_from_log_search {
+    my ($self) = @_;
 
     my $index  = $self->index;
-    my $sessions = $self->log_sessions;
+    my @sessions = $self->log_sessions;
 
     unless ($index) {
         # Look for a single match
-        my @paths = keys %$sessions;
-        return unless scalar(@paths) == 1;
-        my $path = $paths[0];
-        return unless $sessions->{$path}->{status} =~ m/^(active|finished)$/;
-        return $path;
+        return unless scalar(@sessions) == 1;
+        return unless $sessions[0]->{status} =~ m/^(active|finished)$/;
+        return $sessions[0]->{path};
     }
 
-    while (my ($path, $details) = each %$sessions) {
-        return $path if $details->{status} eq 'active'   and $details->{index} == $index;
-        return $path if $details->{status} eq 'finished' and $details->{index} == $index;
+    foreach my $s (@sessions) {
+        return $s->{path} if $s->{index} == $index and $s->{status} =~ m/^(active|finished)$/;
     }
     return;
+}
+
+sub _nth_path {
+    my ($self) = @_;
+    my @sessions = $self->_classify_sessions($self->glob_sessions);
+    return unless @sessions;
+    return $sessions[0]->{path};
 }
 
 sub log_search {
@@ -79,6 +90,13 @@ sub index {
     ($self->{'index'}) = @args if @args;
     my $index = $self->{'index'};
     return $index;
+}
+
+sub nth {
+    my ($self, @args) = @_;
+    ($self->{'nth'}) = @args if @args;
+    my $nth = $self->{'nth'};
+    return $nth;
 }
 
 sub all {
@@ -110,7 +128,10 @@ sub glob_sessions {
 
 sub _classify_sessions {
     my ($self, @sessions) = @_;
-    my %results;
+    my @results;
+
+    my $log_search = $self->log_search;
+    my $all        = ($self->all or $log_search);
 
     foreach my $path (@sessions) {
 
@@ -122,6 +143,7 @@ sub _classify_sessions {
 
         if ($path =~ m/${SESSION_DONE}$/o) {
             # Just check the done path
+            next unless $all;
             $done = $path;
             $path = undef;
         }
@@ -129,14 +151,16 @@ sub _classify_sessions {
         if ($path and -d $path) {
             $session->{status} = 'active';
         }
-        elsif (-d $done ) {
+        elsif ($all and -d $done) {
             $path = $done;
             $session->{status} = 'finished';
         }
+        $session->{path}   = $path;
 
-        $results{$path} = $session;
+        push @results, $session;
     }
-    return \%results;
+    @results = sort { -M $a->{path} <=> -M $b->{path} } @results unless $log_search; # newest first
+    return @results;
 }
 
 sub log_session_matches {
