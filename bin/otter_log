@@ -39,15 +39,8 @@ Default is
 my @arg = @ARGV; # leftovers following "--"
 
 if ($op eq 'sessions') {
-    $log_finder->log_file_warn('Searching');
-    my $sessions = $log_finder->sessions;
-    my $index = 0;
-    foreach my $path (sort keys %$sessions) {
-        my $status = $sessions->{$path};
-        print "${index}: ${path}\t[${status}]\n";
-        $index++;
-    }
-    exit;
+    $op = "$FindBin::Bin/otter_session";
+    push @arg, '--log_search'; # in @cmd, this will appear immediately before the log_file
 }
 
 # Default args chosen arbitrarily & open for improvement

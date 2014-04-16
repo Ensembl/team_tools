@@ -112,39 +112,4 @@ sub log_file_warn {
     return;
 }
 
-sub session_mentions {
-    my ($self) = @_;
-    my $log_file = $self->log_file;
-    open my $fh, '<', $log_file or croak "Cannot open '$log_file': $!";
-    my @matches;
-    while (<$fh>) {
-        my ($session) = m/$SESSION_SEARCH/;
-        push @matches, $session if $session;
-    }
-    return uniq @matches;
-}
-
-sub sessions {
-    my ($self) = @_;
-    my %results;
-    my @sessions = $self->session_mentions;
-    my $status;
-    foreach my $session (@sessions) {
-        my $done = "${session}${SESSION_DONE}";
-        $status = 'NOT FOUND';
-        if (-d $session) {
-            $status = 'active';
-            next;
-        }
-        if (-d $done ) {
-            $session = $done;
-            $status = 'finished';
-            next;
-        }
-    } continue {
-        $results{$session} = $status;
-    }
-    return \%results;
-}
-
 1;
