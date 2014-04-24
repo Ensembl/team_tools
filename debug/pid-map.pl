@@ -6,7 +6,9 @@ use YAML 'Dump';
 
 # Junk code to trace through RT#395402
 #
-# For chronological order,  | LANG=C sort
+# For chronological order, run like
+#    debug/pid-map.pl ~/../.snapshot/nightly.1/$USER/.otter/otterlace.* | LANG=C sort
+
 
 my %ps_leftover; # key=pid, value = { HDR => val }
 my %oom; # key=pid-killed, value = info
@@ -173,7 +175,7 @@ sub main {
             # continuation line
             next;
         }
-        my ($dt, $msg_type, $msg) = m{^(\d{4}-\d{2}-\d{2} [0-9:]{8},\d+) (.*): (.*)$}
+        my ($dt, $msg_type, $msg) = m{^(\d{4}-\d{2}-\d{2} [0-9:]{8},\d+) ([^:]*): (.*)$}
           or die "Cannot get timestamp from $_";
 
         if ($msg =~ m{^Started zmap, pid (\d+)$}) {
@@ -182,14 +184,16 @@ sub main {
         } elsif ($msg =~ m{^Process (\d+) exited}) {
             z_gone($ppid, $1, $dt, $msg);
 
-        } elsif ($msg =~ m{^=== }) {
-            # stack trace
-            printf "%s:%6d: %s\n", $dt, $ppid, $msg;
-            # does not tell pid.  RT#395448
-            # also does not mean the process has gone.  RT#272216
+        } elsif ($msg =~ m{^=== } # stack trace
+                 # does not tell pid.  RT#395448
+                 # also does not mean the process has gone.  RT#272216
 
-        } elsif ($msg =~ m{^X Error of failed request:}) {
-            # vanished - probably otterlace
+                 || $msg =~ m{^git HEAD:}
+                 # tells the version
+
+                 || $msg =~ m{^X Error of failed request:}
+                 # vanished - probably otterlace
+                ) {
             printf "%s:%6d: %s\n", $dt, $ppid, $msg;
 
         } elsif ($msg_type eq 'otter.main INFO' && $msg eq 'Exiting') {
