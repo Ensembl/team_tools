@@ -1,6 +1,6 @@
 #! /bin/sh
 
-BACKUP_DIR=/warehouse/humpub_wh01/anacode-trac
+BACKUP_DIR=/nfs/anacode/anacode-trac
 LIVE_DIR=/repos/trac/environments/anacode
 
 # Expects git-yacontrib on PATH (for git-iec and git-qcommit)
