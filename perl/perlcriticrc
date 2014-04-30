@@ -23,12 +23,6 @@ allow = %ENV %SIG $| @ARGV
 [Variables::ProhibitEvilVariables]
 variables = $[ $^S $SIG{__DIE__}
 
-# keep webpublish happy
-[Documentation::RequirePodSections]
-severity        = gentle
-lib_sections    = AUTHOR
-script_sections = AUTHOR
-
 [Anacode::ProhibitRebless]
 excepted_filename = (^|/)[^/]+\.t$
 method = ^sub (new|_new|TIEHANDLE)$
