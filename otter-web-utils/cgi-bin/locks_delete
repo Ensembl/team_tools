@@ -6,17 +6,17 @@ use warnings;
 use CGI::Carp qw(fatalsToBrowser);
 BEGIN { use lib ($ENV{OTTER_PERL_INC} || q{}) =~ m{([^:]+)}g }
 
-use OtterWeb 'otterlive_dbh';
+use OtterWeb 'speciesdat_dbh';
 use CGI;
 use JSON();
 
 my $cgi = CGI->new;
 my $json = JSON->new;
 
-my $db = $cgi->param("db");
+my $ds = $cgi->param("ds");
 my $locks = $json->decode($cgi->param("locks"));
 
-my $dbh = otterlive_dbh($db);
+my $dbh = speciesdat_dbh($ds);
 
 my $statement = $dbh->prepare(<<SQL)
 delete from contig_lock
@@ -55,7 +55,7 @@ $dbh->commit;
 $dbh->disconnect;
 
 my $result = {
-    database  => $db,
+    dataset   => $ds,
     locks     => $locks,
     bogus     => $locks_bogus,
     succeeded => $locks_succeeded,
