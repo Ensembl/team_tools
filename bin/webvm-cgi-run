@@ -130,6 +130,17 @@ Pass the text as the GET query string.
 With this option, the query string is not given separately from the
 script filename but stripped off the end of C<cgi-script> at the C<?>.
 
+=item --path-info | -p <path_info>
+
+Pass the text as the C<PATH_INFO> component of the URI.
+
+=item --detect-path | -P
+
+With this option, an attempt is made to separate C<cgi-script> and
+C<PATH_INFO> by stripping path components from the end of
+C<cgi-script> until a file is found in the filesystem, and then using
+the stripped components as C<PATH_INFO>.
+
 =item --otter-cookie | -C
 
 Provide otterlace authentication cookie from F<~/.otter/> and pass it
@@ -162,6 +173,7 @@ mca@sanger.ac.uk
 use Getopt::Long;
 use Pod::Usage;
 use Cwd 'abs_path';
+use File::Basename;
 use File::Spec;
 
 
@@ -170,7 +182,9 @@ sub main {
     Getopt::Long::Configure(qw( bundling require_order ));
     my @opt = qw( help|h stubs|D otter_cookie|otter-cookie|C
                   query|q=s strip_query|strip-query|Q
-                  keep_env|keep-env|E webdir|W=s );
+                  keep_env|keep-env|E webdir|W=s
+                  path_info|path-info|p=s
+                  detect_path|detect-path|P );
     GetOptions(\%opt, @opt) or $opt{help} = 1;
     $opt{help} = 1 unless @ARGV;
 
@@ -182,6 +196,23 @@ sub main {
         die "Conflicting --query && --strip-query given" if exists $opt{query};
         $opt{query} = $1 if $cgi_script =~ s{\?(.*)$}{};
     }
+    if ($opt{detect_path}) {
+        die "Conflicting --path-info && --detect-path given" if exists $opt{path_info};
+        my @path_info;
+        while ($cgi_script and not -f $cgi_script) {
+            my $trail;
+            ($trail, $cgi_script) = fileparse($cgi_script);
+            unshift @path_info, $trail;
+            chop $cgi_script if $cgi_script; # remove trailing /
+        }
+        if ($cgi_script) {
+            $opt{path_info} = join('/', '', @path_info) if @path_info; # '' to force a leading /
+        } else {
+            # Restore original for error below
+            $cgi_script = File::Spec->catfile('', @path_info);
+        }
+    }
+
     -f $cgi_script or die "cgi_script=$cgi_script: no such file";
     -x $cgi_script or die "cgi_script=$cgi_script: file is not executable";
     $cgi_script = File::Spec->rel2abs($cgi_script);
@@ -245,6 +276,11 @@ sub main {
 
     $ENV{LANG} = 'C' unless exists $ENV{LANG};
     # as in APACHECTL wrapper, which wants it to be well-defined
+
+    if ($opt{path_info}) {
+        $ENV{PATH_INFO} = $opt{path_info};
+        $ENV{SCRIPT_URL} .= $opt{path_info};
+    }
 
     if ($opt{query}) {
         $ENV{QUERY_STRING} = $opt{query};
