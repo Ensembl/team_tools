@@ -6,15 +6,15 @@ use warnings;
 #use CGI::Carp qw(fatalsToBrowser);
 BEGIN { use lib ($ENV{OTTER_PERL_INC} || q{}) =~ m{([^:]+)}g }
 
-use OtterWeb 'otterlive_dbh';
+use OtterWeb 'speciesdat_dbh';
 use CGI;
 use JSON();
 
 my $cgi = CGI->new;
 my $json = JSON->new;
 
-my $db = $cgi->param("db");
-my $dbh = otterlive_dbh($db);
+my $ds = $cgi->param("ds");
+my $dbh = speciesdat_dbh($ds);
 my $db_selection =
     $dbh->selectall_arrayref(<<'QUERY', { Slice => { } });
 

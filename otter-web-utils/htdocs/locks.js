@@ -3,7 +3,7 @@ $(document).ready(function() {
 
     var
       dbRootURL      = "/cgi-bin/otter-web-utils/",
-      dbNamesURL     = dbRootURL + "db_list",
+      dsNamesURL     = dbRootURL + "ds_list",
       LocksURL       = dbRootURL + "locks",
       LocksDeleteURL = dbRootURL + "locks_delete";
       ;
@@ -141,33 +141,33 @@ $(document).ready(function() {
       };
     };
 
-    var dbLoadLocks = function(db) {
-      var div = db.div;
+    var dsLoadLocks = function(ds) {
+      var div = ds.div;
       div.addClass("progress_loading");
       div.text("LOADING");
-      var query = { db: db.name, };
+      var query = { ds: ds.name, };
       $.getJSON(LocksURL,query,function(locks) {
           div.removeClass("progress_loading");
           div.text("");
           if (locks.length) {
             var locksTableElement = addLocksTableElement(locks,div);
-            db.lockEntries = locksTableElement.lockEntries;
+            ds.lockEntries = locksTableElement.lockEntries;
           } else {
-            db.lockEntries = [ ];
+            ds.lockEntries = [ ];
           }
         });
     };
 
-    var dbLocksDelete = function(db) {
+    var dbLocksDelete = function(ds) {
       var locks = [ ];
-      $.each(db.lockEntries,
+      $.each(ds.lockEntries,
              function(i,lockEntry) {
                if (lockEntry.checkbox.attr("checked")) {
                  locks.push(lockEntry.contig_lock_id);
                }
              });
       var query = {
-          db:    db.name,
+          ds:    ds.name,
           locks: JSON.stringify(locks),
       };
       $.getJSON(LocksDeleteURL,query,function(result) {
@@ -176,7 +176,7 @@ $(document).ready(function() {
                 "failed:    " + JSON.stringify(result.failed)    + "\n" +
                 "bogus:     " + JSON.stringify(result.bogus)     + "\n" +
                 "");
-          dbLoadLocks(db);
+          dsLoadLocks(ds);
         });
     }
 
@@ -188,7 +188,7 @@ $(document).ready(function() {
         value:   "Reload",
       };
       button.attr(attrs);
-      button.click(function() { dbLoadLocks(db); });
+      button.click(function() { dsLoadLocks(db); });
       return button;
     };
 
@@ -213,19 +213,19 @@ $(document).ready(function() {
       li.append(dbReloadButtonNew(db));
       li.append(dbDeleteSelectedLocksButtonNew(db));
       li.append(db.div);
-      dbLoadLocks(db);
+      dsLoadLocks(db);
       return li;
     };
 
     // add a list item element for each database
-    $.getJSON(dbNamesURL,function(dbNames) {
+    $.getJSON(dsNamesURL,function(dsNames) {
         var ul = $(".db_list");
-        $.each(dbNames,
-               function(i,dbName) {
-                 var db = {
-                   name: dbName,
+        $.each(dsNames,
+               function(i,dsName) {
+                 var ds = {
+                   name: dsName,
                  };
-                 ul.append(dbLiElementNew(db));
+                 ul.append(dbLiElementNew(ds));
                });
       });
 
