@@ -1,0 +1,21 @@
+#!/usr/local/bin/perl -Tw
+
+use strict;
+use warnings;
+
+#use CGI::Carp qw(fatalsToBrowser);
+BEGIN { use lib ($ENV{OTTER_PERL_INC} || q{}) =~ m{([^:]+)}g }
+
+use CGI;
+use JSON();
+
+use OtterWeb;
+use Bio::Otter::Server::Config;
+
+my $cgi = CGI->new;
+my $json = JSON->new;
+
+my $ds_list = [ map { $_->name }
+                @{ Bio::Otter::Server::Config->SpeciesDat->datasets } ];
+
+print $cgi->header("text/plain"), $json->encode($ds_list);
