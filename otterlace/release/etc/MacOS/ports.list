@@ -41,6 +41,7 @@ xorg-libXmu
 #
 curl
 xprop
+zmq
 
 # bioinformatics
 #
