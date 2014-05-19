@@ -14,7 +14,7 @@ fetch_all_logs() {
         hosts=$( webvm-hosts $HTYPE )
         for host in $hosts; do
           (
-            dest=/nfs/anacode/logs/webvm/$host
+            dest=$LOGSDIR/$host
             echo "=== $host -> $dest/"
             echo + \
             rsync $DRY_RUN -ai -e smithssh --chmod=g+rw,o-rwx $host:/www/tmp/www-$HTYPE/logs/ $dest
@@ -26,6 +26,17 @@ fetch_all_logs() {
         done
     done
     wait
+
+    echo '== Tidy up old & uncompressed'
+    find $LOGSDIR -type f -name '2???-??-??--*_log' -print0 | perl -ln0e '
+  die "$_: not found" unless -f $_;
+  if (-f "$_.bz2") {
+    my $unlink = unlink($_) ? "unlinked" : "UNLINK FAILED: $!";
+    print "$_: superseded by $_.bz2, $unlink";
+  } else {
+    print "$_: no compressed file yet";
+  }'
+
     echo My return code is not informative
 }
 
