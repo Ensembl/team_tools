@@ -1,0 +1,39 @@
+#! /usr/bin/env perl
+use strict;
+use warnings;
+use YAML qw( LoadFile Dump );
+use Config::IniFiles;
+
+
+# this is a "pick out the bits that still work" script
+die "Q'n'D to figure out which satellite databases are actually in use (RT#400533)";
+
+# INPUTS
+my $ini = Config::IniFiles->new(-file => "/nfs/anacode/WEBVM_docs.live/data/otter/83/otter_config");
+my ($sat) = LoadFile("/tmp/satellites.yaml"); # from ./satellites_list
+$sat = $sat->{dataset_by_dbspec} or die "data absent";
+
+
+# MUNGE
+foreach my $sec ($ini->Sections) {
+    my ($sp, $col) = $sec =~ m{^(\w+)\.filter\.(\S+)$}
+      or next;
+    my $metakey = $ini->val($sec, 'metakey')
+      or next;
+    my $sat_db = $sat->{"$sp.$metakey"};
+    if (!$sat_db) {
+        warn "dataset=$sp column=$col metakey=$metakey : no satellite db listed\n";
+        next;
+    }
+    push @{ $sat_db->{USED} }, $sec;
+}
+
+my (%used_sat, %unused_sat);
+while (my ($k, $v) = each %$sat) {
+    next unless $v->{db} =~ /genebuild/i;
+    my $place = $v->{USED} ? \%used_sat : \%unused_sat;
+    $place->{$k} = $v;
+}
+
+# OUTPUT
+print Dump({ used => \%used_sat, unused => \%unused_sat });
