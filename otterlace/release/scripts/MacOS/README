@@ -55,6 +55,10 @@ install_cpan_bundle.sh
   # (which are not available in MacPorts)
 
 
+# INSTALL local perl modules by hand - not yet scripted!
+# See: README.perl_by_hand
+
+
 cleanup_ports.sh
 
   # Removes ports only needed for the build.
