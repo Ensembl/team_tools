@@ -166,7 +166,7 @@ sub do_lookup {
     if ($source =~ m{[:/]}) {
         $uri = URI->new($source);
     } else {
-        $uri = URI->new('http:/cgi-bin/server-meta');
+        $uri = URI->new('http:/cgi-bin/server-meta?need=svn_config');
         $uri->host_port($source);
     }
     print "url=$uri\n" if $opt{debug};
