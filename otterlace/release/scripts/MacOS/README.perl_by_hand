@@ -3,7 +3,11 @@
 otter_swac=$PWD/Contents/Resources
 mkdir Contents/Resources/_non_dist/Src
 cd Contents/Resources/_non_dist/Src
+
 scp lucid-dev32:/nfs/anacode/otterlace/src/Config-IniFiles-2.5801.tar.gz .
+# This old hacked CPAN module could be replaced if the bug were
+# resolved:  https://rt.cpan.org/Public/Bug/Display.html?id=95899
+
 cd ..
 mkdir Logs
 mkdir Build
