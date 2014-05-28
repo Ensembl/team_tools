@@ -32,9 +32,12 @@ do_pubweb() {
             "USER=$USER" \
             "LANG=$LANG" \
             "HOME=$HOME" \
-            $TT/bin/pubweblish --quiet --config=$1 || sleep 5
-        # Can't do much with pubweblish(1)'s exit code
-        # just give time to read the text if it fails
+            $TT/bin/pubweblish --quiet --config=$1 || {
+            # Can't do much with pubweblish(1)'s exit code
+            # just give time to read the text if it fails
+            printf "\n\t'pubweblish --quiet --config=%s' failed,\n\tplease run it from an nfs-attached machine to update webservers.\n\n" "$1"
+            sleep 5
+        }
     } |& sed -u -e 's/^/    /'
 }
 
