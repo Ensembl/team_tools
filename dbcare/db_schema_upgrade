@@ -1,0 +1,126 @@
+#!/bin/bash
+
+date="$( date '+%Y-%m-%d_%H-%M-%S' )"
+
+# update paths
+log_root="/nfs/anacode/logs/db_upgrade"
+engine_sql_path='/nfs/anacode/scripts/sql/engine.sql'
+
+# ensembl paths
+ensembl_patch_root="sql/patch_"
+ensembl_attribute_script_path="misc-scripts/attribute_types/upload_attributes.pl"
+ensembl_attribute_file_path="misc-scripts/attribute_types/attrib_type.txt"
+
+usage="$( basename "$0" ) <version_new>"
+if [ "$#" -ne 1 ]
+then
+    echo "error: usage: ${usage}" >&2
+    exit 1
+fi
+
+# arguments
+version_new=$1 # e.g. 61
+
+# versions
+version_old="$(( $version_new - 1 ))"
+version_pair="${version_old}_${version_new}"
+
+# echo "version_old = ${version_old}, version_new = ${version_new}" ; exit
+
+# paths
+ensembl_dir="${HOME}/work/git/ensembl"
+patch_root="${ensembl_dir}/${ensembl_patch_root}${version_pair}"
+log_dir="${log_root}/${version_pair}/${date}"
+ensembl_attribute_script="${ensembl_dir}/${ensembl_attribute_script_path}"
+ensembl_attribute_file="${ensembl_dir}/${ensembl_attribute_file_path}"
+
+function db_version_get() {
+    echo "select meta_value from meta where meta_key = 'schema_version'" |
+    $db_command -N "$db_name"
+}
+
+function db_upgrade() {
+    db_count="$(( $db_count + 1 ))"
+
+    local db_log_dir
+    db_log_dir="$( printf '%s/%03d_%s' "$host_log_dir" "$db_count" "$db_name" )"
+
+    local patch_log_dir patch_count
+    patch_log_dir="${db_log_dir}/0_patch"
+    mkdir -p -- "$patch_log_dir"
+    patch_count=0
+    for patch in ${patch_root}*.sql
+    do
+        local patch_log_name patch_log_file
+        patch_count="$(( $patch_count + 1 ))"
+        patch_log_name="$( printf '%03d_%s.txt' "$patch_count" "$( basename "$patch" '.sql' )" )"
+        patch_log_file="${patch_log_dir}/${patch_log_name}"
+	cat $engine_sql_path $patch |
+        sed "s/MyISAM/InnoDB/g" |
+        /usr/bin/time -f "%E real,%U user,%S sys" \
+            $db_command $db_name \
+            > "$patch_log_file" 2>&1
+    done
+
+}
+
+function host_upgrade() {
+
+    local host port user pass db_prefix
+
+    host=$1
+    port=$2
+    user=$3
+    pass=$4
+    db_prefix=$5
+
+    local host_log_dir host_log_file
+    host_count="$(( $host_count + 1 ))"
+    host_log_dir="$( printf '%s/%03d_%s' "$log_dir" "$host_count" "$host" )"
+    host_log_file="${host_log_dir}.txt"
+    > "$host_log_file"
+
+    local db_command
+    db_command="mysql -u$user -p$pass -h$host -P$port";
+
+    local db_count db_name
+    db_count=0
+    for db_name in ` echo "SHOW DATABASES LIKE '${db_prefix}%'" | $db_command -N `
+    do
+        local version
+        version="$( db_version_get )"
+        case "$version" in
+            "$version_old")
+                echo "database: '${db_name}': selected" |
+                tee -a "$host_log_file"
+                db_upgrade
+                ;;
+            *)
+                echo "database: '${db_name}': incorrect version: ${version}" |
+                tee -a "$host_log_file"
+                ;;
+        esac
+    done
+}
+
+user=ottroot
+echo -n "Enter the password for ${user}: "
+read -s password
+echo
+# password=XXXXXXXXXX
+
+mkdir -p -- "$log_dir"
+chmod g+s "$log_dir"
+
+host_count=0
+# host_upgrade otterpipe1 3322 "$user" "$password" pipe_
+# host_upgrade otterpipe2 3323 "$user" "$password" pipe_
+# host_upgrade otterlive  3324 "$user" "$password" loutre_
+# host_upgrade otterpipe2 3323 "$user" "$password" chromoDB
+# host_upgrade otterpipe2 3323 "$user" "$password" jgrg_human_
+# host_upgrade otterpipe2 3323 "$user" "$password" jgrg_human_dev
+# host_upgrade otterlive  3324 "$user" "$password" loutre_cat_dev
+# host_upgrade otterpipe1 3322 "$user" "$password" pipe_cat_dev
+
+chgrp -R anacode "$log_dir"
+chmod -R ug+rw   "$log_dir"
