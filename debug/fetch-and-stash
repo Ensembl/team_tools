@@ -1,0 +1,69 @@
+#! /usr/bin/env perl
+
+use strict;
+use warnings;
+
+use IPC::Open3;
+use IO::Handle;
+use IO::Select;
+use Digest::SHA 'sha1_hex';
+use File::Slurp 'write_file';
+use Time::HiRes qw( gettimeofday tv_interval );
+use Sys::Hostname 'hostname';
+
+my $home = $ENV{HOME};
+foreach my $url (@ARGV) {
+    my @fh = map { IO::Handle->new } (0..2);
+    my @cmd = (qw( curl -vsS -b ), "$home/.otter/ns_cookie_jar",
+               ('mib106458i' eq hostname() ? qw( --limit-rate 20k ) : ()),
+               $url);
+
+    print "@cmd\n";
+    my $t0 = [gettimeofday()];
+    my $pid = open3(@fh, @cmd) or die "Couldn't open3: $!";
+
+    close $fh[0];
+    foreach my $fh (@fh[1,2]) { $fh->blocking(0) }
+
+    my %fh = (fetch => $fh[1], info => $fh[2]);
+    my %txt = map {($_ => '')} keys %fh;
+
+    my %rev_fh = reverse %fh;
+    my $s = IO::Select->new();
+    $s->add(values %fh);
+
+    while ($s->handles) {
+        foreach my $fh ($s->can_read(5)) {
+            my $key = $rev_fh{$fh}
+              or die "unknown filehandle $fh for url $url";
+
+            my $nread = $fh->read($txt{$key}, 10240, length($txt{$key}));
+            if ((defined $nread && !$nread) || # EOF as documented
+                (!defined $nread && $!==0))  { # weird EOF?  I'm confused
+                delete $fh{$key};
+                $s->remove($fh);
+                close $fh;
+            } elsif (!defined $nread) {
+                my $e = $!+0;
+                die "url $url $key: failed, '$!'=$e; $@.\n";
+            } # else got some data
+        }
+    }
+
+    $txt{info} .= sprintf("\nWallclock time %.3fsec\n", tv_interval($t0));
+
+    waitpid $pid, 0;
+    if ($?) {
+        my $msg = "url $url: exit code $?\n";
+        warn $msg;
+        $txt{info} .= $msg;
+    }
+
+    my $sha = sha1_hex($txt{fetch});
+    $sha .= ($txt{fetch} =~ m{^<otter>.*</otter>\Z}ms) ? '-ok' : '-truncated';
+    print "Fetched $sha\n";
+
+    my $fn_txt = "$home/fetch.$sha.txt";
+    write_file($fn_txt, { atomic => 1 }, $txt{fetch}) unless -e $fn_txt;
+    write_file("$home/fetch.$sha.$$t0[0].log", { atomic => 1 }, $txt{info});
+}
