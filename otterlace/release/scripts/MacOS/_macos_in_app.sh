@@ -2,7 +2,7 @@
 #
 #   . "$( dirname "$0" )/_macos_in_app.sh" || exit 1
 
-. "$( dirname "$0" )/_macos_common.sh" || exit 9
+. "$( dirname "${BASH_SOURCE[0]}" )/_macos_common.sh" || exit 9
 
 # assume we're being run in the top-level app dir, e.g. otterlace.app
 app_base="${PWD}"
