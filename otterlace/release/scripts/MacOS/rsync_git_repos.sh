@@ -21,7 +21,7 @@ do_rsync () {
     repo="$1"
     dest="$2"
     dest="${remote_path}${dest:+/$dest}"
-    rsync -a --del "$dry_run" "$verbose" "$repo" "${ssh_spec}:${dest}"
+    rsync -a --del $dry_run $verbose "$repo" "${ssh_spec}:${dest}"
 }
 
 do_rsync PerlModules.git
