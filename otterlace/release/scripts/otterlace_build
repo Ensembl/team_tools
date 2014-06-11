@@ -242,7 +242,7 @@ setup_globals() {
 
 
 with_new_directory() {
-    local dir command
+    local dir command newdir olddir
     dir="$1"
     command="$2"
     shift 2
@@ -251,19 +251,34 @@ with_new_directory() {
         then
             echo "error: directory '${dir}' already exists, refusing to remove it" >&2
             return 1
-        else
-            write_build_log_entry --level deleting_old --dir "$dir"
-            rm -rf -- "$dir"
         fi
     fi &&
-    mkdir -v -p -- "$dir" &&
-    chgrp -v "${install_group}" "$dir" &&
-    chmod -v g+s "$dir" &&
-    "$command" "$dir" "$@"
-    status=$?
-    echo " [i] with_new_directory: $command returned $status"
-    chmod -R ug+rw "$dir" &&
-    ( exit "$status" )
+    mkdir -v -p -- "$( dirname "$dir" )" &&
+    olddir="$( mktemp -u -d "$dir.old.XXXXXX" )" &&
+    newdir="$( mktemp    -d "$dir.new.XXXXXX" )" &&
+    chgrp -v "${install_group}" "$newdir" &&
+    chmod -v g+srwx,o+rx "$newdir" &&
+    # Build in sibling directory, move if successful
+    if "$command" "$newdir" "$@"; then
+        echo " [i] with_new_directory: $command ok"
+        if [ -e "$dir" ]; then
+            write_build_log_entry --level deleting_old --dir "$dir"
+            mv -v "$dir" "$olddir" &&
+            {
+                # rm -r can fail, probably due to NFS files still in use (RT371348)
+                # But they will be small, tidied up eventually, and not blocking build
+                rm -rf -- "$olddir" ||
+                echo "Cruft left in $olddir"
+            }
+        fi &&
+        mv -v "$newdir" "$dir" &&
+        chmod -R ug+rw "$dir"
+    else
+        status=$?
+        echo " [i] with_new_directory: $command returned $status"
+        # leave the evidence? #   rm -rf -- "$newdir"
+        ( exit "$status" )
+    fi
 }
 
 git_cache_create() {
