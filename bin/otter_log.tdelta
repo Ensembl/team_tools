@@ -1,0 +1,24 @@
+#! /usr/bin/perl -p -CS
+use strict;
+use warnings;
+use charnames ':full';
+
+# Deltify log timestamps.  Run like
+#   otter_log | otter_log.tdelta | less -S
+
+our ($oldt, $oldYMD);
+if (my ($YMD, $h,$m,$s,$u) = m{^(\d{4}-\d{2}-\d{2}) (\d+):(\d+):(\d+),(\d+) }) {
+    my $t = 3600*$h + 60*$m + $s + $u/1e4;
+    my $d = defined $oldt ? $t - $oldt : 0;
+
+    my $delta = (abs($d) < 600
+                 ? sprintf "%+10.4f", $d
+                 : sprintf "%+d:%06.3f", int($d / 60), abs($d - int($d/60) * 60));
+    $delta =~ s{\+}{\N{GREEK CAPITAL LETTER DELTA}};
+
+    $_ =~ s{^$oldYMD ([0-9:,]+) }{$1 $delta } if defined $oldYMD;
+    # does not apply delta to new days
+
+    $oldt = $t;
+    $oldYMD = $YMD;
+}
