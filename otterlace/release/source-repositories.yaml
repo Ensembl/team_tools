@@ -1,6 +1,7 @@
 # Data for bin/anacode_source_repo
 ---
 _default_order:
+  - mac_local
   - internal
   - github
 _pushable_remotes:
@@ -25,6 +26,12 @@ internal:
   webvm: intcvs1:/repos/git/anacode/webvm.git
   webvm-deps: intcvs1:/repos/git/anacode/webvm-deps.git
   zircon: intcvs1:/repos/git/anacode/zircon.git
+mac_local:
+  PerlModules: /Users/otter/Otter/Git/Mirrors/anacode/PerlModules.git
+  ensembl: /Users/otter/Otter/Git/Mirrors/anacode/github-mirror-ro/Anacode/ensembl.git
+  ensembl-otter: /Users/otter/Otter/Git/Mirrors/anacode/ensembl-otter.git
+  team_tools: /Users/otter/Otter/Git/Mirrors/anacode/team_tools.git
+  zircon: /Users/otter/Otter/Git/Mirrors/anacode/zircon.git
 mca:
   ensembl-otter: /nfs/users/nfs_m/mca/gitwk-anacode/ensembl-otter
   team_tools: /nfs/users/nfs_m/mca/gitwk--bg/team_tools
