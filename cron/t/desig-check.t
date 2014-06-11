@@ -16,9 +16,10 @@ not match the installed symlinks.
 use lib '/software/anacode/otter/otter_dev/ensembl-otter/modules';
 use Bio::Otter::Server::Config;
 
+#$ENV{ANACODE_SERVER_CONFIG} = "$ENV{HOME}/.otter/server-config";
+diag "Taking BOSConfig from ".Bio::Otter::Server::Config->data_dir;
 my $desig = Bio::Otter::Server::Config->designations;
 my %major; # set of versions with clients, key = major
-diag "Taking BOSConfig from ".Bio::Otter::Server::Config->data_dir;
 
 my @holtdir = map {"/software/noarch/$_/anacode/otter"}
   qw( linux-i386 linux-x86_64 precise-x86_64 ); # XXX: This trick will stop working after Lenny+Lucid
