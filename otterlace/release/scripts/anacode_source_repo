@@ -163,7 +163,7 @@ sub show_urls {
 
     my $find = sub {
         my ($name) = @_;
-        my @found = grep { defined }
+        my @found = grep { defined($_) and exists_if_local($_) }
           map { $config->{$_}->{$name} } @order;
         warn join "\n  ", "[w] Repo $name is shadowed:", @found if @found > 1;
         die "[e] No repo found for $name in ordering (@order)" unless @found;
@@ -187,6 +187,12 @@ sub show_urls {
     return 0;
 }
 
+sub exists_if_local {
+    my ($repo) = @_;
+    return 1 if $repo =~ /^[\w]+:/; # remote
+    return (-d $repo);
+}
+
 sub cfg_source {
     my ($opt, $name) = @_;
     my $origin = sprintf("configured as %s in %s", $name, $opt->{filename});
@@ -200,10 +206,28 @@ sub is_remote {
     return $repo =~ m{^([-a-z0-9.@]+):} ? $1 : undef;
 }
 
+sub is_bare {
+    my ($repo) = @_;
+
+    my $is_remote = is_remote($repo);
+    return $is_remote if $is_remote;
+
+    if (!-d $repo) {
+	warn sprintf("[w] %s is not a local directory", $repo);
+	return 'NOT_FOUND';
+    }
+    
+    if (-d "$repo/objects" and -d "$repo/refs") {
+	return 'IS_BARE';
+    }
+
+    return;
+}
+
 sub clean_check {
     my ($opt, $name, $repo) = @_;
 
-    return () if is_remote($repo); # not implemented, but could be done
+    return () if is_bare($repo);
 
     my @prob;
     if (chdir $repo) {
