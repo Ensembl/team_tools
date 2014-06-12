@@ -59,5 +59,8 @@ cp -v "${macos_dist_dir}/otterlace" "${macos_dir}"
 # Info.plist file
 cp -v "${macos_dist_dir}/Info.plist" "${contents_dir}"
 
+# Leave droppings...
+ln -sfhv "${ensembl_otter_dir}" "${install_base}/_non_dist/_ensembl_otter"
+
 exit $?
 
