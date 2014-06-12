@@ -60,4 +60,7 @@ else
     echo "XRemote not found in this ZMap build, so nothing more left to do."
 fi
 
+# Leave droppings...
+ln -sfhv "${zmap_build_dir}" "${install_base}/_non_dist/_annotools"
+
 exit 0
