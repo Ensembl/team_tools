@@ -16,7 +16,13 @@ usage() {
 
   Options:
 
-  -h, --help            Show this help
+  -h, --help                    Show this help
+
+  -m, --read_me <dir>           Copy ReadMe directory into top of image.
+
+  -M, --e_o_read_me             Find ReadMe directory via footprints
+                                left by install_otterlace.sh, and
+                                copy into top of image.
 
   -n, --non_dist                Include 'non-dist' components in image.
                                 (For archival purposes.)
@@ -35,12 +41,23 @@ detach=''
 do_non_dist=''
 exclude_build=''
 release=''
+read_me=''
+e_o_read_me=''
+
 while [ $# -gt 0 ] && [ "${1:0:1}" = "-" ]; do
     sw=$1
     shift
     case $sw in
         -h | --help)
             usage
+            ;;
+        -m | --read_me)
+            read_me=$1
+            [ -d "${read_me}" ] || bail "'${read_me}' not found"
+            shift
+            ;;
+        -M | --e_o_read_me)
+            e_o_read_me=1
             ;;
         -n | --non_dist)
             do_non_dist=1
@@ -62,22 +79,31 @@ while [ $# -gt 0 ] && [ "${1:0:1}" = "-" ]; do
     esac
 done
 
-[ -n "${exclude_build}" ] && [ -z "${non_dist}" ] && usage "--exclude_build requires --non_dist"
+[ -n "${read_me}" ]       && [ -n "${e_o_read_me}" ] && usage "--read_me and --e_o_readme are mutually exclusive"
+[ -n "${exclude_build}" ] && [ -z "${do_non_dist}" ] && usage "--exclude_build requires --non_dist"
 [ "$#" = 1 ] || usage "Must provide a single argument: <app_name>"
 
 app_name="$1"
 app_name="${app_name%/}"        # strip trailing slash, if any
 [ -e "${app_name}" ] || bail "${script_name}: app '${app_name}' not found"
 
+non_dist_dir="${non_dist}/$( versioned_non_dist "${app_name}" )"
+if [ -n "$do_non_dist" ]; then
+    [ -d "$non_dist_dir" ] || bail "non_dist_dir '${non_dist_dir}' not found"
+fi
+
+if [ -n "${e_o_read_me}" ]; then
+    footprint="${non_dist_dir}/_ensembl_otter"
+    [ -L "$footprint" ] || bail "'${footprint}' not found for ReadMe"
+    read_me="$( readlink "$footprint" )/docs/ReadMe.rtfd"
+    [ -d "${read_me}" ] || bail "'${read_me}' not found"
+fi
+
 app_stem="${app_name%.app}"     # strip trailing .app, if any
 [ -z "${release}" ] && release="${app_stem}"
 
 img_name="${release}.sparseimage"
 [ ! -e "${img_name}" ] || bail "${script_name}: image '${img_name}' already exists"
-
-if [ -n "$do_non_dist" ]; then
-    non_dist_dir="$( versioned_non_dist "${app_name}" )" || exit $?
-fi
 
 echo "Creating sparseimage '${img_name}' [${release}]"
 hdiutil create -fs HFS+ -volname "${release}" "${img_name}"
@@ -95,11 +121,17 @@ if [ -n "$do_non_dist" ]; then
     copy_non_dist "${non_dist}/${non_dist_dir}" "${img_non_dist}" "${exclude_build}"
 fi
 
-echo "Done."
+if [ -n "$read_me" ]; then
+    echo "Copying ${read_me} -> ${mount_point}/"
+    cp -pR "${read_me}" "${mount_point}"
+fi
 
 if [ -n "$detach" ]; then
+    echo "Detaching ${mount_point}"
     hdiutil detach "${mount_point}"
 fi
+
+echo "Done."
 
 exit 0
 
