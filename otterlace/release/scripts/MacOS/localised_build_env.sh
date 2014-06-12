@@ -5,12 +5,12 @@
 
 . "$( dirname "${BASH_SOURCE[0]}" )/_macos_in_app.sh" || exit 1
 
-if [ ! -d "${resources_path}" ]; then
-    echo "No ./${resources_path} directory here - not an otterlace.app container?" >&2
+if [ ! -d "${install_base}" ]; then
+    echo "'${install_base}' not found - not an otterlace.app container?" >&2
     return 2
 fi
 
-lib_path="${PWD}/${resources_path}/lib"
+lib_path="${install_base}/lib"
 
 export DYLD_FALLBACK_LIBRARY_PATH="${lib_path}"
 export PKG_CONFIG_PATH="${lib_path}/pkgconfig"
