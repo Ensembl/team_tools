@@ -6,7 +6,7 @@ bail() {
 }
 
 macos_scripts="$( dirname "${BASH_SOURCE[0]}" )"
-script_name="$( basename "${BASH_SOURCE[0]}" )"
+script_name="$( basename "$0" )"
 
 # based on this script being in $TT/otterlace/release/scripts/MacOS ...
 etc_macos="${macos_scripts}/../../etc/MacOS"
