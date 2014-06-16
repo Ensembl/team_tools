@@ -254,12 +254,19 @@ sub whittle {
     foreach my $fn (@fn) {
         next if -l $fn;
 
-        my ($major, $minor, $feat) = $fn =~
-          m{/otter_rel(\d{2,3})(?:\.(\d{2}))?(?:_(\w+))?(?:-\w+)?$};
+        my ($major, $minor, $feat, $build_cruft) = $fn =~
+          m{/otter_rel(\d{2,3})(?:\.(\d{2}))?(?:_(\w+))?(?:-\w+)?(\.(?:new|old)\.[a-zA-Z0-9]{6})?$};
 
         if (!-d $fn || !defined $major) {
             warn "[w] Skipping incomprehensible $fn\n";
             push @$keep, $fn;
+        } elsif (defined $build_cruft) {
+            if (-M $fn < 1) {
+                warn "[i] Skipping recent build cruft $fn\n";
+                push @$keep, $fn;
+            } else {
+                push @drop, $fn;
+            }
         } elsif (defined $feat) {
             warn "[w] Skipping feature '$feat' for $fn\n";
             push @$keep, $fn;
