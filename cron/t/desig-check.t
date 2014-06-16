@@ -39,6 +39,12 @@ foreach my $holtdir (@holtdir) {
     my %got_nondes; # key = major, val = latest major.minor
     foreach my $vsn (sort grep { ! -l "$holtdir/$_" && -d _ } @holt_leaf) {
         # "latest" minor version is given by loop's sort
+        if ($vsn =~ m{_rel(\d+.*)\.(old|new)\.[a-zA-Z0-9]{6}$}) {
+            my ($rel, $age) = @_;
+            # leftovers from tt 7da30ad2
+            warn "Ignoring $age build cruft for $rel: $vsn";
+            next;
+        }
         my ($maj, $min, $feat) =
           $vsn =~ m{_rel(\d+)(?:\.(\d+))?(?:_(\w+))?$} or
             die "Incomprehensible otter client $holtdir/$vsn";
