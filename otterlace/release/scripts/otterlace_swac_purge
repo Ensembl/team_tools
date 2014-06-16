@@ -200,11 +200,15 @@ sub cleanup {
     my $n = $desig_vsn[0];
     my $desig_list = join ', ',
       map { "$desig[$_] => $desig_vsn[$_]" } (0..$#desig);
+    my @odd_desig;
     for (my $i=0; $i<@desig; $i++) {
         my $want = $n+$i;
-        die "In designations $desig_list, expected $desig[$i] = $want but found $desig_vsn[$i]"
+        push @odd_desig, "\n    expected $desig[$i] = $want but found $desig_vsn[$i]"
           unless $desig_vsn[$i] == $want;
     }
+    warn "[w] *** In designations $desig_list,@odd_desig\n".
+      "   It is no longer fatal, but we didn't expect that"
+        if @odd_desig;
 
     my $live = $desig{live}->[0];
     die "n => $n, live => $live ...?" unless $live >= $n;
