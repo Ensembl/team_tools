@@ -18,6 +18,8 @@ while (@ARGV) {
         $log_finder->nth($1);
     } elsif ($sw =~ m{^--(less|grep|ls|sessions)$}) {
         $op = $1;
+    } elsif ($sw =~ m{^(-D|--tdelta)$}) {
+        $ENV{LESSOPEN} = '|otter_log.tdelta %s';
     } elsif ($sw =~ m{^(--help|-h)$}) {
         warn "Syntax: $0 [ --less | --grep | --ls | --sessions ] [ <username> | <number> ]* [ -- <args for next op> ]
 
