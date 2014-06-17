@@ -9,14 +9,14 @@ Recipe:
 
 cd ~/Dist # or wherever you want to do your app building
 
-setup_app_skeleton.sh otterlace.app
+setup_app_skeleton.sh build_otterlace.app
 
-  # sets up the otterlace.app directory tree, including symlinks out
-  # of the tree for var and share. attempts to share macports
+  # sets up the build_otterlace.app directory tree, including symlinks
+  # out of the tree for var and share. attempts to share macports
   # distfiles if appropriate.
 
 
-cd otterlace.app
+cd build_otterlace.app
 
 install_macports.sh
 
@@ -37,7 +37,7 @@ install_macports.sh
   # (port_update.sh can be run again at a future date if required.)
 
 # Check the values of portautoclean and keeplogs in
-#    otterlace.app/Contents/Resources/etc/macports/macports.conf
+#    build_otterlace.app/Contents/Resources/etc/macports/macports.conf
 #
 # Do you want to retain build files and logs for debugging?
 
@@ -96,21 +96,19 @@ install_otterlace.sh <path to ensembl-otter git checkout>
 # Test the build here.
 
   # mg13 note to self:
-  #   my environment accesses ~/Dist/otterlace.app.
+  #   my environment accesses ~/Dist/build_otterlace.app.
   #   Put the test app somewhere else for testing, and ensure
-  #   ~/Dist/otterlace.app is empty.
+  #   ~/Dist/build_otterlace.app is empty.
 
 
   # Make sure the new app is called otterlace.app again, then:
 
 cd ..  # back to ~/Dist
-build_sparse_image.sh -r otterlace_mac_intel-<nn>-<mm> otterlace.app
+build_sparse_image.sh -r otterlace_mac_intel-<nn>-<mm> -M otterlace.app
 
-  # builds and populates sparse disk image, except for:
-
-  # Obtain ReadMe.rtfd from previous release, and update it.
-  #   cp -pR ReadMe.rtfd /Volumes/otterlace_mac_intel-<MM>-<NN>
-  #   hdiutil eject /Volumes/otterlace_mac_intel-<MM>-<NN>
+  # builds and populates sparse disk image, and copis in ReadMe.rtfd
+  # from the ensembl-otter used in install_otterlace.sh (which leaves
+  # a link).
 
 
 compress_image.sh otterlace_mac_intel-<nn>-<mm>.sparseimage
@@ -123,3 +121,5 @@ compress_image.sh otterlace_mac_intel-<nn>-<mm>.sparseimage
 
 clone_app.sh  - clone an app directory and its _non_dist component
 rename_app.sh - rename an app directory and its _non_dist component
+
+# At the moment there is no remove_app.sh.
