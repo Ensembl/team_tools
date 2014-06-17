@@ -205,7 +205,7 @@ check_prereqs() {
     if [ -n "${no_clone}" ]; then
         # We're not cloning
         if [ -n "${use_parked}" ]; then
-            [ -d "${parked_app}" ] || bail "--parked_app: '${parked_app}' not found"
+            [ -d "${parked_app}" ] || bail "--use_parked: --parked_app '${parked_app}' not found"
             cleanup_build_app=1
         else
             [ -d "${build_app}" ] || bail "--build_app: '${build_app}' not found"
@@ -219,6 +219,8 @@ check_prereqs() {
     [ -n "$cleanup_build_app" ] && can_untouch "${build_app}" "--build_app"
     can_untouch "${target_app}" "--target_app"
 
+    [[ -z "$use_parked" && -e "$parked_app" ]] && bail "--parked_app '${parked_app}' is in the way"
+
     true
 }
 
@@ -231,6 +233,10 @@ get_release_tag() {
     image_release="${image_stem}-${release_tag}"
     sparse_image="${image_release}.sparseimage"
     compressed_image="${image_release}.dmg"
+
+    [ -e "$sparse_image" ] && bail "'${sparse_image}' is in the way"
+    [ -e "$compressed_image" ] && bail "'${compressed_image}' is in the way"
+
     true
 }
 
