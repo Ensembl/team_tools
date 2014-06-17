@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e # bail out on error
+set -x
 
 . "$( dirname "$0" )/_macos_above_app.sh" || exit 1
 
@@ -116,9 +117,9 @@ echo "Copying ${app_name} -> ${mount_point}"
 cp -pR "${app_name}" "${mount_point}"
 
 if [ -n "$do_non_dist" ]; then
-    img_non_dist="${mount_point}/_non_dist/${non_dist_dir}"
+    img_non_dist="${mount_point}/${non_dist_dir}"
     mkdir -v -p "${img_non_dist}"
-    copy_non_dist "${non_dist}/${non_dist_dir}" "${img_non_dist}" "${exclude_build}"
+    copy_non_dist "${non_dist_dir}" "${img_non_dist}" "${exclude_build}"
 fi
 
 if [ -n "$read_me" ]; then
