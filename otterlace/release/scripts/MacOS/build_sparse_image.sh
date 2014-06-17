@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e # bail out on error
-set -x
 
 . "$( dirname "$0" )/_macos_above_app.sh" || exit 1
 
