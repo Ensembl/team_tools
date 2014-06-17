@@ -321,7 +321,7 @@ install_annotools() {
 
 install_otterlace() {
     chat "install_otterlace"
-    ${dry_run:+echo DRY_RUN:} "${macos_scripts}/install_otterlace.sh" "$otter"
+    DISPLAY= ${dry_run:+echo DRY_RUN:} "${macos_scripts}/install_otterlace.sh" "$otter"
 }
 
 
