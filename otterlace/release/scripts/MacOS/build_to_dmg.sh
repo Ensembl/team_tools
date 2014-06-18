@@ -18,13 +18,10 @@ annotools_prereqs=
 release_tag=
 
 target_stem="otterlace"
-master_app=
-no_clone=
+clone_from_master=
 build_app=
-cleanup_build_app=
 target_app=
 parked_app=
-use_parked=
 
 image_stem=
 image_release=
@@ -55,19 +52,19 @@ usage() {
   -n, --dry-run                 Skip actual builds, echoing what would be done
   -d, --display_only            Exit after checking and displaying settings
 
+  --target_stem       <stem>    Stem of the target app (default: '${target_stem}')
+                                Defaults for further options are set from this.
+
+  --parked_app        <app>     The parked app to use for the build, unless:
+  --clone_from_master <app>     Clone from named master app
+
+  --build_app         <app>     The app directory to build in
+  --target_app        <app>     The target app directory for the image
+
+  --image_stem        <stem>    Stem for image names (defaults to --target_stem)
+  --release_tag       <version> Release tag (default: taken from --otter)
+
   --install_annotools_prereqs   Install annotools prerequisites
-  --release_tag                 Release tag (default: taked from --otter)
-
-  --target_stem <stem>          Stem of the target app (default: '${target_stem}')
-  --master_app  <dirname>       Name of the master app directory to be cloned
-  --no_clone                    Do not make a clone (must set --build_app)
-  --build_app                   The app directory to build in (if --no_clone)
-  --target_app                  The target app directory for the image
-  --parked_app                  Where to park the app after the image is created
-  --use_parked                  Use parked app for this build (implies --no_clone)
-
-  --image_stem                  Stem for image names (defaults to --target_stem)
-
   --skip_annotools              Don't rebuild annotools
 
 ${problem}"
@@ -120,12 +117,9 @@ process_options() {
                 target_stem=$1
                 shift
                 ;;
-            --master_app)
-                master_app=$1
+            --clone_from_master)
+                clone_from_master=$1
                 shift
-                ;;
-            --no_clone)
-                no_clone=1
                 ;;
             --build_app)
                 build_app=$1
@@ -138,10 +132,6 @@ process_options() {
             --parked_app)
                 parked_app=$1
                 shift
-                ;;
-            --use_parked)
-                use_parked=YES
-                no_clone=1
                 ;;
             --image_stem)
                 image_stem=$1
@@ -165,10 +155,9 @@ process_options() {
 expand_defaults() {
     chat "expand_defaults"
 
-    master_app="build_${target_stem}_master.app"
-    build_app="${build_app:-${master_app/_master/}}"
     target_app="${target_app:-${target_stem}.app}"
-    parked_app="${parked_app:-${master_app/_master/_parked}}"
+    build_app="${build_app:-build_${target_app}}"
+    parked_app="${parked_app:-${build_app/.app/_parked.app}}"
 
     image_stem="${image_stem:-${target_stem}}"
 
@@ -202,24 +191,15 @@ check_prereqs() {
     [ -n "$zmap" ]  || bail "--zmap must be set"
     [ -d "$zmap" ]  || bail "--zmap: '${zmap}' not found"
 
-    if [ -n "${no_clone}" ]; then
-        # We're not cloning
-        if [ -n "${use_parked}" ]; then
-            [ -d "${parked_app}" ] || bail "--use_parked: --parked_app '${parked_app}' not found"
-            cleanup_build_app=1
-        else
-            [ -d "${build_app}" ] || bail "--build_app: '${build_app}' not found"
-        fi
+    if [ -n "${clone_from_master}" ]; then
+        [ -d "${clone_from_master}" ] || bail "--clone_from_master: '${clone_from_master}' not found"
     else
-        # We are cloning
-        [ -d "${master_app}" ] || bail "--master_app: '${master_app}' not found"
-        cleanup_build_app=1
+        # We're using parked (the default)
+        [ -d "${parked_app}" ]        || bail "--parked_app '${parked_app}' not found"
     fi
 
-    [ -n "$cleanup_build_app" ] && can_untouch "${build_app}" "--build_app"
+    can_untouch "${build_app}" "--build_app"
     can_untouch "${target_app}" "--target_app"
-
-    [[ -z "$use_parked" && -e "$parked_app" ]] && bail "--parked_app '${parked_app}' is in the way"
 
     true
 }
@@ -244,26 +224,34 @@ get_release_tag() {
 display_options() {
     [[ -n "$verbose" || -n "$display_only" ]] || return 0
 
-    local clone
-    if [ -n "$no_clone" ]; then clone="--no_clone => not using master_app"; else clone="$master_app"; fi
+    local mode detail
+    if [ -n "$clone_from_master" ]; then
+        mode="clone_from_master: ${clone_from_master}"
+        detail="(not using --parked_app)"
+    else
+        mode="parked_app:        ${parked_app}"
+        detail="(not using --clone_from_master)"
+    fi
 
     echo "Settings:
     otter:             ${otter}
     zmap:              ${zmap}
-    release_tag:       ${release_tag}
-    annotools_prereqs: ${annotools_prereqs:-no}
-    skip_annotools:    ${skip_annotools:-no}
 
     target_stem:       ${target_stem}
-    master_app:        ${clone}
+
+    ${mode}
+                       ${detail}
+
     build_app:         ${build_app}
     target_app:        ${target_app}
-    parked_app:        ${parked_app}
-    use_parked:        ${use_parked:-no}
 
     image_stem:        ${image_stem}
+    release_tag:       ${release_tag}
     sparse_image:      ${sparse_image}
     compressed_image:  ${compressed_image}
+
+    annotools_prereqs: ${annotools_prereqs:-no}
+    skip_annotools:    ${skip_annotools:-no}
 "
     [ -n "$display_only" ] && exit
     true
@@ -272,17 +260,17 @@ display_options() {
 
 prepare() {
     chat "prepare"
-    [[ -n "$cleanup_build_app" && -e "$build_app" ]] && rm -v "$build_app"
-    [ -e "$target_app" ] && rm -v "$target_app"
-    [ -n "$use_parked" ] && "${macos_scripts}/rename_app.sh" "$parked_app" "$build_app"
+    [ -e "$build_app"  ]        && rm -v "$build_app"
+    [ -e "$target_app" ]        && rm -v "$target_app"
+    [ -z "$clone_from_master" ] && "${macos_scripts}/rename_app.sh" "$parked_app" "$build_app"
     true
 }
 
 
 clone_master() {
-    [ -z "$no_clone" ] || return 0
+    [ -n "$clone_from_master" ] || return 0
     chat "clone_master"
-    "${macos_scripts}/clone_app.sh" "$master_app" "$build_app"
+    "${macos_scripts}/clone_app.sh" "$clone_from_master" "$build_app"
 }
 
 
