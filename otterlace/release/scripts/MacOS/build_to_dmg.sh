@@ -22,6 +22,7 @@ clone_from_master=
 build_app=
 target_app=
 parked_app=
+park_to=
 
 image_stem=
 image_release=
@@ -193,9 +194,11 @@ check_prereqs() {
 
     if [ -n "${clone_from_master}" ]; then
         [ -d "${clone_from_master}" ] || bail "--clone_from_master: '${clone_from_master}' not found"
+        park_to="${build_app}.$( date "+%FT%T" )"
     else
         # We're using parked (the default)
         [ -d "${parked_app}" ]        || bail "--parked_app '${parked_app}' not found"
+        park_to="${parked_app}"
     fi
 
     can_untouch "${build_app}" "--build_app"
@@ -244,6 +247,7 @@ display_options() {
 
     build_app:         ${build_app}
     target_app:        ${target_app}
+    park_to:           ${park_to}
 
     image_stem:        ${image_stem}
     release_tag:       ${release_tag}
@@ -342,7 +346,8 @@ build_sparse_image() {
 
 park_build_app() {
     chat "park_build_app"
-    "${macos_scripts}/rename_app.sh" "$target_app" "$parked_app"
+
+    "${macos_scripts}/rename_app.sh" "$target_app" "$park_to"
     touch "$target_app"
     tell "touched '${target_app}'"
 }
