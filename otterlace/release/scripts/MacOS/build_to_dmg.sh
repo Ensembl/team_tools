@@ -61,7 +61,7 @@ usage() {
   --build_app         <app>     The app directory to build in
   --target_app        <app>     The target app directory for the image
 
-  --image_stem        <stem>    Stem for image names (defaults to --target_stem)
+  --image_stem        <stem>    Stem for image names
   --release_tag       <version> Release tag (default: taken from --otter)
 
   --install_annotools_prereqs   Install annotools prerequisites
@@ -159,7 +159,7 @@ expand_defaults() {
     build_app="${build_app:-build_${target_app}}"
     parked_app="${parked_app:-${build_app/.app/_parked.app}}"
 
-    image_stem="${image_stem:-${target_stem}}"
+    image_stem="${image_stem:-${target_stem}_mac_intel}"
 
     true
 }
