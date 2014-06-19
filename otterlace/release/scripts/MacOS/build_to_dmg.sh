@@ -174,9 +174,9 @@ can_untouch() {
     [ -e "$what" ] || return 0
 
     if [[ -f "$what" && ! -s "$what" ]]; then
-        chat "${desc}: can delete '$what'"
+        chat "${desc}: can delete placeholder '$what'"
     else
-        bail "${desc}: will not delete '$what'"
+        bail "${desc}: will not delete non-placeholder '$what'"
     fi
     true
 }
