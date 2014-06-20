@@ -1,0 +1,79 @@
+clang-3.4:
+  Dependencies to be installed:
+    cctools
+    cctools-headers
+    ld64
+    dyld-headers
+    libunwind-headers
+    llvm-3.4
+    libffi
+    llvm_select
+    clang_select
+*   python27
+*   db46
+*   autoconf
+    m4
+*   automake
+    db_select
+    libtool
+    libedit
+    python_select
+    sqlite3
+
+clang-3.2
+Dependencies to be installed: cctools ld64 llvm-3.4 clang_select python27 db46 autoconf m4 automake db_select libtool libedit python_select sqlite3
+
+port install llvm-3.2
+port select --set llvm mp-llvm-3.2
+port install cctools +llvm32
+~/.subversion/servers
+
+No luck!
+What about trying to do without libvpx?
+Which p5.12-data-stag dep is it?
+  p5.12-gd
+    gd2 - requires it!! - we could make a version which doesn't, or a version of p5-data-stag which doesn't use gd.
+
+OK, try copying over image from my MacBook.
+
+**********
+pushd Contents/Resources/lib/pkgconfig/
+sed -i '.bak' -e '/^prefix=/ s|.*|prefix=/Users/otter/Otter/Dist/build_otterlace.app/Contents/Resources|' *.pc
+need to jig $CR/bin/curl-config? Yes, sed as above.
+**********
+
+PKG_CONFIG_PATH=/Users/otter/Otter/Dist/build_otterlace.app/Contents/Resources/lib/pkgconfig \
+DYLD_FALLBACK_LIBRARY_PATH=/Users/otter/Otter/Dist/build_otterlace.app/Contents/Resources/lib \
+~/Otter/Git/team_tools/otterlace/release/scripts/MacOS/install_annotools.sh \
+  /net/netapp5a/vol/team119/zmap/ZMap/BUILDS/OVERNIGHT_BUILDS/ZMap.0.22-136-gbf57a32.BUILD
+
+export CR=$PWD/Contents/Resources
+PATH=$CR/bin:$PATH \
+DYLD_FALLBACK_LIBRARY_PATH=$CR/lib \
+PERL5LIB=$CR/lib/perl5/site_perl:$CR/lib/perl5/vendor_perl:$CR/lib/perl5 \
+~/Otter/Git/team_tools/otterlace/release/scripts/anacode_source_repo ensembl
+
+On git.internal:
+cd /repos/git/anacode
+rsync -ai PerlModules.git otter@anacodeosx:~/Otter/Git/Mirrors/anacode
+rsync -ai zircon.git otter@anacodeosx:~/Otter/Git/Mirrors/anacode
+rsync -ai ensembl-otter.git otter@anacodeosx:~/Otter/Git/Mirrors/anacode
+rsync -ai team_tools.git otter@anacodeosx:~/Otter/Git/Mirrors/anacode
+rsync -ai github-mirror-ro/Anacode/ensembl.git otter@anacodeosx:~/Otter/Git/Mirrors/anacode/github-mirror-ro/Anacode
+
+Back on anacodeosx:
+cd ~/Otter/Git
+git clone Mirrors/anacode/ensembl-otter.git
+git clone Mirrors/anacode/team_tools.git
+
+PERL5LIB=$CR/lib/perl5/site_perl:$CR/lib/perl5/vendor_perl:$CR/lib/perl5 \
+PATH=$CR/bin:$PATH \
+DYLD_FALLBACK_LIBRARY_PATH=$CR/lib \
+~/Otter/Git/team_tools/otterlace/release/scripts/MacOS/install_otterlace.sh ~/Otter/Git/ensembl-otter
+
+****
+Had to hand edit $CR/etc/macports/*.conf
+And $CR/bin/port !!
+And $CR/share/macports/Tcl/macports_autoconf.tcl
+
+annotools builds fail if build directory not build_otterlace.app
