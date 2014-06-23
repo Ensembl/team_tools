@@ -1,0 +1,40 @@
+#! /bin/sh
+
+# _rackmac_copy_dmg <major.minor>
+#
+#   Transfer a built image to the FTP site.
+#   Does not update any symlinks.
+
+. "$( dirname "$0" )/_otterlace.sh" || exit 1
+
+REL=$1
+RACKMAC=rackmac # what mca calls it
+
+case $REL in
+    [0-9][0-9].[0-9][0-9])
+        # ok
+        :
+        ;;
+    *) bail "Syntax: $0 <xx.yy>" ;;
+esac
+
+# Workstation side
+FTPROOT=~ftp/pub/anacode/otterlace
+FTPDIR=$FTPROOT/release_$REL
+echo Will take $FTPDIR from build in $RACKMAC:
+
+[ -d $FTPROOT ] || bail "Cannot see $FTPROOT/"
+if [ -d $FTPDIR ]; then
+    echo "$FTPDIR exists already" >&2
+    exit 9
+fi
+
+XFERDIR=$( mktemp -d mac-rel$REL.XXXXXX )
+chgrp -v anacode $XFERDIR
+chmod -v 0775 $XFERDIR
+
+scp -p \
+    $RACKMAC:Otter/Dist/otterlace_mac_intel-$REL.dmg \
+    $XFERDIR/
+
+mv -v $XFERDIR $FTPDIR
