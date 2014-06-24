@@ -17,16 +17,19 @@ my @basic_pat =
    qr{: Hostname: \S+\n},
    qr{: Tools are( |\n)});
 
-push @pat,
-  qr{: (?:(?:(?:X Error|  Major opcode|  Serial number) of|  Resource id in) failed request|  Current serial number in output stream): };
-
-
 my ($buff, $pos, @basic) = ('');
 
 sub makepats {
     while (@ARGV) {
         my $ptn = pop @ARGV;
         last if $ptn eq '--';
+        if ($ptn eq '+BadWindow') {
+            push @pat,
+              (qr{: (?:(?:(?:X Error|  Major opcode|  Serial number) of|  Resource id in) failed request|  Current serial number in output stream): },
+               qr{WARN: (?:RUNNING: dotter .*echo 'Dotter finished'|Dotter finished|Karlin/Altschul statistics for these sequences and score matrix:)\n},
+              );
+            next;
+        }
         die "Pattern '$ptn' looks like a filename.  Put a '--' after it"
           if $ptn =~ m{/otterlace\.\d+\S*\.log$} || -e $ptn;
         push @pat, qr{$ptn};
