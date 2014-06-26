@@ -269,6 +269,16 @@ print join q{ }, @out;
     printf -v $__varname %s "$__out"
 }
 
+looks_like_version() {
+    case "$1" in
+        [0-9][0-9][0-9].[0-9][0-9] | [0-9][0-9].[0-9][0-9])
+            # ok
+            return 0 ;;
+        *)
+            return 1 ;;
+    esac
+}
+
 
 
 # Related scripts assume that $( cd foo; echo bar ) chdir(./foo) and
