@@ -5,18 +5,14 @@
 #   Transfer a built image to the FTP site.
 #   Does not update any symlinks.
 
+set -e
 . "$( dirname "$0" )/_otterlace.sh" || exit 1
 
 REL=$1
 RACKMAC=rackmac # what mca calls it
 
-case $REL in
-    [0-9][0-9].[0-9][0-9])
-        # ok
-        :
-        ;;
-    *) bail "Syntax: $0 <xx.yy>" ;;
-esac
+looks_like_version "$REL" || bail "Syntax: $0 <xx.yy>"
+
 
 # Workstation side
 FTPROOT=~ftp/pub/anacode/otterlace
@@ -29,7 +25,9 @@ if [ -d $FTPDIR ]; then
     exit 9
 fi
 
-XFERDIR=$( mktemp -d mac-rel$REL.XXXXXX )
+# mktemp -t : deprecated in GNU coreutils mktemp, but the only option
+# in MacOS' OpenBSD version
+XFERDIR=$( mktemp -t -d mac-rel$REL.XXXXXX )
 chgrp -v anacode $XFERDIR
 chmod -v 0775 $XFERDIR
 
