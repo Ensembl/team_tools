@@ -18,7 +18,7 @@ verbose = %f:%l:%c:%m\t[%s] %p\n
 # tweak some default policies
 
 [Variables::RequireLocalizedPunctuationVars]
-allow = %ENV %SIG $| @ARGV
+allow = %ENV %SIG $| @ARGV $0
 
 [Variables::ProhibitEvilVariables]
 variables = $[ $^S $SIG{__DIE__}
