@@ -11,6 +11,8 @@ Proc::ProcessTable
 MooseX::Log::Log4perl
 Sys::LoadAvg
 ZMQ::LibZMQ3
+JSON
+JSON::XS
 
 =cut
 
