@@ -134,17 +134,24 @@ sub send_files {
     # must be omitted.  js5 said the resulting "permission denied" when this goes wrong is rsync's doing, not RT#377744
 
     my $fail = run_showing
-      (rsync => maybe_dry("-n"),
+      (rsync =>
        ($QUIET ? () : ('-iv')),
        qw( -a --delete -e smithssh ),
+       maybe_dry(qw( -c -n --no-t )),
        "$srcdir$part/", "$host:$dest$part/");
     die "send_files failed: $fail" unless defined wantarray;
     return $fail;
 }
 
 sub maybe_dry {
-    my ($flag) = @_;
-    return $DRY_RUN ? ($flag) : ();
+    my (@flag) = @_;
+    if (wantarray) {
+        return $DRY_RUN ? (@flag) : ();
+    } elsif (1 == @flag) {
+        return $DRY_RUN ? ($flag[0]) : ();
+    } else {
+        die 'wantarray';
+    }
 }
 
 sub do_util {
