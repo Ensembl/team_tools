@@ -13,7 +13,7 @@
 #  With explicit URL and verbosity,
 #   curl_otter -v http://otter.sanger.ac.uk/cgi-bin/otter/78/get_accession_types?accessions=P35613.2,B0PJS9.1
 #
-#  Taking server from .otter_config ,
+#  Taking server from .otter/config.ini ,
 #    curl_otter 73/test
 #    curl_otter test		# live version
 #    curl_otter \~mca/76/test	# use the per-developer config
@@ -67,7 +67,7 @@ if ! [[ "$1" =~ ^(https?:|/) ]]; then
  }
  push @url, $url;
  print join "", @url;
- ' "$1" ~/.otter_config ~/.otter/config )"
+ ' "$1" ~/.otter/config.ini )"
     echo Fetch url=$url >&2
     set -- $url
 fi
