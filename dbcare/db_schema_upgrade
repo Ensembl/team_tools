@@ -3,11 +3,12 @@
 
 date="$( date '+%Y-%m-%d_%H-%M-%S' )"
 
-# update paths
+# update paths, from which other paths are derived
 log_root="/nfs/anacode/logs/db_upgrade"
 engine_sql_path='/nfs/anacode/scripts/sql/engine.sql'
+ensembl_dir="${HOME}/work/git/ensembl"
 
-# ensembl paths
+# ensembl subpaths
 ensembl_patch_root="sql/patch_"
 ensembl_attribute_script_path="misc-scripts/attribute_types/upload_attributes.pl"
 ensembl_attribute_file_path="misc-scripts/attribute_types/attrib_type.txt"
@@ -28,8 +29,7 @@ version_pair="${version_old}_${version_new}"
 
 # echo "version_old = ${version_old}, version_new = ${version_new}" ; exit
 
-# paths
-ensembl_dir="${HOME}/work/git/ensembl"
+# derived paths
 patch_root="${ensembl_dir}/${ensembl_patch_root}${version_pair}"
 log_dir="${log_root}/${version_pair}/${date}"
 ensembl_attribute_script="${ensembl_dir}/${ensembl_attribute_script_path}"
@@ -116,6 +116,9 @@ function host_upgrade() {
         esac
     done
 }
+
+
+echo Upgrading from $patch_root
 
 user=ottroot
 echo -n "Enter the password for ${user}: "
