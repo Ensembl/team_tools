@@ -1,4 +1,5 @@
 #!/bin/bash
+# Bash for bitwise OR
 
 date="$( date '+%Y-%m-%d_%H-%M-%S' )"
 
@@ -34,6 +35,18 @@ log_dir="${log_root}/${version_pair}/${date}"
 ensembl_attribute_script="${ensembl_dir}/${ensembl_attribute_script_path}"
 ensembl_attribute_file="${ensembl_dir}/${ensembl_attribute_file_path}"
 
+exitcode=0
+function exit_or() {
+    if [ "$1" = 0 ]; then
+        :
+        # nothing to do
+    else
+        echo "  exitcode |= $1 for $2"
+        exitcode=$(( $exitcode | $1 ))
+    fi
+}
+
+
 function db_version_get() {
     echo "select meta_value from meta where meta_key = 'schema_version'" |
     $db_command -N "$db_name"
@@ -60,8 +73,8 @@ function db_upgrade() {
         /usr/bin/time -f "%E real,%U user,%S sys" \
             $db_command $db_name \
             > "$patch_log_file" 2>&1
+        exit_or $? "$db_name to $patch_log_file"
     done
-
 }
 
 function host_upgrade() {
@@ -98,6 +111,7 @@ function host_upgrade() {
             *)
                 echo "database: '${db_name}': incorrect version: ${version}" |
                 tee -a "$host_log_file"
+                exit_or 4 "$db_name incorrect version"
                 ;;
         esac
     done
@@ -110,11 +124,12 @@ echo
 # password=XXXXXXXXXX
 
 mkdir -p -- "$log_dir"
-chmod g+s "$log_dir"
+chmod  g+ws "$log_dir"/..
 
 host_count=0
 # host_upgrade otterpipe1 3322 "$user" "$password" pipe_
 # host_upgrade otterpipe2 3323 "$user" "$password" pipe_
+# host_upgrade otterpipe2 3323 "$user" "$password" gencode_
 # host_upgrade otterlive  3324 "$user" "$password" loutre_
 # host_upgrade otterpipe2 3323 "$user" "$password" chromoDB
 # host_upgrade otterpipe2 3323 "$user" "$password" jgrg_human_
@@ -124,3 +139,6 @@ host_count=0
 
 chgrp -R anacode "$log_dir"
 chmod -R ug+rw   "$log_dir"
+
+echo Exit code will be $exitcode
+exit $exitcode
