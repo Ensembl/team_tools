@@ -49,7 +49,7 @@ foreach my $holtdir (@holtdir) {
           $vsn =~ m{_rel(\d+)(?:\.(\d+))?(?:_(\w+))?$} or
             die "Incomprehensible otter client $holtdir/$vsn";
         if (defined $feat) {
-            $min = '' unless defined $min;
+            $min = defined $min ? ".$min" : '';
             push @dev_feat, "${maj}${min}_$feat";
         } else {
             $got_nondes{$maj} = defined $min ? "$maj.$min" : $maj;
@@ -64,15 +64,15 @@ foreach my $holtdir (@holtdir) {
     # Build expected non-designated list
     while (my ($k, $v) = each %got_ln) {
         my ($maj, $min, $feat) =
-          $v =~ m{_rel(\d+)(?:\.(\d+)|_(\w+))?$} or
+          $v =~ m{_rel(\d+)(?:\.(\d+))?(?:_(\w+))?$} or
             die "Incomprehensible otter client $k => $v";
-        if (defined $feat) {
+        if (defined $feat && !defined $min) {
             my @found_feat = grep { "${maj}_$feat" eq $_ } @dev_feat;
             if (@found_feat) {
                 # valid feature branch designation - won't be part of
                 # %want_ln because designations.txt doesn't include
-                # them
-                delete $got_ln{$k};
+                # them.  Except it does now.
+#                delete $got_ln{$k};
             } else {
                 # didn't see the directory, provoke a failure
                 $got_ln{$k} = "$v (feature branch dangles)";
