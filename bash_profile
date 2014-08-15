@@ -34,7 +34,7 @@ $PERL5LIB\
 fi
 
 # choose the Perl
-if ! ( echo "$PATH" | sed -e 's/:/\n/g' | grep -E ^/software/perl ); then
+if ! ( echo "$PATH" | sed -e 's/:/\n/g' | grep -q -E ^/software/perl ); then
     case "$anacode_distro_code" in
         lenny|lucid|squeeze) PATH="/software/perl-5.12.2/bin:$PATH" ;;
         precise) PATH="/software/perl-5.14.4/bin:$PATH" ;;
