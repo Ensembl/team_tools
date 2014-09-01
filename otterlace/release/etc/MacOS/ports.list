@@ -30,6 +30,7 @@ p5-log-log4perl
 p5-file-slurp
 p5-test-differences
 p5-sub-name
+p5-timedate
 
 # graphics
 #
