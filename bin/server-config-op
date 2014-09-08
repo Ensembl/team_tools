@@ -48,6 +48,8 @@ Fetch all the remote tracking branches (with prune option), and tags.
 Then ensure all corresponding local branches exist, rebasing any local
 commits.
 
+Also fixes directory permission - should not be world readable.
+
 The default remote is C<origin>.
 
 Local branches which persist after the remote has been tagged and
@@ -307,6 +309,7 @@ sub main {
         sane_repo("remote tracking ($remote)" => @vsn);
 
         print "* Fetch\n";
+        fix_perms();
         run(fetch => qw( git fetch -p ), $remote);
         run(fetch => qw( git fetch --tags ), $remote); # could prune local tags with -p, but doesn't seem friendly
         die "Found no remote tracking branches from $remote" unless @r_br;
@@ -342,7 +345,7 @@ sub main {
 sub set_globals {
     my $pwd = getcwd();
     if (-d '.git') {
-        $GIT_DIR = '.git';
+        $GIT_DIR = "$pwd/.git";
         $BARE = 0;
     } elsif ($pwd =~ m{\.git$} && -f 'HEAD') {
         $GIT_DIR = $pwd;
@@ -565,6 +568,23 @@ sub apply_commit {
     run(update_wc => qw( git reset -q --hard HEAD^ ));
     run(update_wc => qw( git merge --ff-only ), $ci_new);
     return ();
+}
+
+
+sub fix_perms {
+    die "We don't (yet) fix_perms on bare repo" if $BARE;
+    my ($dir) = $GIT_DIR =~ m{^(.*)/\.git$}
+      or die "Can't get toplevel from $GIT_DIR";
+
+    ## no critic (ValuesAndExpressions::ProhibitLeadingZeros) here be octal perms
+    my $stat = (stat($dir))[2] & 07777;
+    my $want = $stat & 07770; # chmod o-rwx
+    if ($stat != $want) {
+        printf "** chmod 0%03o %s (o-rwx)\n", $want, $dir;
+        chmod $want, $dir
+          or die "Failed: $!";
+    }
+    return;
 }
 
 sub update_local {
