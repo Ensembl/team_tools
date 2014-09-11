@@ -80,8 +80,10 @@ sub violates {
         $more_arg = $more->content;
     } # else not OK
 
+    my $code_oneline = "$element $arg$more_arg";
+    $code_oneline =~ s{\s*\n\s*}{\\n }g;
     return $self->violation
-      (qq{Auto-dereference of scalar in '$element $arg$more_arg...'},
+      (qq{Auto-dereference of scalar in "$code_oneline..."},
        qq{Use '$element $USE_INSTEAD{$want_sigil}, ...'.},
        $element);
 }
