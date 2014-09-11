@@ -12,11 +12,13 @@ export PERL5LIB=$ANACODE_TEAM_TOOLS/perl/lib:$PERL5LIB
 termarg=--nocolour
 [ -t 1 ] && termarg=
 
-printf -- '-*- mode: compilation; mode: hi-lock; mode: auto-revert -*-
+printf -- '-*- mode: compilation; mode: hi-lock; mode: auto-revert -*- Perl %s
 # Hi-lock: (("[^:]*\\\\[4\\\\]" (0 (quote hi-blue-b) t)))
 # Hi-lock: (("[^:]*\\\\[5\\\\]" (0 (quote hi-red-b) t)))
 # Hi-lock: ((" %s@" (0 (quote hi-yellow) t)))
-\n' "$USER"
+
+From %s
+\n' "$( perl -e 'print $]' )" "$USER" "$( git log -1 --decorate )"
 # four backslashes: printf eats half, "string" eats half, one left to escape [
 
 exec perlcritic \
