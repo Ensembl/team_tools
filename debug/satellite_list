@@ -14,6 +14,8 @@ satellite_list - munge the species.dat
 
 Quick bodge.  Do not maintain.
 
+Delete with the stringy-eval satellite meta keys.
+
 =cut
 
 
@@ -122,16 +124,15 @@ sub spec2txt {
 # without dbnames
 sub ds2dbspec {
     my ($ds) = @_;
-    my $P = $ds->params;
-    my @s = { -host    => $P->{HOST},
-              -port    => $P->{PORT},
-              -user    => $P->{USER},
-              -pass    => $P->{PASS} };
-    push @s, { -host    => $P->{DNA_HOST},
-               -port    => $P->{DNA_PORT},
-               -user    => $P->{DNA_USER},
-               -pass    => $P->{DNA_PASS} }
-      if defined $P->{DNA_HOST};
+    my @s = { -host    => $ds->HOST,
+              -port    => $ds->PORT,
+              -user    => $ds->USER,
+              -pass    => $ds->PASS };
+    push @s, { -host    => $ds->DNA_HOST,
+               -port    => $ds->DNA_PORT,
+               -user    => $ds->DNA_USER,
+               -pass    => $ds->DNA_PASS }
+      if defined $ds->DNA_HOST;
     return @s;
 }
 
