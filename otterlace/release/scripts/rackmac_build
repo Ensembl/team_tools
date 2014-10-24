@@ -1,0 +1,59 @@
+#! /bin/sh
+
+# rackmac_build <major.minor>
+#
+#   Build it,
+#   Then if that succeeds
+#   Transfer a built image to the FTP site.
+#   Does not update any symlinks.
+
+set -e
+. "$( dirname "$0" )/_otterlace.sh" || exit 1
+
+REL=$1
+ZMAPDIR=$2
+RACKMAC=rackmac # what mca calls it
+
+ZMAPDIR_LOCAL=/nfs/zmap/ZMap/BUILDS/$ZMAPDIR
+ZMAPDIR_REMOTE="~/Otter/Links/ZMap_BUILDS/$ZMAPDIR"
+
+[ $(uname) = 'Linux' ] || bail \
+    "This is a convenience wrapper, run it from a Linux server"
+
+# looks_like_version "$REL" || bail "Syntax: $0 <xx.yy>"
+
+RELTAG=$( perl -e '
+ my ($prog, $v) = @ARGV;
+ if ($v =~ m{^(\d{2,3})\.(\d{2})$}) {
+   print "humpub-release-$1-$2";
+ } else {
+   die "Syntax: $prog <xx.yy> *_BUILDS/ZMap.MUMBLE.BUILD\n";
+ }' "$(basename "$0")" "$REL" )
+
+[ -d "$ZMAPDIR_LOCAL" ] && [ -f "$ZMAPDIR_LOCAL/Dist"/zmap-*-g*.tar.gz ] \
+    || bail "Couldn't find ZMap dist tarball in $ZMAPDIR_LOCAL (local)
+
+Syntax: $(basename "$0") <xx.yy> *_BUILDS/ZMap.MUMBLE.BUILD"
+printf "\n\nArgs look OK,\n  build %s\n  with  %s\n\n" "$RELTAG" "$ZMAPDIR_REMOTE"
+
+printf "\n\n\nGetting the checkout\n"
+ssh rackmac "hostname; cd ~/Otter/Git/ensembl-otter && git fetch -p && git checkout $RELTAG && git --no-pager log --decorate -1" \
+    || bail "git checkout $RELTAG failed"
+
+
+printf "\n\n\nCheck the ZMap build\n"
+ssh rackmac "hostname; cd $ZMAPDIR_REMOTE && DIST=\$( echo Dist/zmap-*-g*.tar.gz ) && echo DIST=\$DIST && [ -n \"\$DIST\" ] && [ -f \"\$DIST\" ]" \
+    || bail "Couldn't find ZMap dist tarball in $ZMAPDIR_REMOTE (remote)"
+
+
+printf "\n\n\nStart the build"
+sleep 5 # long enough to read and abort, but insignificant next to a build
+echo
+ssh rackmac "hostname; cd ~/Otter/Dist && \$ANACODE_TEAM_TOOLS/otterlace/release/scripts/MacOS/build_to_dmg.sh -v --otter ~/Otter/Git/ensembl-otter --zmap $ZMAPDIR_REMOTE" \
+    || bail "Otterlace build failed"
+
+
+printf "\n\n\nCopy the result\n"
+_rackmac_copy_dmg "$REL" || bail 'failed'
+
+echo Mac build complete
