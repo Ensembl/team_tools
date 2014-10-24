@@ -13,6 +13,9 @@ RACKMAC=rackmac # what mca calls it
 
 looks_like_version "$REL" || bail "Syntax: $0 <xx.yy>"
 
+[ $(uname) = 'Linux' ] || bail "Run this from a Linux server,
+ not the MacOS host (which has no access to the FTP site NFS home)"
+
 
 # Workstation side
 FTPROOT=~ftp/pub/anacode/otterlace
@@ -36,3 +39,8 @@ scp -p \
     $XFERDIR/
 
 mv -v $XFERDIR $FTPDIR
+
+printf "\n\n You update the symlink?\n"
+ls -lrt $FTPROOT
+
+echo "Then wait for sync to ftp site"
