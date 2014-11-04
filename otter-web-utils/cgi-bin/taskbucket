@@ -1,5 +1,4 @@
-#! /software/bin/perl -T
-# just to pick up modules from /software
+#!/usr/local/bin/perl -T
 
 use strict;
 use warnings;
@@ -27,6 +26,25 @@ RT ticket are generated.
 Symlinks to all public files below the directory (chasing symlinks)
 are also listed, with exclusions for Git/CVS/SVN.
 
+=head1 INSTALLATION
+
+It should work for you with
+
+ # standard for otter-web-utils toolset
+ cd www-dev   # webvm.git
+ ln -snvf ~/gitwk-anacode/team_tools apps/
+ ln -snvf team_tools/otter-web-utils/conf/60otter-web-utils.conf apps/
+
+ # for taskbucket files
+ mkdir -p ~/public_html/RT/example.RT123456
+
+=head1 LINKING
+
+http://$USER-otter.sandbox.sanger.ac.uk/taskbucket#123456
+
+which is an alias of
+http://$USER-otter.sandbox.sanger.ac.uk/cgi-bin/otter-web-utils/taskbucket
+
 =cut
 
 sub main {
@@ -49,7 +67,8 @@ Content-type: text/html\n
   }
   .taskbucket .title, .taskbucket .detail  { float: left; margin: 0.25ex; background-color: #d0ffd0 }
   .taskbucket .detail { width: 70% }
-  .taskbucket .title  { width: 20%; font-size: 140% }
+  .taskbucket .title  { width: 20%; font-size: 140%; color: black; text-decoration: none }
+  .taskbucket .title:hover { text-decoration: underline }
   .taskbucket ul      { clear: both; border: 3px #ffd0ff solid; padding-top: 1em; padding-bottom: 1em; margin: 0 0 0 2em }
   li.hi               { border-left: 0.5ex red solid; padding-left: 0.5ex }
  </style>
@@ -81,7 +100,7 @@ HDR
 
         print <<"ITEM";
 <div id="$rt_id" class="taskbucket">
-  <div class="title"> $hleaf </div>
+  <a class="title" href="#$rt_id"> $hleaf </a>
   <div class="detail">
     Files under <a href="$href/$hleaf"> $hfn </a>, <br />
     for <a href="https://rt.sanger.ac.uk/Ticket/Display.html?id=$rt_id"> RT ticket $rt_id </a>
