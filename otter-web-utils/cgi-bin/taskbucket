@@ -1,0 +1,163 @@
+#! /software/bin/perl -T
+# just to pick up modules from /software
+
+use strict;
+use warnings;
+
+use CGI 'escapeHTML';
+use File::Slurp qw( read_dir );
+use File::Find 'find';
+use List::Util 'min';
+
+=head1 NAME
+
+cgi-bin/taskbucket - publish work-in-progress files
+
+=head1 DESCRIPTION
+
+This lists files under your htdocs/ which relate to an RT ticket.  It
+is intended for "developer's local Apache" use.
+
+Directories are listed when they are public and the name matches
+C<qr{\.RT\d+}>.
+
+Symlinks to the directory (for Apache's directory lister) and to the
+RT ticket are generated.
+
+Symlinks to all public files below the directory (chasing symlinks)
+are also listed, with exclusions for Git/CVS/SVN.
+
+=cut
+
+sub main {
+    my $dir = homedir().'/public_html/RT';
+    my $href = homehref();
+
+    my $Q = new CGI;
+
+    print <<"HDR" unless $Q->param('include');
+Content-type: text/html\n
+<html><head>
+ <title>Task bucket</title>
+ <style type="text/css">
+  .taskbucket {
+    border: thin black solid;
+    text-color: black;
+    background-color: white;
+    padding: 3px;
+    margin: 1em;
+  }
+  .taskbucket .title, .taskbucket .detail  { float: left; margin: 0.25ex; background-color: #d0ffd0 }
+  .taskbucket .detail { width: 70% }
+  .taskbucket .title  { width: 20%; font-size: 140% }
+  .taskbucket ul      { clear: both; border: 3px #ffd0ff solid; padding-top: 1em; padding-bottom: 1em; margin: 0 0 0 2em }
+  li.hi               { border-left: 0.5ex red solid; padding-left: 0.5ex }
+ </style>
+</head>
+<body><h1>Task bucket</h1>
+<p>
+  Files from Matthew's home directory, for investigations &amp;
+  development on RT tickets, which don't warrant being piled into the
+  RT database.
+</p>
+
+HDR
+
+    my @dir = sort {
+        my @m = (-M "$dir/$a", -M "$dir/$b");
+        defined $m[0] <=> defined $m[1] || $m[0] <=> $m[1];
+    } read_dir($dir);
+    my $hit_re = $Q->param('hi');
+    $hit_re = defined $hit_re ? qr{$hit_re} : undef;
+
+    foreach my $leaf (@dir) {
+        my $fn = "$dir/$leaf";
+        next unless -d $fn && public($fn);
+        next unless my ($rt_id) = $leaf =~ /\.RT(\d{5,8})$/;
+
+        my $hleaf = escapeHTML($leaf);
+        my $hfn = escapeHTML($fn);
+        my ($age, @item) = files_in($fn, "$href/$hleaf", $hit_re);
+
+        print <<"ITEM";
+<div id="$rt_id" class="taskbucket">
+  <div class="title"> $hleaf </div>
+  <div class="detail">
+    Files under <a href="$href/$hleaf"> $hfn </a>, <br />
+    for <a href="https://rt.sanger.ac.uk/Ticket/Display.html?id=$rt_id"> RT ticket $rt_id </a>
+  </div>
+  <ul> @item </ul>
+</div>
+ITEM
+    }
+
+    print <<"FTR" unless $Q->param('include');
+</body></html>
+FTR
+}
+
+sub homedir {
+    return (getpwuid($<))[7];
+}
+
+sub homehref {
+    my $uid = (getpwuid($<))[0];
+    return "/~$uid/RT";
+}
+
+sub files_in {
+    my ($fn, $rel, $hit_re) = @_;
+
+    my @age = (-M $fn);
+    my @file;
+    find({ wanted => sub {
+               my $file = $_;
+               if ($file =~ m{/(\.git|\.svn|CVS)}) {
+                   $File::Find::prune = 1;
+                   return;
+               }
+               if (-d $file && public($file) && -f "$file/index.html") {
+                   my $idx = "$file/index.html";
+                   if (-f "$file/index-subs-excl.html") {
+                       # hack for NYTProf output - probably a thousand files
+                       $file = $idx;
+                       $File::Find::prune = 1;
+                   }
+                   # else...  counting the contents would be more general
+               }
+               return unless -f $file && public($file);
+               my $oldpfx  = substr($file, 0, length($fn)+1, "");
+               return unless $oldpfx eq "$fn/";
+               push @file, $file;
+               push @age, -M $_;
+           },
+           no_chdir => 1,
+           follow_skip => 1,
+           follow => 1,
+         }, $fn);
+
+    my @out;
+    foreach my $leaf (@file) {
+        my $hleaf = escapeHTML($leaf);
+        my $hi = $hit_re && "$rel/$leaf" =~ $hit_re ? ' class="hi"' : '';
+        my $hileaf = $hleaf;
+        $hileaf =~ s{($hit_re)}{<b>$1</b>} if $hi; # could fail if escapeHTML obscures the match
+        push @out, qq{<li$hi><a href="$rel/$hleaf"> $hileaf </a></li>};
+    }
+
+    my $newest = min(@age);
+    return ($newest, @out);
+}
+
+
+sub public {
+    ## no critic (ValuesAndExpressions::ProhibitLeadingZeros ValuesAndExpressions::ProhibitMagicNumbers)
+    my ($fn) = @_;
+    my @s = stat($fn);
+    my $u = ($s[2] & 0500) >> 6;
+    my $o = ($s[2] & 07);
+#   warn sprintf("%s: user=%o other=%o\n", $fn, $u, $o);
+    return $o == $u;
+}
+
+main();
