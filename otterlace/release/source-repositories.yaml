@@ -1,4 +1,7 @@
-# Data for bin/anacode_source_repo
+# Data for bin/anacode_source_repo which gives Git URLs to build
+# scripts.
+#
+# (_comment values are not actually ignored, just not ever invoked)
 ---
 _default_order:
   - mac_local
@@ -18,6 +21,9 @@ github_push:
   ensembl: git@github.com:Ensembl/ensembl.git
   ensembl-otter: git@github.com:Anacode/ensembl-otter.git
 internal:
+  _comment: |
+    For larger sources (ensembl) we make builds from local repositories
+    because it is faster and more efficient than hauling it from upstream Github.
   ensembl: intcvs1:/repos/git/anacode/github-mirror-ro/Anacode/ensembl.git
   ensembl-otter: intcvs1:/repos/git/anacode/ensembl-otter.git
   PerlModules: intcvs1:/repos/git/anacode/PerlModules.git
@@ -27,6 +33,7 @@ internal:
   webvm-deps: intcvs1:/repos/git/anacode/webvm-deps.git
   zircon: intcvs1:/repos/git/anacode/zircon.git
 mac_local:
+  _comment: 'host anacodeosx is firewalled and cannot reach intcvs1, so local copies are pushed onto it.  http://mediawiki.internal.sanger.ac.uk/index.php/Otter_Mac_in_a_rack#Git'
   PerlModules: /Users/otter/Otter/Git/Mirrors/anacode/PerlModules.git
   ensembl: /Users/otter/Otter/Git/Mirrors/anacode/github-mirror-ro/Anacode/ensembl.git
   ensembl-otter: /Users/otter/Otter/Git/Mirrors/anacode/ensembl-otter.git
