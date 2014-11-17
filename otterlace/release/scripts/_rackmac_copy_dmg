@@ -41,6 +41,9 @@ scp -p \
 mv -v $XFERDIR $FTPDIR
 
 printf "\n\n You update the symlink?\n"
-ls -lrt $FTPROOT
+ls -lrt --color $FTPROOT | sed -e 's/^/    /'
+
+printf "\n\n maybe with one of\n    ln -snvf release_%s %s/%s\n    ln -snvf release_%s %s/%s\n\n" \
+    "$REL" "$FTPROOT" TEST "$REL" "$FTPROOT" CURRENT
 
 echo "Then wait for sync to ftp site"
