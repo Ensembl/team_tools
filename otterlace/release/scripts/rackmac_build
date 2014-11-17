@@ -12,7 +12,7 @@ set -e
 
 REL=$1
 ZMAPDIR=$2
-RACKMAC=rackmac # what mca calls it
+RACKMAC=otter@anacodeosx # match otterlace/release/scripts/MacOS/rsync_git_repos.sh
 
 ZMAPDIR_LOCAL=/nfs/zmap/ZMap/BUILDS/$ZMAPDIR
 ZMAPDIR_REMOTE="~/Otter/Links/ZMap_BUILDS/$ZMAPDIR"
@@ -30,26 +30,36 @@ RELTAG=$( perl -e '
    die "Syntax: $prog <xx.yy> *_BUILDS/ZMap.MUMBLE.BUILD\n";
  }' "$(basename "$0")" "$REL" )
 
+RELBRANCH=$( perl -e '
+ my ($prog, $v) = @ARGV;
+ $v =~ m{^(\d{2,3})\.(\d{2})$};
+ print "humpub-branch-$1";
+' "$(basename "$0")" "$REL" )
+
 [ -d "$ZMAPDIR_LOCAL" ] && [ -f "$ZMAPDIR_LOCAL/Dist"/zmap-*-g*.tar.gz ] \
     || bail "Couldn't find ZMap dist tarball in $ZMAPDIR_LOCAL (local)
 
 Syntax: $(basename "$0") <xx.yy> *_BUILDS/ZMap.MUMBLE.BUILD"
 printf "\n\nArgs look OK,\n  build %s\n  with  %s\n\n" "$RELTAG" "$ZMAPDIR_REMOTE"
 
+printf "\n\nUpdating Git mirrors\n"
+ssh intcvs1 $ANACODE_TEAM_TOOLS/otterlace/release/scripts/MacOS/rsync_git_repos.sh \
+    || bail "Copying repos from intcvs1 to $RACKMAC failed"
+
 printf "\n\n\nGetting the checkout\n"
-ssh rackmac "hostname; cd ~/Otter/Git/ensembl-otter && git fetch -p && git checkout $RELTAG && git --no-pager log --decorate -1" \
-    || bail "git checkout $RELTAG failed"
+ssh $RACKMAC "hostname; cd ~/Otter/Git/ensembl-otter && (git diff --quiet && git diff --quiet --cached || (echo Working copy $PWD is modified; git status; false)) && git fetch -p && (git checkout $RELBRANCH || git checkout -t origin/$RELBRANCH) && git reset --hard $RELTAG && git --no-pager log --decorate -1 --color" \
+    || bail "git (checkout,reset) $RELTAG failed - somehow not pushed from intcvs1?"
 
 
 printf "\n\n\nCheck the ZMap build\n"
-ssh rackmac "hostname; cd $ZMAPDIR_REMOTE && DIST=\$( echo Dist/zmap-*-g*.tar.gz ) && echo DIST=\$DIST && [ -n \"\$DIST\" ] && [ -f \"\$DIST\" ]" \
+ssh $RACKMAC "hostname; cd $ZMAPDIR_REMOTE && DIST=\$( echo Dist/zmap-*-g*.tar.gz ) && echo DIST=\$DIST && [ -n \"\$DIST\" ] && [ -f \"\$DIST\" ]" \
     || bail "Couldn't find ZMap dist tarball in $ZMAPDIR_REMOTE (remote)"
 
 
 printf "\n\n\nStart the build"
 sleep 5 # long enough to read and abort, but insignificant next to a build
 echo
-ssh rackmac "hostname; cd ~/Otter/Dist && \$ANACODE_TEAM_TOOLS/otterlace/release/scripts/MacOS/build_to_dmg.sh -v --otter ~/Otter/Git/ensembl-otter --zmap $ZMAPDIR_REMOTE" \
+ssh $RACKMAC "hostname; cd ~/Otter/Dist && \$ANACODE_TEAM_TOOLS/otterlace/release/scripts/MacOS/build_to_dmg.sh -v --otter ~/Otter/Git/ensembl-otter --zmap $ZMAPDIR_REMOTE" \
     || bail "Otterlace build failed"
 
 
