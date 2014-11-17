@@ -9,7 +9,7 @@ set -e
 . "$( dirname "$0" )/_otterlace.sh" || exit 1
 
 REL=$1
-RACKMAC=rackmac # what mca calls it
+RACKMAC=otter@anacodeosx # match otterlace/release/scripts/MacOS/rsync_git_repos.sh
 
 looks_like_version "$REL" || bail "Syntax: $0 <xx.yy>"
 
