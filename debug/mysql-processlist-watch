@@ -1,0 +1,46 @@
+#! /usr/bin/env perl
+use strict;
+use warnings;
+
+use Time::HiRes qw( gettimeofday tv_interval usleep );
+use YAML 'Dump';
+use DBI;
+
+sub sql_compactify {
+    my ($sqlref) = @_;
+    $$sqlref =~ s{( IN \( /\* \d+ \*/) '[^()]+\)}{$1 ...};
+    $$sqlref =~ s{( \S+ LIKE \S+ OR )}{$1 ...};
+    return;
+}
+
+sub main {
+    my ($row_re, $dsn, $user, $pass) = @_;
+    my $dbh = DBI->connect($dsn, $user, $pass, { RaiseError => 1 });
+    $row_re = qr{$row_re};
+    my $every = 0.333; # sec/loop
+
+    while (1) {
+        my $t0 = [ gettimeofday() ];
+        my $R = $dbh->selectall_arrayref('show full processlist');
+        my $T = tv_interval($t0);
+        my @t0 = localtime($t0->[0]);
+        my $when = sprintf('%4d-%02d-%02dt%02d:%02d:%02d.%06d +%.4fs',
+                           $t0[5]+1900, $t0[4]+1, $t0[3],
+                           @t0[2,1,0], $t0->[1], $T);
+        $R = [ grep {
+            (join "\t", grep { defined } @$_) =~ $row_re and
+              $_->[4] ne 'Sleep'
+        } @$R ];
+        foreach my $r (@$R) {
+            sql_compactify(\$r->[7]);
+        }
+        print Dump({ $when => $R }) if @$R;
+        my $d = $every - $T;
+        usleep($d * 1E6) if $d > 0;
+    }
+
+    return 0;
+}
+
+
+exit main(@ARGV);
