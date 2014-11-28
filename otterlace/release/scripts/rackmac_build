@@ -36,8 +36,8 @@ RELBRANCH=$( perl -e '
  print "humpub-branch-$1";
 ' "$(basename "$0")" "$REL" )
 
-[ -d "$ZMAPDIR_LOCAL" ] && [ -f "$ZMAPDIR_LOCAL/Dist"/zmap-*-g*.tar.gz ] \
-    || bail "Couldn't find ZMap dist tarball in $ZMAPDIR_LOCAL (local)
+[ -d "$ZMAPDIR_LOCAL" ] && [ -f "$ZMAPDIR_LOCAL/Dist"/zmap-*.tar.gz ] \
+    || bail "Couldn't find ZMap dist tarball in $ZMAPDIR_LOCAL/Dist/zmap-*.tar.gz (local)
 
 Syntax: $(basename "$0") <xx.yy> *_BUILDS/ZMap.MUMBLE.BUILD"
 printf "\n\nArgs look OK,\n  build %s\n  with  %s\n\n" "$RELTAG" "$ZMAPDIR_REMOTE"
