@@ -116,6 +116,15 @@ If L<webpublish(1)> is still required, the caller must do it.
 
 See L<http://mediawiki.internal.sanger.ac.uk/index.php/Otter_Server_configuration#New_version_branch>
 
+=item lint
+
+Check some of the files in the current directory.
+
+The exit code may be
+
+ 0: no problems
+ 4: something might be wrong
+ 5: too late to lint dev or live
 
 =back
 
@@ -334,11 +343,15 @@ sub main {
         sane_repo(local => @vsn);
         push_new(@ARGV);
 
+    } elsif ($op eq 'lint') {
+        die "Cannot '$op' in a bare repository" if $BARE;
+        return do_lint($br);
+
     } else {
         syntax_msg();
     }
 
-    return 0;
+    return 0; # early return on lint
 }
 
 
@@ -701,6 +714,71 @@ sub push_new {
     run(update5 => qw( server-config-op update ), $remote);
 
     return;
+}
+
+
+sub do_lint {
+    my ($br) = @_;
+    my (@check, %bad);
+
+    if ($br eq 'dev' || $br eq 'live') {
+        print " > Lint: not running on $br\n";
+        return 5;
+    } elsif ($br eq 'root') {
+        print " > Lint: no checks yet, for $br\n";
+        # Delegate to webvm or latest e-o ?
+        return 0;
+    }
+
+    # Find & load the right code
+    my $find_major =
+      ($br < 88 ? 88 # lint code not available before that
+       : $br);
+    my $eo =
+#      "$ENV{HOME}/gitwk-anacode/ensembl-otter/modules";
+      "/software/anacode/otter/otter_rel$find_major/ensembl-otter/modules"; # XXX: Linux-centric!  Should call some team_tools code to find it?
+    try {
+        require lib;
+        lib->import($eo);
+
+        require Bio::Otter::Version;
+        if ($br ne (my $major = Bio::Otter::Version->version)) {
+            $bad{version} = [ "code $major from $INC{'Bio/Otter/Version.pm'}",
+                              "data $br" ];
+        }
+    } catch {
+        my $err = $_;
+        $err =~ s{ \(\@INC contains: .*}{}; # too long
+        chomp $err;
+        $bad{code_load} = [ "Lint failed: $err", "Tried $eo" ];
+    };
+
+    if (-f 'otter_config') {
+        try {
+            require Bio::Otter::Utils::Config::Lint;
+            my $lint = Bio::Otter::Utils::Config::Lint->new('otter_config');
+            push @check, 'otter_config';
+            my @fail = $lint->check;
+            $bad{"$br/otter_config"} = \@fail if @fail;
+        } catch {
+            my $err = $_;
+            $err =~ s{ \(\@INC contains: .*}{}; # too long
+            chomp $err;
+            $bad{"$br/otter_config"} = [ "Lint failed: $err" ];
+        };
+    }
+
+    printf(" > Lint:%s, checked %s\n",
+           (keys %bad ? 'FAIL' : 'ok'),
+           join ' ', @check)
+      if @check;
+    printf("\n [%s]\n\t%s\n", $_, join "\n\t", @{ $bad{$_} })
+      foreach sort keys %bad;
+    print("\n  This may not be a real problem, but\n",
+          "  you should check before pushing.\n\n")
+      if keys %bad;
+
+    return keys %bad ? 4 : 0;
 }
 
 
