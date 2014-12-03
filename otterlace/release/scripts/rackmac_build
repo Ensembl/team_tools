@@ -52,7 +52,7 @@ ssh $RACKMAC "hostname; cd ~/Otter/Git/ensembl-otter && (git diff --quiet && git
 
 
 printf "\n\n\nCheck the ZMap build\n"
-ssh $RACKMAC "hostname; cd $ZMAPDIR_REMOTE && DIST=\$( echo Dist/zmap-*-g*.tar.gz ) && echo DIST=\$DIST && [ -n \"\$DIST\" ] && [ -f \"\$DIST\" ]" \
+ssh $RACKMAC "hostname; cd $ZMAPDIR_REMOTE && DIST=\$( echo Dist/zmap-*.tar.gz ) && echo DIST=\$DIST && [ -n \"\$DIST\" ] && [ -f \"\$DIST\" ]" \
     || bail "Couldn't find ZMap dist tarball in $ZMAPDIR_REMOTE (remote)"
 
 
