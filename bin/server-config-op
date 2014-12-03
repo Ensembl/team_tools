@@ -7,7 +7,7 @@ use strict;
 use warnings;
 
 use List::MoreUtils 'uniq';
-use File::Slurp qw( write_file );
+use File::Slurp qw( slurp write_file );
 use Cwd 'getcwd';
 use Try::Tiny;
 
@@ -48,7 +48,8 @@ Fetch all the remote tracking branches (with prune option), and tags.
 Then ensure all corresponding local branches exist, rebasing any local
 commits.
 
-Also fixes directory permission - should not be world readable.
+Also fixes directory permission - should not be world readable - and
+B<will install a post-commit hook> to run the C<lint> operation below.
 
 The default remote is C<origin>.
 
@@ -157,7 +158,14 @@ It works with a detached HEAD, but may not produce useful results.
 =back
 
 
-=head1 GIT-HOOKS
+
+=head1 LOCAL GIT-HOOKS
+
+This script installs itself as a post-commit hook.
+Failure do not prevent commits, but will make noise.
+
+
+=head1 CENTRAL GIT-HOOKS
 
 This script works in conjunction with I<hooks> on the central server,
 which trigger actions when you push to it and come from
@@ -328,6 +336,7 @@ sub main {
             print "\n* NB. $br was cleanly deleted\n";
             $br = 'root';
         }
+        hooks_install() unless $BARE;
         restore_checkout($br);
 
     } elsif ($op =~ /^(cherry-)?pick$/) {
@@ -599,6 +608,35 @@ sub fix_perms {
     }
     return;
 }
+
+sub hooks_install {
+    my $fn = '.git/hooks/post-commit';
+    print "\n* Install $fn\n";
+    my $want = <<'SHELL';
+#!/bin/sh
+#   Installed by server-config-op &hooks_install
+#   Changes will be overwritten!
+
+server-config-op lint
+retcode=$?
+
+if [ $retcode = 5 ]; then
+    printf "\n *\n * Direct commit to dev or live is probably a bad idea\n *\n\n" >&2
+fi
+SHELL
+    my $old = -f $fn ? slurp($fn) : "($fn is absent)";
+    if ($old eq $want) {
+        print "no-op\n";
+    } else {
+        write_file("$fn.new", { atomic => 1 }, $want);
+        chmod 0755, "$fn.new";
+        system("diff", "-u", $fn, "$fn.new");
+        rename("$fn.new", $fn) or die "Failed to install $fn: $!";
+        print "done\n";
+    }
+    return;
+}
+
 
 sub update_local {
     my ($remote, $l_br, $r_br) = @_;
