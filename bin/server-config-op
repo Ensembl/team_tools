@@ -755,6 +755,15 @@ sub push_new {
 }
 
 
+sub branch_version {
+    my ($br) = @_;
+    return $1 if $br =~ m{^(?:remotes/[^/]+/)?(\d+)$};
+    return $1 if $br =~ m{^(?:remotes/[^/]+/)?(?:feature|[a-z0-9]+)/(\d+)[-_.,]};
+    return (); # doesn't look like a major-version-numbered branch
+}
+
+# To run with your local e-o,
+#   perl -I ~/gitwk-anacode/ensembl-otter/modules -MBio::Otter::Utils::Config::Lint $(where server-config-op) lint
 sub do_lint {
     my ($br) = @_;
     my (@check, %bad);
@@ -767,22 +776,27 @@ sub do_lint {
         # Delegate to webvm or latest e-o ?
         return 0;
     }
+    my $br_num = branch_version($br);
+    if (!$br_num) {
+        print " > Lint: don't know what branch $br is\n";
+        return 6;
+    }
 
     # Find & load the right code
     my $find_major =
-      ($br < 88 ? 88 # lint code not available before that
-       : $br);
+      ($br_num < 88 ? 88 # lint code not available before that
+       : $br_num);
     my $eo =
-#      "$ENV{HOME}/gitwk-anacode/ensembl-otter/modules";
       "/software/anacode/otter/otter_rel$find_major/ensembl-otter/modules"; # XXX: Linux-centric!  Should call some team_tools code to find it?
     try {
         require lib;
         lib->import($eo);
 
         require Bio::Otter::Version;
-        if ($br ne (my $major = Bio::Otter::Version->version)) {
+        if ($br_num ne (my $major = Bio::Otter::Version->version)) {
+            my $want = $br eq $br_num ? $br : "$br_num for branch $br";
             $bad{version} = [ "code $major from $INC{'Bio/Otter/Version.pm'}",
-                              "data $br" ];
+                              "data $want" ];
         }
     } catch {
         my $err = $_;
