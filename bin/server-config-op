@@ -757,8 +757,9 @@ sub push_new {
 
 sub branch_version {
     my ($br) = @_;
-    return $1 if $br =~ m{^(?:remotes/[^/]+/)?(\d+)$};
-    return $1 if $br =~ m{^(?:remotes/[^/]+/)?(?:feature|[a-z0-9]+)/(\d+)[-_.,]};
+    my $out;
+    return $out if ($out) = $br =~ m{^(?:remotes/[^/]+/)?(\d+)$};
+    return $out if ($out) = $br =~ m{^(?:remotes/[^/]+/)?(?:feature|[a-z0-9]+)/(\d+)[-_.,]};
     return (); # doesn't look like a major-version-numbered branch
 }
 
