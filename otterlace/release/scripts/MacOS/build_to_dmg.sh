@@ -361,6 +361,7 @@ compress_dmg() {
 
 cleanup() {
     chat "cleanup"
+    ${dry_run:+echo DRY_RUN:} rm -v "$sparse_image"
 }
 
 
