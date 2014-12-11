@@ -1,7 +1,4 @@
-#! /software/perl-5.12.2/bin/perl
-#
-# Hardwired #! to avoid influence from calling user's environment.
-# Avoiding /usr/bin/perl for lack of File::Slurp.
+#! /usr/bin/env perl
 
 use strict;
 use warnings;
