@@ -32,6 +32,7 @@ p5-test-differences
 p5-sub-name
 p5-timedate
 p5-anyevent
+p5-sys-cpuload
 
 # graphics
 #
