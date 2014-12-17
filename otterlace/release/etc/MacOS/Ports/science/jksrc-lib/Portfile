@@ -4,7 +4,7 @@
 PortSystem              1.0
 
 name                    jksrc-lib
-version                 277
+version                 309
 categories              science
 platforms               darwin
 maintainers             sanger.ac.uk:mg13 openmaintainer
@@ -20,8 +20,8 @@ homepage                http://hgdownload.cse.ucsc.edu/downloads.html
 master_sites            http://hgdownload.cse.ucsc.edu/admin/
 distname                jksrc.v${version}
 
-checksums               sha256  2b82880d00fa5613fc96b752171db2e8c227f0e46f34500354a9b248dfaf73d6 \
-                        rmd160  50523cab4c845801a18ec27873c90c9434b7a5b6
+checksums               sha256  575ce90dbd57484318711740681cf591d5160459a673ce962ad54cb7f5df062c \
+                        rmd160  860a7ac107da94f1b0e96b8288d45868eca72fd1
 
 use_zip                 yes
 worksrcdir              kent
@@ -31,7 +31,7 @@ depends_lib             port:libpng
 use_configure           no
 
 set archflags           [get_canonical_archflags cc]
-set sdkroot             [portconfigure::configure_get_sdkroot]
+set sdkroot             [portconfigure::configure_get_sdkroot "${configure.sdk_version}"]
 set sdkroot_flags       ""
 
 if {${sdkroot} != ""} {
@@ -52,7 +52,7 @@ destroot {
     
     xinstall -d ${destroot}${prefix}/share/doc/${name}
     xinstall -m 644 -W ${worksrcpath}/src \
-        CHANGES README \
+        README \
         ${destroot}${prefix}/share/doc/${name}
     xinstall -m 644 ${worksrcpath}/src/lib/README ${destroot}${prefix}/share/doc/${name}/README.lib
 
