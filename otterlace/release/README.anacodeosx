@@ -1,0 +1,20 @@
+Rebuilding on otter@anacodeosx
+------------------------------
+
+The scripts (as modified) now work to rebuild a working otterlace
+environment from scratch, with the following manual interventions:
+
+p5-graph @0.960.0 is broken - the checksum had 5e8 excised when perl
+5.8 was removed by script! [mg13 to submit MacPorts ticket.]
+
+p5-tk @804.32.0 - p5.12-extutils-makemaker must be uninstalled first
+(brought in by another port). This will likely be fixed upstream
+either in p5-tk or p5.12-extutils-makemaker as it is not MacPorts
+specific.
+
+openjade - an insufficiently rigorous regexp mistakenly alters
+'build_otterlace.app' in a path in <build_dir>/jade/Makefile.la.
+
+
+Note that otterlace must include ensembl-otter e1a0f0f :
+"RipVanWinkle: favour Sys::CpuLoad over Sys::LoadAvg."
