@@ -1,4 +1,4 @@
-#! /software/bin/perl-5.12.2 -T
+#!/usr/local/bin/perl -T
 
 use strict;
 use warnings;
