@@ -1,4 +1,4 @@
-#! /usr/bin/perl -T
+#!/usr/local/bin/perl -T
 
 use strict;
 use warnings;
@@ -33,12 +33,13 @@ my $SHOWPROCS = q{show full processlist};
 sub headlinks {
     my $me = (getpwuid($<))[0];
     $me = "\u$me";
+    my $prog = $0; $prog =~ s{.*/}{};
     return <<HTML;
 <p>
   [ <a href="/"> top index </a>
   | <a href="http://mediawiki.internal.sanger.ac.uk/wiki/index.php/User:$me">[[User:$me]]</a>
   | <a href="http://ganglia.internal.sanger.ac.uk/gweb-2.2.0/?c=Lutra%20Servers&m=load_one&r=hour&s=by%20name&hc=4&mc=2">lutras on Ganglia</a>
-  | <a href="http://git.internal.sanger.ac.uk/cgi-bin/gitweb.cgi?p=users/mca/local-apache.git;a=history;f=cgi-bin/mysql-procs.pl;hb=HEAD"> this code </a>
+  | <a href="http://git.internal.sanger.ac.uk/cgi-bin/gitweb.cgi?p=anacode/team_tools.git;a=history;f=otter-web-utils/cgi-bin/$prog;hb=HEAD"> this code </a>
   | <a href="http://mediawiki.internal.sanger.ac.uk/wiki/index.php/Anacode_Databases">[[Anacode Databases]]</a>
   ]
 </p>
