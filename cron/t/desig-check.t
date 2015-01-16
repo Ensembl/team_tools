@@ -22,7 +22,7 @@ my $desig = Bio::Otter::Server::Config->designations;
 my %major; # set of versions with clients, key = major
 
 my @holtdir = map {"/software/noarch/$_/anacode/otter"}
-  qw( linux-i386 linux-x86_64 precise-x86_64 ); # XXX: This trick will stop working after Lenny+Lucid
+  qw( linux-i386 linux-x86_64 precise-x86_64 trusty-x86_64 ); # XXX: This trick will stop working after Lenny+Lucid
 foreach my $holtdir (@holtdir) {
     diag "In $holtdir";
 
