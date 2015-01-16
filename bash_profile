@@ -38,6 +38,7 @@ if ! ( echo "$PATH" | sed -e 's/:/\n/g' | grep -q -E ^/software/perl ); then
     case "$anacode_distro_code" in
         lenny|lucid|squeeze) PATH="/software/perl-5.12.2/bin:$PATH" ;;
         precise) PATH="/software/perl-5.14.4/bin:$PATH" ;;
+        trusty)  PATH="/software/perl-5.18.2/bin:$PATH" ;;
         etch) # not expecting to need this; 5.12.2 needs GLIBC_2.4
             PATH="/software/perl-5.10.1/bin:$PATH"
             ;;
