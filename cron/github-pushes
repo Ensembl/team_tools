@@ -24,6 +24,7 @@ setup_vars() {
     # Assume there is just one ssh-agent running; don't pester the X11 user
     export SSH_AGENT_PID=$( pidof ssh-agent )
     export SSH_AUTH_SOCK=$( echo /tmp/keyring-*/ssh )
+    # See also https://github.com/mcast/scripts/blob/master/bin/with-found-ssh-agent
     DISPLAY=
 
     if [ -z "$SSH_AUTH_SOCK" ] || [ -z "$SSH_AGENT_PID" ]; then
