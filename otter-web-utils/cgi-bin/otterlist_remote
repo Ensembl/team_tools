@@ -1,0 +1,3 @@
+#! /bin/sh
+
+exec ssh -Tax lucid-dev32 env SHOWING_LIVE=1 $PWD/otterlist
