@@ -12,6 +12,8 @@ mysql-procs.pl - mysql show full processlist
 
 Display running queries on the team databases.
 
+Linked from L<SangerWiki/http://mediawiki.internal.sanger.ac.uk/index.php/Anacode_databases#See_also>
+
 =head1 AUTHOR
 
 Matthew Astley, team119 (Anacode)

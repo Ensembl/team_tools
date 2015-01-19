@@ -12,6 +12,8 @@ cbi5d-procs.pl - mysql show full processlist
 
 Display running queries on database.
 
+B<Forked from mysql-procs and should be merged back in>
+
 =head1 AUTHOR
 
 Matthew Astley, team119 (Anacode)
