@@ -9,7 +9,7 @@ zhost2ohost:
   cbi4a: cbi4a gen1
   cbi4h: cbi4h gen1
   deskpro20407: lucid-dev32
-  lucid-dev64: lucid-dev64 gen1
+  lucid-dev64: lucid-dev64 gen1 trusty-dev64
   mac106229i: ~
   mac18480i: ~
   tviewsrv: lucid-dev32
