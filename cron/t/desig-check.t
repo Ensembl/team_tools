@@ -84,8 +84,8 @@ foreach my $holtdir (@holtdir) {
       grep { /^\d+$/ } keys %$desig;
 
     if ($holtdir =~ /trusty-x86_64/) { # XXX: special case not required after 87 is gone ~ 2015-08
-        delete @want_nondes{qw{ 85 86 87 }};
-        my @unwant_ln = grep { $want_ln{$_} =~ m{^otter_rel8[567]} } keys %want_ln;
+        delete @want_nondes{qw{ 85 86 }};
+        my @unwant_ln = grep { $want_ln{$_} =~ m{^otter_rel8[56]} } keys %want_ln;
         delete @want_ln{@unwant_ln};
         diag "On $holtdir, skipping 85..87 (old editions not built)";
         diag "  unwant_ln = (@unwant_ln)";
