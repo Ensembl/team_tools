@@ -24,6 +24,7 @@ setup_vars() {
     # Assume there is just one ssh-agent running; don't pester the X11 user
     export SSH_AGENT_PID=$( pidof ssh-agent )
     export SSH_AUTH_SOCK=$( echo /tmp/keyring-*/ssh )
+    # See also https://github.com/mcast/scripts/blob/master/bin/with-found-ssh-agent
     DISPLAY=
 
     if [ -z "$SSH_AUTH_SOCK" ] || [ -z "$SSH_AGENT_PID" ]; then
@@ -41,7 +42,7 @@ setup_vars() {
 
 all_repos() {
     REFS_WHITE='refs/tags/(humpub-release-.*|initial_empty_commit|cvs_MAIN_final|info/.*)|origin/humpub-branch-.*'
-    REFS_BLACK='origin/master|origin/(feature|jgrg|jh13|mca|mg13|tmp)/.*|refs/tags/(cvs|feature|attic)/.*'
+    REFS_BLACK='origin/master|origin/(attic|feature|jgrg|jh13|mca|mg13|tmp)/.*|refs/tags/(cvs|feature|attic)/.*'
     MAKE_MASTER_RE='tags/humpub-release-(\d+)-dev$'
     FROM_REMOTE='origin'
     REPO="$HOME/gitwk--bg/ensembl-otter"
@@ -66,13 +67,14 @@ all_repos() {
     # Developer branches and tags are all private, may be rebased etc.
 
 
-    REFS_WHITE='origin/anacode|origin/master'
-    REFS_BLACK='nil'
-    MAKE_MASTER_RE=
-    FROM_REMOTE='origin'
-    REPO="$HOME/_httpd/cgi-bin/cron2rss"
-    TO_REMOTE='git@github.com:Anacode/cron2rss.git'
-    do_push
+    ## More repos here if required, e.g.:
+    # REFS_WHITE='origin/anacode|origin/master'
+    # REFS_BLACK='nil'
+    # MAKE_MASTER_RE=
+    # FROM_REMOTE='origin'
+    # REPO="$HOME/_httpd/cgi-bin/cron2rss"
+    # TO_REMOTE='git@github.com:Anacode/cron2rss.git'
+    # do_push
 }
 
 

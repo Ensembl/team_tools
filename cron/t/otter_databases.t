@@ -127,7 +127,7 @@ sub enslave_pass {
 }
 
 
-sub be_readonly {
+sub be_readonly { # XXX:DUP ensembl-otter.git t/obtain-db.t
     my ($what, $dbh, $dbname) = @_;
 
     my $have_db = eval {
@@ -141,6 +141,7 @@ sub be_readonly {
 
 	my $ins = eval {
 	    local $SIG{__WARN__} = sub { };
+            $dbh->begin_work if $dbh->{AutoCommit}; # it's off here, but was on when I copied...
 	    $dbh->do("insert into meta (species_id, meta_key, meta_value) values (null, ?,?)", {},
 		     "be_readonly.$0", scalar localtime);
 	    "Inserted";

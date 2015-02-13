@@ -31,6 +31,8 @@ p5-file-slurp
 p5-test-differences
 p5-sub-name
 p5-timedate
+p5-anyevent
+p5-sys-cpuload
 
 # graphics
 #
@@ -53,7 +55,7 @@ samtools
 
 # development
 #
-p5-test-perl-critic
+# p5-test-perl-critic
 p5-test-differences
 p5-test-exception
 p5-test-mockobject

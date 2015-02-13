@@ -273,6 +273,7 @@ sub main {
     $ENV{SCRIPT_NAME} = $ENV{SCRIPT_URL} = $cgi_url;
     $ENV{GATEWAY_INTERFACE} = 'CGI/bogus'; # 'CGI/1.1'
     $ENV{REQUEST_METHOD} = 'GET' unless defined $ENV{REQUEST_METHOD};
+    $ENV{SERVER_PROTOCOL} = 'HTTP/1.1/faked'; # for webvm.git 89da8c56
 
     $ENV{LANG} = 'C' unless exists $ENV{LANG};
     # as in APACHECTL wrapper, which wants it to be well-defined
