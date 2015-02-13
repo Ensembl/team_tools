@@ -1,0 +1,461 @@
+#!/usr/local/bin/perl -T
+#
+# on deskpro we want /software/bin/perl and that is (currently
+# 2015-01) the same
+#
+# on web-ottersand-01 we're sure to fail (because no /software) but
+# might like to explain why
+
+use strict;
+use warnings;
+
+use CGI qw( header escapeHTML );
+use File::Slurp qw( read_dir slurp );
+use File::Spec;
+use Sys::Hostname 'hostname';
+
+
+# Globals. Ick.
+my %vsn; # value = [ path, arch, leaf, version, (flavour), decoration, \@track ], key = path
+my @track; # list of [ path, arch, leaf, designatee_path, designation, (flavour) ]
+my @strange; # HTML strings
+my ($newest, $newfn);
+
+sub main {
+    $ENV{PATH} = '/bin:/usr/bin';
+    my $remote = ($ENV{SHOWING_LIVE}
+                  ? q{<br /><span class="new"> This page shows files directly from the dev servers </span>}
+                  : '');
+
+    my @out =
+      (header(-expires => 'now', -type => 'text/html'),
+       qq{<html>
+<head><title>Otterlace versions list</title>
+<style type="text/css">
+ table.vsns    { border-collapse: collapse; border: thin black solid }
+ table.vsns th { border: thin black solid; padding: 1ex }
+ table.vsns td { border: thin black solid; padding: 3px }
+ table.vsns tr.gone td { text-decoration: line-through; color: grey }
+ strike.bad    { color: grey }
+ span.ottvsn   { font-size: 120% }
+ span.binvsn   { font-size: 80%; font-family: monospace }
+ span.titled   { border-bottom: 1px dotted grey }
+ span.new      { font-style: italic; color: red }
+ pre.data      { border: thin #ccf dashed; background-color: #eef }
+ td.empty      { background-color: #ddd }
+ div.eek       { color: darkred }
+</style>
+</head><body>
+ <h1> Otterlace versions </h1>
+ <p>
+  Served from <a href="/">developer local Apache</a>.
+  Please bookmark via <a href="http://mediawiki.internal.sanger.ac.uk/wiki/index.php/Otterlace#Current_versions">the wiki page</a>.
+ </p>
+ <h2> Internal Linux releases </h2>
+  <p>
+    [ <a href="otterlist"> view from a deskpro </a>
+    | <a href="otterlist_remote"> view from a build host </a>
+    ]
+  </p>
+  <p> Please note <p><ul>
+    <li> There may be a delay of about ten minutes between release of
+         a new version, and its visibility on all workstations.  This
+         should have been accounted for when announcements were
+         made. $remote</li>
+    <li> Presence in this list does not mean the version is working or
+         tested.  This is a minimal &quot;what is on the
+         filesystem?&quot; listing. </li>
+  </ul>\n},
+      );
+
+    my %ftp =
+      (url => 'ftp://ftp.sanger.ac.uk/pub/anacode/otterlace/', # needs last /
+       path => homedir('ftp').'/pub/anacode/otterlace');
+    open $ftp{url_fh}, '-|',
+      (curl => '-qsS', $ftp{url},
+       # "$ftp{url}/CURRENT/", "$ftp{url}/TEST/", # doesn't work very well
+      ) or die "Cannot pipe from curl: $!";
+    open $ftp{path_fh}, '-|',
+      (find => $ftp{path},
+       -printf => '%M %3n %6u %g %9s %TY-%Tm-%Td %.8TT',
+       -cmin => '-30', -printf => '** ', -o => -printf => '   ',
+       qw{ , -printf ./%P -type l -printf }, ' -> %l',
+       qw{ , -printf \n })
+        or die "Cannot pipe from find: $!";
+    # let them get started now, so data should be ready after we do other IO
+
+    find_vsns();
+    push @out, display_vsns();
+    push @out, ftp_vsns(%ftp);
+
+    my $hnow = escapeHTML(scalar localtime);
+    my $hhost = escapeHTML(hostname());
+    push @out, qq{<hr /> <i> Generated at $hnow; files as seen from $hhost </i> <br />\n};
+    if ($newest * 24 < 1) {
+        push @out, sprintf(qq{ <span class="new"> Newest file <tt>%s</tt> is only %.1f minutes old </span>\n},
+                           escapeHTML($newfn), $newest * 24 * 60);
+    }
+    push @out, qq{</body></html>\n};
+    print join '', @out;
+}
+
+
+# We don't scan all file stamps, but the ones we see should be representative
+sub set_newest {
+    foreach (@_) {
+        my $ignore = -l $_; # want the lstat for age
+        next unless -e _;
+        my $age = -M _;
+        next if defined $newest && $age > $newest;
+        $newest = $age;
+        $newfn = $_;
+    }
+}
+
+sub find_vsns {
+    foreach my $arch (qw( linux-i386 linux-x86_64 )) {
+        my $holtdir = "/software/noarch/$arch/anacode/otter";
+        set_newest($holtdir);
+        foreach my $leaf (read_dir($holtdir)) {
+            next if $leaf =~ /^sync_stamp\./; # from check-software-replication-one-loop of team_tools
+            my $fn = "$holtdir/$leaf";
+            my $hfn = escapeHTML($fn);
+            set_newest($fn);
+            if (-l $fn) {
+                my $ln = readlink($fn);
+                my $hln = escapeHTML($ln);
+                my $ln_path = File::Spec->rel2abs($ln, $holtdir);
+                if (!-e $ln_path) {
+                    # dangling symlink
+                    push @strange, qq{Symlink <tt>$hfn</tt> -&gt; <tt>$hln</tt> is dangling};
+                } elsif ($leaf eq 'otter_production_main') {
+                    my $expect = 'otter_live';
+                    push @strange, eek(qq{Legacy symlink <tt>$hfn</tt> should point<br /> to <tt>$expect</tt> but points<br /> to <tt>$hln</tt>})
+                      unless $ln eq $expect;
+                } elsif ($leaf =~ m{^otter_(\w+)(-\w+)?$}) {
+                    my ($desig, $flav) = ($1, flav($2));
+                    push @track, [ $fn, $arch, $leaf, $ln_path, $desig, $flav ];
+                } else {
+                    push @strange, qq{Symlink <tt>$hfn</tt> -&gt; <tt>$hln</tt> also found};
+                }
+            } elsif (-d $fn) {
+                if ($leaf =~ m{^otter_rel(\d+\.?\d+)(-\w+)?(~(?i:DEL~?)?)?$}) {
+                    my ($vsn, $flav, $gone) = ($1, flav($2), $3);
+                    my @decor;
+                    push @decor, 'gone' if defined $gone;
+                    push @decor, 'incomplete' unless -x "$fn/bin/zmap";
+                    push @strange, "Displaced duplicate <tt>$hfn</tt> - weird!" if exists $vsn{$fn};
+                    $vsn{$fn} = [ $fn, $arch, $leaf, $vsn, $flav, (join ' ', @decor) ];
+                } elsif ($leaf =~ m{^otter_rel5[23][._]}) {
+                    # ignore ancient assorted other versions
+                } else {
+                    push @strange, qq{Directory <tt>$hfn</tt> also found};
+                }
+                set_newest(qq{$fn/bin/zmap});
+            } else {
+                push @strange, qq{Something else <tt>$hfn</tt>...  weird};
+            }
+        }
+
+        my $bindir = "/software/noarch/$arch/anacode/bin";
+        foreach my $leaf (read_dir($bindir)) {
+            next unless $leaf =~ /otterlace/;
+            next if $leaf =~ /^_otterlace/; # ignore private implementation script
+            next if $leaf =~ /^otterlace_rel(\d+)/ && $1 <= 57; # ignore old version-specific non-symlink wrapper scripts
+
+            my $fn = "$bindir/$leaf";
+            my $hfn = escapeHTML($fn);
+            if (-l $fn) {
+                my $ln = readlink($fn);
+                my $hln = escapeHTML($ln);
+                my $ln_path = File::Spec->rel2abs($ln, $bindir);
+                if (!-e $ln_path) {
+                    # dangling symlink
+                    push @strange, qq{Symlink <tt>$hfn</tt> -&gt; <tt>$hln</tt> is dangling};
+                } elsif ($ln eq '_otterlace_perdistro') {
+                    # ignore the magical "which distro are we running" wrapper,
+                    # it passes on to /software/anacode/otter/otter_*-$distro
+                    # which we understand already
+                } elsif ($leaf =~ m{^(.*)_otterlace$}) {
+                    my $expect = "otterlace_$1";
+                    my $hexp = escapeHTML($expect);
+                    push @strange, eek(qq{Track-prefix symlink <tt>$hfn</tt> should point<br /> to <tt>$hexp</tt>, but instead points<br /> to <tt>$hln</tt>})
+                      unless $ln eq $expect;
+                } elsif ($leaf =~ m{^otterlace(|_\w+)$}) {
+                    my $track = $1 ? substr($1, 1) : 'live';
+                    my $expect = "../otter/otter_$track/bin/otterlace";
+                    my $hexp = escapeHTML($expect);
+                    push @strange, eek(qq{Track-suffix symlink <tt>$hfn</tt> should point<br /> to <tt>$hexp</tt>, but instead points<br /> to <tt>$hln</tt>})
+                      unless $ln eq $expect;
+                } else {
+                    push @strange, qq{Symlink <tt>$hfn</tt> is weird};
+                }
+            } else {
+                push @strange, qq{Non-symlink <tt>$hfn</tt>, should be pointer to an otterlace version?};
+            }
+        }
+    }
+
+    # Populate \@track designations in %vsn
+    foreach my $T (@track) {
+        my $vpath = $T->[3];
+        push @{ $vsn{$vpath}->[6] }, $T;
+    }
+}
+
+sub eek {
+    return qq{<div class="eek">@_</div>};
+}
+
+sub display_vsns {
+    my @out;
+
+### Drawing all versions and showing where they're used - too messy
+#
+#    # Draw %vsn
+#    push @out, qq{<table class=vsns>}, tr4(th => qw{ Version Designation Arch });
+#    foreach my $path (sort keys %vsn) {
+#        my %hF = version_row($vsn{$path}, \%vsn);
+#        next unless keys %hF;
+#        my @td = ($hF{vsn}, $hF{tracks}, $hF{arch_flav});
+#        push @out, join '', tr4(td => @td);
+#        $out[-1] =~ s/<tr>/<tr class="$hF{decor}">/ if $hF{decor};
+#    }
+#    push @out, qq{</table>\n};
+
+    # Collect relevant versions
+    my %desig; # key = $designation, value = { key ="$archflav", value = \%V }
+    my %archflav; # key = "$archflav", value undef
+    foreach my $T (@track) {
+        my (%T, %V);
+        @T{qw{ path arch leaf designatee_path designation flav }} = @$T;
+        @V{qw{ path arch leaf vsn flav decor tracks }} = @{ $vsn{ $T{designatee_path} } };
+
+        if ($T{arch} ne $V{arch} || ($T{flav} ne $V{flav} && $T{flav} ne '')) {
+            # weirdness - report it
+            push @strange, 'Symlink to weirdness: '.showdata(track => \%T, version => \%V);
+            next;
+        }
+
+        my $af = $T{arch};
+        $af .= '/'.$T{flav} if $T{flav};
+
+        $archflav{$af} = undef;
+        $desig{$T{designation}}->{$af} = \%V;
+    }
+
+    # Draw %desig
+    my @archflav = sort keys %archflav;
+    push @out, qq{<table border=1 class=vsns>}, tr4(th => 'Designation', showarch(@archflav));
+    foreach my $desig (sort by_desig keys %desig) {
+        my %td; # key = archflav, value = vsn
+        @td{ @archflav } = @{ $desig{$desig} }{ @archflav }; # many are undef
+
+        push @out, join '', tr4(td => showdesig($desig), showversion(@td{ @archflav }));
+    }
+    push @out, qq{</table>\n};
+
+    # Mention anything left over
+    push @out, (qq{<p> Also found some things I didn't understand </p><ul>},
+                (map {qq{<li>$_</li>\n}} @strange),
+                qq{</ul>\n}) if @strange;
+
+    return @out;
+}
+
+sub by_desig {
+    ($b eq 'live') <=> ($a eq 'live') ||
+      $a cmp $b;
+}
+
+
+sub showdata {
+    my %D = @_;
+    require YAML;
+    my $D = YAML::Dump(\%D);
+    return qq{<pre class="data">$D</pre>};
+}
+
+sub showdesig {
+    my ($desig) = @_;
+    my $hdesig = escapeHTML($desig);
+    return ($desig eq 'live'
+            ? '<tt>otterlace</tt> (live)'
+            : qq{<tt>otterlace_$hdesig</tt>});
+}
+
+sub showarch {
+    return map {
+        my $orig = $_;
+        local $_ = $_; # avoid changing caller's data via aliasing
+        s/linux-i386/Deskpro/;
+        s/linux-x86_64/Linux 64-bit/;
+        s{/lenny}{<br />Lenny (Debian)};
+        s{/lucid}{<br />Lucid (Ubuntu)};
+        qq{<span class="titled" title="$orig">$_</span>};
+    } @_;
+}
+
+sub showversion {
+    return map {
+        if (defined $_) {
+            my %V = %$_;
+            $V{ZMap} = hoik_compiled_version(ZMap => "$V{path}/bin/zmap");
+            $V{SeqTools} = hoik_compiled_version(SeqTools => "$V{path}/bin/blixemh", "$V{path}/bin/blixem");
+            my %hV = quotehash(%V);
+            my $out = $hV{vsn};
+            $out .= ' (dev)' if $V{vsn} =~ /^\d+$/;
+            $out = qq{<span class="ottvsn">$out</span>};
+            foreach my $exe (qw( ZMap SeqTools )) {
+                next unless defined $V{$exe};
+                my $txt = $hV{$exe};
+                $txt =~ s{\n}{<br />}g;
+                $out .= qq{<br /><span class="binvsn titled" title="$exe">$txt</span>};
+            }
+            $out = qq{<strike class="bad titled" title="$hV{decor}">$out looks broken</span>} if $V{decor};
+            $out;
+        } else {
+            undef;
+        }
+    } @_;
+}
+
+sub hoik_compiled_version {
+    # this is a nasty hack, but should be safe
+    my ($type, @fn) = @_;
+    my ($fn) = grep { -f && -x _ && -r _ } @fn;
+    return () unless defined $fn;
+
+    my $exe = slurp($fn);
+    my ($vsn, $compiled);
+
+    my $MO3 = join '|', qw( Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec );
+    $MO3 = qr{$MO3};
+
+    if ($type eq 'ZMap') {
+# e.g.
+#   develop-Release_0_1_136_5-59-gaf8fd3c
+#   develop-0.10.2-24-g56da
+#   ZMap - release_0.11.0-0.10.2-20-g8a906
+#   production-Release_0_1_136_7-1-g7e5a091
+#   production-Release_0_1_138
+#   release_Release_0_1_138-Release_0_1_136_6-115-g6d689c5
+#   ZMap - 0.6.1-86-g308a
+
+        my @to_v62 = $exe =~
+          m{\b((?:develop|production|release[_a-zA-Z0-9]*)-(?i:Release_)?0_\d+_[-_0-9]+(?:-g[0-9a-f]{4,12})?)[\r\n]*\x00+([ -~]*\d+:\d{2}:\d{2}[ -~]*)?};
+
+        my @new = $exe =~
+	  m{\x00(ZMap - (?:develop|production|release)?[-_0-9.]+(?:-g[0-9a-f]{4,12})?)[\r\n]*\x00};
+	my @ts = $exe =~
+	  m{(?:\x00|\xff)($MO3 [ 0-9]\d 20\d{2} \d{2}:\d{2}:\d{2})\x00};
+
+        if (@new && @ts) {
+            ($vsn, $compiled) = ($new[0], $ts[0]);
+        } else {
+            ($vsn, $compiled) = @to_v62;
+        }
+    } elsif ($type eq 'SeqTools') {
+# e.g.
+#   SeqTools - 4.6-41-g2894\n
+#   SeqTools - 4.7\n
+        ($vsn, $compiled) = $exe =~
+          m{\b(SeqTools - \d+\.\d+[-_.0-9]*(?:-g[0-9a-f]{4,12})?)[\r\n]*\x00+([ -~]*\d+:\d{2}:\d{2}[ -~]*)?};
+    }
+
+    return $vsn.($compiled ? "\nCompiled $compiled" : '') if defined $vsn;
+    return ();
+}
+
+sub quotehash {
+    my %F = @_;
+    my %hF = map {( $_, defined $F{$_} ? escapeHTML($F{$_}) : '' )} keys %F;
+    return %hF;
+}
+
+# sub version_row {
+#     my ($vsn_item, $vsns_hash) = @_;
+#     return () unless defined $vsn_item;
+# 
+#     # The data
+#     my %F;
+#     @F{qw{ path arch leaf vsn flav decor tracks }} = @$vsn_item;
+#     $F{arch_flav} = qq{$F{arch} $F{flav}};
+# 
+#     # Bulk HTML quote
+# #    my %hF = map {( $_, defined $F{$_} ? escapeHTML($F{$_}) : '' )} keys %F;
+#     my %hF = quotehash(%F);
+# 
+#     # Formatting
+#     if ($F{tracks}) {
+#         # list of [ path, arch, leaf, designatee_path, designation, (flavour) ]
+# #        my @desig = map { $_->[4] } @{ $F{tracks} };
+# #        $hF{tracks} = join '; ', map {qq{ <span class="titled" title="$hT{path}"> $hT{designation} </span> }}
+#     }
+# 
+#     return %hF;
+# }
+
+sub flav { # Input: match capture.  Output: description
+    my ($flav) = @_;
+    if (defined $flav) {
+        $flav =~ s/^-//;
+        return $flav;
+    } else {
+        return '';
+    }
+}
+
+
+sub tr4 {
+    my ($ele, @cell) = @_;
+    my @ele = map {( defined $_
+                     ? qq{<$ele> $_ </$ele>}
+                     : qq{<$ele class="empty"></$ele>}
+                   )} @cell;
+
+    # Make colspans
+    for (my $i=0; $i<$#ele; $i++) {
+        my $n = 1;
+        while ($i + $n < @ele && $ele[$i] eq $ele[$i+$n]) { $n++ }
+        next unless $n > 1;
+        splice @ele, $i+1, $n-1 if
+          $ele[$i] =~ s/^<td/<td colspan="$n"/;
+    }
+
+    return (q{<tr>}, @ele, qq{</tr>\n});
+}
+
+
+sub ftp_vsns {
+    my %ftp = @_;
+
+    # require YAML;    my $t = YAML::Dump(\%ftp); my $ht = escapeHTML($t); return qq{<pre class=data>$ht</pre>};
+
+    # Read from subprocesses
+    foreach my $k (qw( url path )) {
+        my $fh = $ftp{"${k}_fh"};
+        $ftp{"${k}_txt"} = join '', <$fh>;
+        close $fh;
+    }
+    $ftp{path_txt} =~ s{^total \d+\n}{}; # hack
+
+    my %hftp = quotehash(%ftp);
+    my @out = qq{<h2> Mac versions </h2>\n <table class="vsns">\n};
+
+    push @out, tr4(th => qq{<tt>$hftp{path}</tt>},
+                   qq{<a href="$hftp{url}">FTP site</a>});
+    push @out, tr4(td =>
+                   qq{<pre class=data>$hftp{path_txt}</pre>},
+                   qq{<pre class=data>$hftp{url_txt}</pre>});
+    push @out, qq{</table>\n};
+
+    return @out;
+}
+
+sub homedir {
+    my ($user) = @_;
+    return (getpwnam($user))[7];
+}
+
+main();

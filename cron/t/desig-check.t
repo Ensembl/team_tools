@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 10;
+use Test::More tests => 12; # 2*@holtdir + 2*2 (Otter Server)
 use YAML qw( Dump );
 use File::Slurp 'read_dir';
 
@@ -22,7 +22,7 @@ my $desig = Bio::Otter::Server::Config->designations;
 my %major; # set of versions with clients, key = major
 
 my @holtdir = map {"/software/noarch/$_/anacode/otter"}
-  qw( linux-i386 linux-x86_64 precise-x86_64 ); # XXX: This trick will stop working after Lenny+Lucid
+  qw( linux-i386 linux-x86_64 precise-x86_64 trusty-x86_64 ); # XXX: This trick will stop working after Lenny+Lucid
 foreach my $holtdir (@holtdir) {
     diag "In $holtdir";
 
@@ -82,6 +82,14 @@ foreach my $holtdir (@holtdir) {
     }
     my %want_nondes = map {( $_ => $desig->{$_} )}
       grep { /^\d+$/ } keys %$desig;
+
+    if ($holtdir =~ /trusty-x86_64/) { # XXX: special case not required after 87 is gone ~ 2015-08
+        delete @want_nondes{qw{ 85 86 }};
+        my @unwant_ln = grep { $want_ln{$_} =~ m{^otter_rel8[56]} } keys %want_ln;
+        delete @want_ln{@unwant_ln};
+        diag "On $holtdir, skipping 85..87 (old editions not built)";
+        diag "  unwant_ln = (@unwant_ln)";
+    }
 
     my $pass = 1;
     $pass = 0 unless is_deeply(\%got_ln, \%want_ln, "Symlinks in $holtdir");
