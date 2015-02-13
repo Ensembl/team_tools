@@ -1,0 +1,69 @@
+#! /bin/sh
+
+# rackmac_build <major.minor>
+#
+#   Build it,
+#   Then if that succeeds
+#   Transfer a built image to the FTP site.
+#   Does not update any symlinks.
+
+set -e
+. "$( dirname "$0" )/_otterlace.sh" || exit 1
+
+REL=$1
+ZMAPDIR=$2
+RACKMAC=otter@anacodeosx # match otterlace/release/scripts/MacOS/rsync_git_repos.sh
+
+ZMAPDIR_LOCAL=/nfs/zmap/ZMap/BUILDS/$ZMAPDIR
+ZMAPDIR_REMOTE="~/Otter/Links/ZMap_BUILDS/$ZMAPDIR"
+
+[ $(uname) = 'Linux' ] || bail \
+    "This is a convenience wrapper, run it from a Linux server"
+
+# looks_like_version "$REL" || bail "Syntax: $0 <xx.yy>"
+
+RELTAG=$( perl -e '
+ my ($prog, $v) = @ARGV;
+ if ($v =~ m{^(\d{2,3})\.(\d{2})$}) {
+   print "humpub-release-$1-$2";
+ } else {
+   die "Syntax: $prog <xx.yy> *_BUILDS/ZMap.MUMBLE.BUILD\n";
+ }' "$(basename "$0")" "$REL" )
+
+RELBRANCH=$( perl -e '
+ my ($prog, $v) = @ARGV;
+ $v =~ m{^(\d{2,3})\.(\d{2})$};
+ print "humpub-branch-$1";
+' "$(basename "$0")" "$REL" )
+
+[ -d "$ZMAPDIR_LOCAL" ] && [ -f "$ZMAPDIR_LOCAL/Dist"/zmap-*.tar.gz ] \
+    || bail "Couldn't find ZMap dist tarball in $ZMAPDIR_LOCAL/Dist/zmap-*.tar.gz (local)
+
+Syntax: $(basename "$0") <xx.yy> *_BUILDS/ZMap.MUMBLE.BUILD"
+printf "\n\nArgs look OK,\n  build %s\n  with  %s\n\n" "$RELTAG" "$ZMAPDIR_REMOTE"
+
+printf "\n\nUpdating Git mirrors\n"
+ssh intcvs1 $ANACODE_TEAM_TOOLS/otterlace/release/scripts/MacOS/rsync_git_repos.sh \
+    || bail "Copying repos from intcvs1 to $RACKMAC failed"
+
+printf "\n\n\nGetting the checkout\n"
+ssh $RACKMAC "hostname; cd ~/Otter/Git/ensembl-otter && (git diff --quiet && git diff --quiet --cached || (echo Working copy $PWD is modified; git status; false)) && git fetch -p && (git checkout $RELBRANCH || git checkout -t origin/$RELBRANCH) && git reset --hard $RELTAG && git --no-pager log --decorate -1 --color" \
+    || bail "git (checkout,reset) $RELTAG failed - somehow not pushed from intcvs1?"
+
+
+printf "\n\n\nCheck the ZMap build\n"
+ssh $RACKMAC "hostname; cd $ZMAPDIR_REMOTE && DIST=\$( echo Dist/zmap-*.tar.gz ) && echo DIST=\$DIST && [ -n \"\$DIST\" ] && [ -f \"\$DIST\" ]" \
+    || bail "Couldn't find ZMap dist tarball in $ZMAPDIR_REMOTE (remote)"
+
+
+printf "\n\n\nStart the build"
+sleep 5 # long enough to read and abort, but insignificant next to a build
+echo
+ssh $RACKMAC "hostname; cd ~/Otter/Dist && \$ANACODE_TEAM_TOOLS/otterlace/release/scripts/MacOS/build_to_dmg.sh -v --otter ~/Otter/Git/ensembl-otter --zmap $ZMAPDIR_REMOTE" \
+    || bail "Otterlace build failed"
+
+
+printf "\n\n\nCopy the result\n"
+_rackmac_copy_dmg "$REL" || bail 'failed'
+
+echo Mac build complete

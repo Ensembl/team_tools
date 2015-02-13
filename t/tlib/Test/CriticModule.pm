@@ -36,6 +36,13 @@ sub import {
 sub critic_module_ok {
     my ($module, $test_name, @args) = @_;
 
+  SKIP: {
+    if ($ENV{OTTER_TESTS_SKIP_CRITIC}) {
+        my $tb = Test::Builder->new;
+        $tb->skip("Skipping critic_module_ok($module)");
+        return;
+    }
+
     my @mod_dir = split(/::/, $module);
     my $mod_file = pop(@mod_dir) . ".pm";
     my $mod_rel_path = File::Spec->catfile(@mod_dir, $mod_file);
@@ -49,6 +56,8 @@ sub critic_module_ok {
     }
 
     return critic_ok($mod_path, $test_name, @args);
+
+  } # SKIP
 }
 
 1;

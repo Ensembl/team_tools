@@ -39,6 +39,7 @@ my @expect_arch = qw(
     linux-i386
     linux-x86_64
     precise-x86_64
+    trusty-x86_64
     );
 
 sub show_syntax {
@@ -49,7 +50,7 @@ Purge old Otterlace releases from /software/anacode .
 
   -L : local mode, works only on /software/anacode/
                     not /software/noarch/*/anacode/
-       (required on precise-x86_64 machines)
+       (required on precise-x86_64 and trusty-x86_64 machines)
 
 Defaults to a dry run.\n";
 }

@@ -9,9 +9,12 @@ set -e
 . "$( dirname "$0" )/_otterlace.sh" || exit 1
 
 REL=$1
-RACKMAC=rackmac # what mca calls it
+RACKMAC=otter@anacodeosx # match otterlace/release/scripts/MacOS/rsync_git_repos.sh
 
 looks_like_version "$REL" || bail "Syntax: $0 <xx.yy>"
+
+[ $(uname) = 'Linux' ] || bail "Run this from a Linux server,
+ not the MacOS host (which has no access to the FTP site NFS home)"
 
 
 # Workstation side
@@ -36,3 +39,11 @@ scp -p \
     $XFERDIR/
 
 mv -v $XFERDIR $FTPDIR
+
+printf "\n\n You update the symlink?\n"
+ls -lrt --color $FTPROOT | sed -e 's/^/    /'
+
+printf "\n\n maybe with one of\n    ln -snvf release_%s %s/%s\n    ln -snvf release_%s %s/%s\n\n" \
+    "$REL" "$FTPROOT" TEST "$REL" "$FTPROOT" CURRENT
+
+echo "Then wait for sync to ftp site"

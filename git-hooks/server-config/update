@@ -87,9 +87,12 @@ case "$refname","$newrev_type" in
                     fi
 		fi
 		;;
+	refs/heads/feature/*,delete | refs/heads/$USER/*,delete)
+                echo "Looks like you are deleting a feature branch"
+                ;;
 	refs/heads/*,delete)
 		# delete branch
-		echo "*** Explicitly deleting a branch is not allowed in this repository.  Please push a commit containing no files, so it can be merged." >&2
+		echo "*** Explicitly deleting a version-branch is not allowed in this repository.  Please push a commit containing no files, so it can be merged." >&2
 		exit 1
 		;;
 	refs/remotes/*,commit)
