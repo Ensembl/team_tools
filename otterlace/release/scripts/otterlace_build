@@ -37,6 +37,11 @@ get_opts_inputvars() {
             --hosts | -H)
                 # this is a convenience option, so _otterlace_build_config.pl can remain "internal"
                 exec _otterlace_build_config.pl -list ;;
+            --enumerate-hosts | -E)
+                # this is a convenience option, so _otterlace_build_config.pl can remain "internal"
+                [[ $# > 1 ]] && show_help_exit '--enumerate-hosts takes zero or one release stream argument'
+                stream="${1:-live}"
+                exec _otterlace_build_config.pl "$stream" ;;
             --server-only | -S)
                 [ -n "$client_build_hosts" ] && bail "Was about to overwrite client_build_hosts='$client_build_hosts'"
                 client_build_hosts=' '
@@ -134,7 +139,12 @@ show_help_exit() {
  Options:
 
     --help | -h			Show this help (and stop)
+
     --hosts | -H		Show build hosts list (and stop)
+
+    --enumerate-hosts | -E [<stream>]
+                                Show raw list of build hosts for
+                                  given release stream (default: live)
 
     --server-only | -S		Build Otter Server, but no clients
 
