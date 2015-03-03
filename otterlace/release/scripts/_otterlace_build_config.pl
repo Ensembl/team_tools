@@ -12,7 +12,7 @@ _otterlace_build_config.pl - calculate config for otterlace_build
 
 =head1 SYNOPSIS
 
- _otterlace_build_config [ options ] <ZMap_build_tree>*
+ _otterlace_build_config [ options ] <ZMap_build_tree|release_stream>*
 
 =head1 DESCRIPTION
 
@@ -35,8 +35,8 @@ C<< {lenny,lucid}-dev{32,64} >> are not always available.
 
 =head2 Operations
 
-For a list of build directories and some (hopefully stable) data, we
-can produce either
+For a list of build directories (or otterlace release streams)
+and some (hopefully stable) data, we can produce either
 
 =over 4
 
@@ -85,16 +85,19 @@ sub main {
   When given a buildhost (which must be from that set), return the one
   ZMap tree which should be used on the host.\n";
     }
-    my @missing_dir = grep { ! -d $_ }
-      map {($_, "$_/ZMap", "$_/Dist")} # should exist in valid build; mca inferred
-        @zmapdirs;
-    die "$0: ZMap build directories (@zmapdirs) are missing some component directories (@missing_dir)\n"
-      if @missing_dir;
 
     # Read config
     my $cfg_fn = "$RealBin/../build-config.yaml"; # TODO: a flag
     eval { read_config($cfg_fn) } or
       die "$0: Failed to read $cfg_fn: $@";
+
+    @zmapdirs = _maybe_convert(@zmapdirs);
+
+    my @missing_dir = grep { ! -d $_ }
+      map {($_, "$_/ZMap", "$_/Dist")} # should exist in valid build; mca inferred
+        @zmapdirs;
+    die "$0: ZMap build directories (@zmapdirs) are missing some component directories (@missing_dir)\n"
+      if @missing_dir;
 
     # Mappings: find the ZMap build hosts
     my %zhost2dir = zhosts(@zmapdirs);
@@ -174,5 +177,21 @@ sub read_config {
     return 1;
 }
 
+sub _maybe_convert {
+    my (@stream_or_dir) = @_;
+    my $ostream2zstream = $CONFIG{ostream2zstream};
+    my $zmap_build_links_path = glob $CONFIG{zmap_build_links_path};
+    my @results;
+    foreach my $sd (@stream_or_dir) {
+        my $zd = $ostream2zstream->{$sd};
+        if ($zd) {
+            $sd = "${zmap_build_links_path}/$zd";
+        } elsif (not -d $sd) {
+            die "$0: '$sd' is neither a directory nor an otterlace release stream\n";
+        }
+        push @results, $sd;
+    }
+    return @results;
+}
 
 exit main();

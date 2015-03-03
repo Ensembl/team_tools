@@ -15,3 +15,9 @@ zhost2ohost:
   tviewsrv: lucid-dev32
   deskpro021045: lucid-dev32
   t119-win-build: ~
+
+zmap_build_links_path: ~zmap
+ostream2zstream:
+  dev:  BUILD.DEVELOPMENT
+  test: BUILD.RELEASE
+  live: BUILD.PRODUCTION
