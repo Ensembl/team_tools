@@ -36,27 +36,34 @@ failure if this does happen, but should not break real apps.
 
 
 sub main {
+
+    # We should perhaps consult databases.yaml for these hostnames?
+
     my @want = # list of [ host:port, user, pass, \@morechecks ]
-      ([ "otterlive:3324", user_password("ottro"),
+      (
+       # otterlive
+       [ "vm-mii-otlp:3324", user_password("ottro"),
 	 [ \&be_readonly, "loutre_human" ] ], # 3 tests
-       [ "otterlive:3324", user_password("ottadmin") ],
-       [ "otterlive:3324", user_password("ottroot") ],
+       [ "vm-mii-otlp:3324", user_password("ottadmin") ],
+       [ "vm-mii-otlp:3324", user_password("ottroot") ],
 
-       [ "otterpipe1:3322", user_password("ottro"),
+       # otterpipe1
+       [ "mcs17:3322", user_password("ottro"),
 	 [ \&be_readonly, "pipe_human" ] ],
-       [ "otterpipe1:3322", user_password("ottadmin") ],
-       [ "otterpipe1:3322", user_password("ottroot") ],
+       [ "mcs17:3322", user_password("ottadmin") ],
+       [ "mcs17:3322", user_password("ottroot") ],
 
-       [ "otterpipe2:3323", user_password("ottro"),
+       # otterpipe2
+       [ "mcs17:3323", user_password("ottro"),
 	 [ \&be_readonly, "pipe_pig" ] ],
-       [ "otterpipe2:3323", user_password("ottadmin") ],
-       [ "otterpipe2:3323", user_password("ottroot"),
+       [ "mcs17:3323", user_password("ottadmin") ],
+       [ "mcs17:3323", user_password("ottroot"),
 #	 [ \&be_readonly, "mca_loutremouse_schema" ], # test would fail because writable
        ],
       );
-    my %slave = (otterlive => "otlpslave",
-		 otterpipe1 => "otp1slave",
-		 otterpipe2 => "otp2slave");
+    my %slave = ('vm-mii-otlp' => 'mcs18',
+		 'mcs17'       => 'mcs18',
+		 );
 
     foreach my $wantrow (@want) {
 	my ($hostport, $user, $pass, @morechecks) = @$wantrow;
