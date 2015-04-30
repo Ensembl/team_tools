@@ -9,7 +9,8 @@ zhost2ohost:
   cbi4a: cbi4a precise-dev64
   cbi4h: cbi4h precise-dev64
   deskpro20407: lucid-dev32
-  lucid-dev64: lucid-dev64 precise-dev64 trusty-dev64
+  lucid-dev64: lucid-dev64
+  precise-dev64: precise-dev64 trusty-dev64
   mac106229i: ~
   mac18480i: ~
   tviewsrv: lucid-dev32
@@ -21,3 +22,7 @@ ostream2zstream:
   dev:  BUILD.DEVELOPMENT
   test: BUILD.RELEASE
   live: BUILD.PRODUCTION
+
+zhost_osname_override:
+  precise-dev64: precise
+  trusty-dev64:  precise
