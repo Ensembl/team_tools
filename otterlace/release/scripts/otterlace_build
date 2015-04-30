@@ -492,17 +492,21 @@ otterlace_client_install() {
     local arch
     # not local: zmap_prefix
     arch="$( uname -m )"
+    hostname="$( hostname )"
+    zmap_build_osname="$( _otterlace_build_config.pl -osname ${hostname} || echo ${osname} )"
+    : ${zmap_build_osname:=${osname}} # default if not set above
 
     echo ""
     echo "  client install"
     echo "  intended host: ${otterlace_client_host}"
     echo "  host name: $( hostname )"
     echo "  os name: ${osname}"
+    echo "  zmap os name: ${zmap_build_osname}"
     echo "  arch: ${arch}"
     echo "  distro version: $( lsb_release -sc 2>/dev/null || echo 'no release codename' )"
 
     # zmap_prefix is only meaningful during a client install
-    zmap_prefix="${zmap_build}/${osname}_${arch}"
+    zmap_prefix="${zmap_build}/${zmap_build_osname}_${arch}"
     [ -d "$zmap_prefix" ] || bail "error: client install for ${osname}_${arch} aborted: the ZMap directory ${zmap_prefix} is missing or invalid"
 
     echo &&
