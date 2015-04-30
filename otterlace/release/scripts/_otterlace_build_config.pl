@@ -60,6 +60,11 @@ of the build as another wrapper on the outside.
 Output the list of build host combinations.  Used for inclusion in
 help text.
 
+=item -osname <otterlace_buildhost>
+
+Output an override value for $osname [which defaults to $(uname -s)]
+for the given build host.
+
 =back
 
 =cut
@@ -71,6 +76,8 @@ sub main {
     my ($op, $for_host);
     if (@ARGV > 2 && $ARGV[0] eq '-host') {
         ($op, $for_host) = splice @ARGV, 0, 2;
+    } elsif (@ARGV == 2 && $ARGV[0] eq '-osname') {
+        ($op, $for_host) = splice @ARGV, 0, 2;
     } elsif (@ARGV == 1 && $ARGV[0] eq '-list') {
         $op = shift @ARGV;
     }
@@ -79,6 +86,7 @@ sub main {
     # Sane?
     if (!@zmapdirs && !$op) {
         die "Syntax: $0 [ -host <otterlace_buildhost> ] <ZMap_build_tree>*
+\t$0 -osname <otterlace_buildhost>
 \t$0 -list\n
   Without -host flag, output the set of Otterlace build hosts for
   these ZMap trees.\n
@@ -133,6 +141,9 @@ sub main {
           "  Given zmapdirs (@zmapdirs)\n".
           "  Valid hosts are (@ohost)\n" unless defined $dir;
         printf("%s\n", $dir);
+    } elsif ($op eq '-osname') {
+        my $override = $CONFIG{zhost_osname_override}->{$for_host};
+        printf("%s\n", $override) if $override;
     } else {
         die "$0: Confused. op=$op";
     }
