@@ -28,9 +28,8 @@ make things much clearer.
 
 =cut
 
-my %slave = (otterlive => "otlpslave",
-             otterpipe1 => "otp1slave",
-             otterpipe2 => "otp2slave");
+my %slave = (otterlive => "mcs18",
+             mcs17     => "mcs18",);
 
 my %known =
   (psl_fetch => q{SELECT matches, misMatches, repMatches, nCount, qNumInsert,
@@ -55,7 +54,7 @@ tStart <= '(\S+)' ORDER BY tStart ASC},
 sub main {
     %known = map {( $_ => sql_to_regexp_hack($known{$_}) )} keys %known;
 
-    foreach my $hostport (qw(  otterlive:3324 otterpipe1:3322 otterpipe2:3323 )) {
+    foreach my $hostport (qw(  otterlive:3324 mcs17:3322 mcs17:3323 )) {
         my ($user, $pass) = user_password("ottadmin");
 
 	my $dbh = try_connect($hostport, $user, $pass, 0);
