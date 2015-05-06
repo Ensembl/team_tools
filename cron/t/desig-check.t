@@ -2,9 +2,10 @@
 use strict;
 use warnings;
 
-use Test::More tests => 12; # 2*@holtdir + 2*2 (Otter Server)
+use Test::More;
 use YAML qw( Dump );
 use File::Slurp 'read_dir';
+use IPC::Cmd 'run';
 
 =head1 DESCRIPTION
 
@@ -21,8 +22,21 @@ diag "Taking BOSConfig from ".Bio::Otter::Server::Config->data_dir;
 my $desig = Bio::Otter::Server::Config->designations;
 my %major; # set of versions with clients, key = major
 
-my @holtdir = map {"/software/noarch/$_/anacode/otter"}
-  qw( linux-i386 linux-x86_64 precise-x86_64 trusty-x86_64 ); # XXX: This trick will stop working after Lenny+Lucid
+my $code;
+my $ok = run( command => "lsb_release -cs", buffer => \$code );
+chomp $code if $code;
+diag sprintf("lsb_release: '%s' (%s)", $code // 'undef', $ok ? 'ok' : 'failed');
+my @holtdir;
+if ($ok and $code eq 'lucid') {
+    @holtdir = map {"/software/noarch/$_/anacode/otter"}
+      qw( linux-i386 linux-x86_64 precise-x86_64 trusty-x86_64 ); # XXX: This trick will stop working after Lenny+Lucid
+}
+else {
+    @holtdir = qw( /software/anacode/otter )
+}
+
+plan tests => ( 2*@holtdir + 2*2 ); # 2 * Otter Server
+
 foreach my $holtdir (@holtdir) {
     diag "In $holtdir";
 
