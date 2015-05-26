@@ -4,8 +4,8 @@ use strict;
 use warnings;
 
 use Try::Tiny;
-use File::Basename;
-use File::Copy;
+use File::Basename qw{ basename };
+use File::Copy qw{ move };
 
 use Hum::Ace::LocalServer;
 
@@ -91,8 +91,8 @@ sub zmap_config_fix {
     my $path = "${dir}/ZMap";
     my $description = 'the ZMap configuration file';
     my $config = path_read $description, $path;
-    my $config_new = zmap_config_new $config, $ace_url;
-    path_write $description, $path, $config_new;
+    my $config_new = zmap_config_new($config, $ace_url);
+    path_write($description, $path, $config_new);
     return;
 }
 
@@ -109,9 +109,9 @@ sub session_reanimate {
     my $ace_url = sprintf
         'acedb://%s:%s@%s:%d'
         , $ace->user, $ace->pass, $ace->host, $ace->port;
-    zmap_config_fix $zmap_dir, $ace_url;
-    ace_start $ace;
-    zmap_start $zmap_dir;
+    zmap_config_fix($zmap_dir, $ace_url);
+    ace_start($ace);
+    zmap_start($zmap_dir);
     return;
 }
 
@@ -127,7 +127,7 @@ my ($session_dir) =
     $session_dir_done =~ /\A(.*)\.done\z/
     or die "the session was not done\n";
 
-move $session_dir_done, $session_dir;
-try     { session_reanimate $session_dir; }
+move($session_dir_done, $session_dir);
+try     { session_reanimate($session_dir); }
 catch   { die $_; }
-finally { move $session_dir, $session_dir_done; };
+finally { move($session_dir, $session_dir_done); };
