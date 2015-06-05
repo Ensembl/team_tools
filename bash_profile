@@ -61,6 +61,10 @@ $PERL5LIB\
 :$anacode_dir/lib/site_perl\
 "
 
+export no_proxy=localhost
+export http_proxy=http://webcache.sanger.ac.uk:3128
+
+
 fi # if [ -d "$anacode_dir" ]
 
 # team_tools environment
@@ -87,9 +91,6 @@ fi
 PERL5LIB="${PERL5LIB#:}" # in case $PERL5LIB was originally empty
 
 export PATH PERL5LIB
-
-export no_proxy=localhost
-export http_proxy=http://webcache.sanger.ac.uk:3128
 
 CVS_RSH=ssh
 export CVS_RSH
