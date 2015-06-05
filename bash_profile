@@ -4,65 +4,65 @@
 anacode_dir=/software/anacode
 
 if [ -d "$anacode_dir" ]
-then
-
-# distro-specific directories, appended first so that their contents
-# will override the contents of distro-independent directories
-
-# we must use the full path to anacode_distro_code as $anacode_dir/bin
-# is not yet on $PATH
-
-anacode_distro_code="$( $anacode_dir/bin/anacode_distro_code )"
-if [ -n "$anacode_distro_code" ]
-then
-    anacode_distro_dir="$anacode_dir/distro/$anacode_distro_code"
-    if [ -d "$anacode_distro_dir" ]
     then
 
-        PATH="\
+    # distro-specific directories, appended first so that their contents
+    # will override the contents of distro-independent directories
+
+    # we must use the full path to anacode_distro_code as $anacode_dir/bin
+    # is not yet on $PATH
+
+    anacode_distro_code="$( $anacode_dir/bin/anacode_distro_code )"
+    if [ -n "$anacode_distro_code" ]
+        then
+        anacode_distro_dir="$anacode_dir/distro/$anacode_distro_code"
+        if [ -d "$anacode_distro_dir" ]
+            then
+
+            PATH="\
 $PATH\
 :$anacode_distro_dir/bin\
 "
 
-        PERL5LIB="\
+            PERL5LIB="\
 $PERL5LIB\
 :$anacode_distro_dir/lib\
 :$anacode_distro_dir/lib/site_perl\
 "
 
+        fi
     fi
-fi
 
-# choose the Perl
-if ! ( echo "$PATH" | sed -e 's/:/\n/g' | grep -q -E ^/software/perl ); then
-    case "$anacode_distro_code" in
-        lenny|lucid|squeeze) PATH="/software/perl-5.12.2/bin:$PATH" ;;
-        precise) PATH="/software/perl-5.14.4/bin:$PATH" ;;
-        trusty)  PATH="/software/perl-5.18.2/bin:$PATH" ;;
-        etch) # not expecting to need this; 5.12.2 needs GLIBC_2.4
+    # choose the Perl
+    if ! ( echo "$PATH" | sed -e 's/:/\n/g' | grep -q -E ^/software/perl ); then
+        case "$anacode_distro_code" in
+            lenny|lucid|squeeze) PATH="/software/perl-5.12.2/bin:$PATH" ;;
+            precise) PATH="/software/perl-5.14.4/bin:$PATH" ;;
+            trusty)  PATH="/software/perl-5.18.2/bin:$PATH" ;;
+            etch) # not expecting to need this; 5.12.2 needs GLIBC_2.4
             PATH="/software/perl-5.10.1/bin:$PATH"
             ;;
-        *) echo $0: Not sure which Perl we want for distro=$anacode_distro_code, take default $( which perl ) >&2 ;;
-    esac
-fi
+            *) echo $0: Not sure which Perl we want for distro=$anacode_distro_code, take default $( which perl ) >&2 ;;
+        esac
+    fi
 
-# distro-independent directories
+    # distro-independent directories
 
-echo $PATH | sed -e 's/:/\n/g' | grep -qE "^$anacode_dir/bin"'/?$' || \
-    PATH="\
+    echo $PATH | sed -e 's/:/\n/g' | grep -qE "^$anacode_dir/bin"'/?$' || \
+        PATH="\
 $PATH\
 :$anacode_dir/bin\
 "
-# May be set in /software/anacode/etc/profile.anacode , see ./swac-etc/
+    # May be set in /software/anacode/etc/profile.anacode , see ./swac-etc/
 
-PERL5LIB="\
+    PERL5LIB="\
 $PERL5LIB\
 :$anacode_dir/lib\
 :$anacode_dir/lib/site_perl\
 "
 
-export no_proxy=localhost
-export http_proxy=http://webcache.sanger.ac.uk:3128
+    export no_proxy=localhost
+    export http_proxy=http://webcache.sanger.ac.uk:3128
 
 
 fi # if [ -d "$anacode_dir" ]
@@ -72,7 +72,7 @@ fi # if [ -d "$anacode_dir" ]
 if true &&
     [ -n "$ANACODE_TEAM_TOOLS" ] &&
     [ -d "$ANACODE_TEAM_TOOLS" ]
-then
+    then
 
     PATH="\
 $PATH\
