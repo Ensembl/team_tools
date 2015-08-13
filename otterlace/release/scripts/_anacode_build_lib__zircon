@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 _do_build() {
     local build_dir gitsrc
