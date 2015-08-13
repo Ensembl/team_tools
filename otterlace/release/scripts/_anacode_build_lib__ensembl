@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # Putting the ensembl sub-projects's modules/ into silos, probably for
 # historical reasons descending from how the webteam did it on legacy
