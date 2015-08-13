@@ -26,3 +26,4 @@ ostream2zstream:
 zhost_osname_override:
   precise-dev64: precise
   trusty-dev64:  precise
+  otter-vm-trusty: precise
