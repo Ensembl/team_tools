@@ -1,0 +1,50 @@
+#!/bin/bash
+
+
+# This updates the symbolic links for a given track across all build hosts.
+
+
+. "$( dirname "$0" )/_otterlace.sh" || exit 1
+
+DRYRUN=''
+while [ $# -gt 0 ] && [ "${1:0:1}" = "-" ]; do
+    sw=$1
+    shift
+    case $sw in
+        -h | --help)
+            bail "Syntax: $0 [ -n | --dry-run ] <track>
+
+ This should be run from an ensembl-otter working copy
+ which is up-to-date on the appropriate branch." ;;
+        -n | --dry-run)
+            echo "(dry run mode)" >&2
+            dryrun='-n'
+            DRYRUN='echo :' ;;
+        *) bail "Unknown option $sw" ;;
+    esac
+done
+
+[ "$#" = 1 ] || bail "Syntax: $0 [ -n | --dry-run ] <track>"
+track="$1"
+
+client_build_hosts="$( _otterlace_build_config.pl $track )" \
+    && [ -n "$client_build_hosts" ] \
+    || bail "Bad track? No client build hosts."
+
+for host in $client_build_hosts; do
+    remote_cmd="cd $PWD && otterlace_symlink_update $dryrun $track"
+    ssh_cmd="ssh -A $host $remote_cmd"
+    echo "== Host '$host':"
+    $ssh_cmd
+done
+
+full_version=$( full_version )
+
+case $track in
+    test)
+        ftp_track=TEST ;;
+    live)
+        ftp_track=CURRENT ;;
+esac
+
+[ -n "$ftp_track" ] && echo "== FTP:" && $DRYRUN ln -vnfs --  "release_$full_version" "~ftp/pub/anacode/otterlace/$ftp_track"
