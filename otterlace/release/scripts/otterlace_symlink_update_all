@@ -47,4 +47,7 @@ case $track in
         ftp_track=CURRENT ;;
 esac
 
-[ -n "$ftp_track" ] && echo "== FTP:" && $DRYRUN ln -vnfs --  "release_$full_version" "~ftp/pub/anacode/otterlace/$ftp_track"
+# Not quoted to allow ~ftp expansion
+ftp_base=~ftp/pub/anacode/otterlace
+
+[ -n "$ftp_track" ] && echo "== FTP:" && $DRYRUN ln -vnfs --  "release_$full_version" "$ftp_base/$ftp_track"
