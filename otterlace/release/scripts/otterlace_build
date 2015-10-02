@@ -418,14 +418,17 @@ otterlace_client_install_scripts() {
 }
 
 otterlace_client_install_zmap() {
-    local install_dir bin_dir zircon_version
+    local install_dir bin_dir zircon_version zmap_binaries zmap_binaries_list b
     install_dir="$1"
     bin_dir="${install_dir}/bin"
-    config_get zircon_version zircon
+    config_get       zircon_version zircon
+    config_get_maybe zmap_binaries
+    : ${zmap_binaries:=zmap tace sgifaceserver blixemh dotter belvu}
+    zmap_binaries_list=($zmap_binaries)
 
     mkdir -p -- "$bin_dir" &&
     _anacode_build_lib__zircon "$install_dir" $zircon_version &&
-    cp -- ${zmap_prefix}/bin/{zmap,tace,sgifaceserver,blixemh,dotter,belvu} "$bin_dir" &&
+    for b in ${zmap_binaries_list[@]}; do cp -- "${zmap_prefix}/bin/$b" "$bin_dir"; done &&
     cp -r -- "${zmap_prefix}/share" "$install_dir" &&
     true
 }

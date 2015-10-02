@@ -41,6 +41,19 @@ config_get() {
         || bail "config_get var=$__varname key=$__key: failed"
 }
 
+config_get_maybe() {
+    local __varname __key __val
+    __varname="$1"
+    __key="${2:-$1}"
+
+    if _config_sane "config_get_maybe $__varname" "$__key"; then
+        __val="$( head -n1 -- "dist/conf/$__key" )" &&
+        printf -v "$__varname" '%s' "$__val"
+    else
+        printf -v "$__varname" '%s' ""
+    fi
+}
+
 config_set() {
     local key value
     key="$1"
