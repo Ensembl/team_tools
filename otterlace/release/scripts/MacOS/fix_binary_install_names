@@ -1,0 +1,111 @@
+#!/usr/bin/env perl
+
+### fix_binary_install_names
+
+use strict;
+use warnings;
+use File::Spec;
+
+{
+    my $application_dir = shift;
+    unless ($application_dir and $application_dir =~ /\.app$/) {
+        exec('perldoc', $0);
+    }
+    $application_dir =~ s{/$}{};
+
+    # "find -type f" excludes symbolic links
+    my @find_libs = ('find', $application_dir, qw{ -type f -and ( -name *.dylib -or -name *.so -or -name *.bundle ) });
+    my @find_exe  = ('find', $application_dir, qw{ -type f -and -perm +111 -and -not -name *.a });
+
+    change_install_names_to_relative_paths(@find_libs);
+    change_install_names_to_relative_paths(@find_exe);
+}
+
+sub change_install_names_to_relative_paths {
+    my (@find) = @_;
+
+    open my $FILE_FIND, '-|', @find or die "Error starting find: '@find |'; $!";
+
+    while (<$FILE_FIND>) {
+        chomp;
+        my $path = $_;
+        my ($dir, $file) = app_dir_and_file($path);
+
+        my @rename;
+        my $id_change_file = undef;
+        if (my ($lib_id_change) = get_app_paths_to_rename($path, $dir, '-D')) {
+            $id_change_file = $lib_id_change->[0];
+            push(@rename, '-id', $lib_id_change->[1]);
+        }
+        my @info = get_app_paths_to_rename($path, $dir, '-L');
+        foreach my $change (@info) {
+            my ($old_path, $new_path) = @$change;
+            if ($id_change_file and $old_path eq $id_change_file) {
+                # The library's install name is being changed using "-id"
+                # so don't add a useless "-change" to the command line.
+                next;
+            }
+            push(@rename, '-change', $old_path, $new_path);
+        }
+        next unless @rename;
+        unshift @rename, 'install_name_tool';
+        push @rename, $path;
+        print STDERR "\n$path\n";
+        # print STDERR "Command: @rename\n";
+        # Run install_name_tool
+        system(@rename) == 0
+          or die "Error running '@rename'; exit $?";
+    }
+    close $FILE_FIND or die "Error running find: '@find |'; exit $?";
+}
+
+sub get_app_paths_to_rename {
+    my ($path, $dir, $otool_flag) = @_;
+
+    my @otool = ('otool', $otool_flag, $path);
+    open my $OTOOL, '-|', @otool or die "Error starting '@otool |'; $!";
+    my $first_line = <$OTOOL>;
+    my @info;
+    while (<$OTOOL>) {
+        my ($old_path) = split;
+        my ($d, $f) = app_dir_and_file($old_path)
+          or next;
+        my $rel_path = File::Spec->abs2rel($d, $dir);
+        my $new_path = '@loader_path';
+        unless ($rel_path eq '.') {
+            $new_path .= "/$rel_path";
+        }
+        $new_path .= "/$f";
+
+        push @info, [$old_path, $new_path];
+    }
+    return @info;
+}
+
+sub app_dir_and_file {
+    my ($path) = @_;
+
+    my ($d, $f) = $path =~ m{\.app/(.+)/([^/]+)$};
+    if ($d and $f) {
+        return ($d, $f);
+    }
+    else {
+        return;
+    }
+}
+
+__END__
+
+=head1 NAME - fix_binary_install_names
+
+=head1 USAGE
+
+  fix_binary_install_names <PATH_TO_DOT_APP_DIR>
+
+=head1 EXAMPLE
+
+  fix_binary_install_names /Applications/otter.app
+
+=head1 AUTHOR
+
+James Gilbert B<email> jgrg@sanger.ac.uk
