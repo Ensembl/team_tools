@@ -63,8 +63,8 @@ export PATH="${install_base}/bin:${PATH}"
 
 _do_config_make () {
     local src_dir prefix
-    src_dir="$1"
-    prefix="$2"
+    src_dir=shift
+    prefix=shift
 
     # use a subshell to avoid permanent cd
     (
@@ -72,7 +72,7 @@ _do_config_make () {
 
 	cd "${src_dir}"
 
-	CFLAGS="${extra_cflags}" ./configure --prefix="${prefix}" "${config_x_includes}" "${config_x_libraries}"
+	CFLAGS="${extra_cflags}" ./configure --prefix="${prefix}" "${config_x_includes}" "${config_x_libraries}" "$@"
 	make
 
     ) || exit $?
@@ -82,8 +82,8 @@ _do_config_make () {
 
 _do_config_make_install () {
     local src_dir prefix
-    src_dir="$1"
-    prefix="$2"
+    src_dir=shift
+    prefix=shift
 
     # use a subshell to avoid permanent cd
     (
@@ -91,7 +91,7 @@ _do_config_make_install () {
 
 	cd "${src_dir}"
 
-	_do_config_make "${PWD}" "${prefix}"
+	_do_config_make "${PWD}" "${prefix}" "$@"
 	make install
 
     ) || exit $?
@@ -117,10 +117,10 @@ config_make_install () {
 
 stage_config_make_install () {
     local src_dir prefix
-    src_dir="$1"
+    src_dir=shift
 
     prefix="${stage_prefix}"
-    _do_config_make_install "${src_dir}" "${prefix}"
+    _do_config_make_install "${src_dir}" "${prefix}" "$@"
 }
 
 install_binaries () {
