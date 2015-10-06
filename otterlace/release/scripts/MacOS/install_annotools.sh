@@ -36,7 +36,7 @@ zmap_src="${unpacked_tarball}"
 # fi
 # # end tmp fix
 
-stage_config_make_install "${zmap_src}"
+stage_config_make_install "${zmap_src}" --without-mysql
 
 # Seqtools
 
