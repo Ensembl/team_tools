@@ -63,8 +63,10 @@ export PATH="${install_base}/bin:${PATH}"
 
 _do_config_make () {
     local src_dir prefix
-    src_dir=shift
-    prefix=shift
+    src_dir="$1"
+    prefix="$2"
+    shift
+    shift
 
     # use a subshell to avoid permanent cd
     (
@@ -82,8 +84,10 @@ _do_config_make () {
 
 _do_config_make_install () {
     local src_dir prefix
-    src_dir=shift
-    prefix=shift
+    src_dir="$1"
+    prefix="$2"
+    shift
+    shift
 
     # use a subshell to avoid permanent cd
     (
@@ -117,7 +121,8 @@ config_make_install () {
 
 stage_config_make_install () {
     local src_dir prefix
-    src_dir=shift
+    src_dir="$1"
+    shift
 
     prefix="${stage_prefix}"
     _do_config_make_install "${src_dir}" "${prefix}" "$@"
