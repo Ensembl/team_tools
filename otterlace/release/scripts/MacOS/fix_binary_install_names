@@ -51,10 +51,15 @@ sub change_install_names_to_relative_paths {
         unshift @rename, 'install_name_tool';
         push @rename, $path;
         print STDERR "\n$path\n";
+        my $mode = (stat $path)[2];
         # print STDERR "Command: @rename\n";
         # Run install_name_tool
+        chmod 0755, $path
+          or die "Failed to make '$path' writable; $!";
         system(@rename) == 0
           or die "Error running '@rename'; exit $?";
+        chmod $mode, $path
+          or die sprintf("Failed to change '%s' back to %#o; $!", $path, $mode);
     }
     close $FILE_FIND or die "Error running find: '@find |'; exit $?";
 }
