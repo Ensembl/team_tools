@@ -322,14 +322,14 @@ install_otterlace() {
     DISPLAY= ${dry_run:+echo DRY_RUN:} "${macos_scripts}/install_otterlace.sh" "$otter"
 }
 
-fix_binary_install_names () {
-    chat "Fixing binary install names"
-    ${dry_run:+echo DRY_RUN:} "${macos_scripts}/fix_binary_install_names" "$build_app"
-}
-
 done_in_build_app() {
     chat "done in '$build_app'"
     popd
+}
+
+fix_binary_install_names () {
+    chat "Fixing binary install names"
+    ${dry_run:+echo DRY_RUN:} "${macos_scripts}/fix_binary_install_names" "$build_app"
 }
 
 
@@ -386,8 +386,8 @@ main() {
     install_annotools_prereqs
     install_annotools
     install_otterlace
-    fix_binary_install_names
     done_in_build_app
+    fix_binary_install_names
 
     rename_build_app
     build_sparse_image
