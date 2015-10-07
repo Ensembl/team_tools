@@ -2,5 +2,5 @@
 
 set -x
 set -e
-source /software/anacode/otter/otter_live/bin/otterlace_env.sh
+source /software/anacode/otter/otter_live/bin/otterlace_env.sh # UNLACE: fix when otter reaches live
 exec perl -MBio::Otter::Lace::Defaults -e 'Bio::Otter::Lace::Defaults::do_getopt; my $cl = Bio::Otter::Lace::Defaults::make_Client; $cl->authorize'
