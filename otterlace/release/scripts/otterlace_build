@@ -171,12 +171,12 @@ setup_self_globals() {
             # Assume for now that PATH already contains the correct container, inc. perl
             export PATH=$PATH:$dist_scripts
             install_group="$( id -g -n )"
-            otter_perl=perl_is_bundled # a magic word for otterlace_env.sh
+            otter_perl=perl_is_bundled # a magic word for otter_env.sh
             ;;
 
         *)
             # Assume PATH has /software/perl-$MUMBLE/bin from team_tools/bash_profile
-            # We need to preserve that into otterlace_env.sh
+            # We need to preserve that into otter_env.sh
             otter_perl="$( dirname $( which perl ))"
             export PATH=$otter_perl:/bin:/usr/bin:/usr/local/bin:$dist_scripts
             install_group="anacode"
@@ -454,7 +454,8 @@ otterlace_client_edit_dist_macos() {
     "${plist_buddy}" -c "Set :CFBundleVersion            ${version}" "${info_plist}" &&
 
     # Copy out setting of OTTER_HOME and modify anasoft
-    # in standard otterlace_env.sh script
+    # in standard otter_env.sh script
+    # UNLACE FIX_ME: otterlace_env.sh
     sed -i.bak \
         -e '/^OTTER_HOME=/s/^/#/' \
         -e '/^anasoft=/s/$/"$OTTER_SWAC"/' \
@@ -512,10 +513,12 @@ otterlace_client_install() {
     zmap_prefix="${zmap_build}/${zmap_build_osname}_${arch}"
     [ -d "$zmap_prefix" ] || bail "error: client install for ${osname}_${arch} aborted: the ZMap directory ${zmap_prefix} is missing or invalid"
 
+    # UNLACE FIX_ME: otterlace_env.sh
     echo &&
     echo "removing old otterlace installation" &&
     with_new_directory "$otter_home" otterlace_client_install_client &&
     otterlace_script_vars_update "${otter_home}/bin/otterlace_env.sh" &&
+    # UNLACE: fix when otter reaches old (otterlace_installed)
     sed -i.bak \
         -e '/^otterlace_installed=/s/=.*$/=true/' \
         "${otter_home}/bin/otterlace" \
