@@ -5,7 +5,6 @@ set -e # bail out on error
 
 . "$( dirname "$0" )/_macos_above_app.sh" || exit 1
 
-
 # Defaults
 #
 verbose=
@@ -17,7 +16,7 @@ zmap=
 annotools_prereqs=
 release_tag=
 
-target_stem="otterlace"
+target_stem=
 clone_from_master=
 build_app=
 target_app=
@@ -156,11 +155,24 @@ process_options() {
 expand_defaults() {
     chat "expand_defaults"
 
+    [ -n "$otter" ] || bail "--otter must be set"
+    [ -d "$otter" ] || bail "--otter: '${otter}' not found"
+
+    if [ -z "${target_stem}" ]; then
+        # This can go once otterlace has disappeared beyond otterlace_old.
+        otter_name="$( source "${macos_scripts}/../_otterlace.sh" &&
+                       cd "$otter"                                &&
+                       config_get_maybe otter_name "" "otterlace" &&
+                       echo "${otter_name}"                          )"
+        target_stem="${otter_name}"
+    fi
+
     target_app="${target_app:-${target_stem}.app}"
     build_app="${build_app:-build_${target_app}}"
     parked_app="${parked_app:-${build_app/.app/_parked.app}}"
 
     image_stem="${image_stem:-${target_stem}_mac_intel}"
+
 
     true
 }
@@ -187,8 +199,6 @@ check_prereqs() {
 
     [ -d "_non_dist" ] || bail "_non_dist not found: need to be run in suitable Dist directory"
 
-    [ -n "$otter" ] || bail "--otter must be set"
-    [ -d "$otter" ] || bail "--otter: '${otter}' not found"
     [ -n "$zmap" ]  || bail "--zmap must be set"
     [ -d "$zmap" ]  || bail "--zmap: '${zmap}' not found"
 

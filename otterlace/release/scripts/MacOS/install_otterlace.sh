@@ -54,7 +54,7 @@ macos_dist_dir="${install_base}/otter/otter_rel${version}/ensembl-otter/scripts/
 contents_dir="${app_base}/Contents"
 macos_dir="${contents_dir}/MacOS"
 mkdir -v -p "${macos_dir}"
-cp -v "${macos_dist_dir}/otterlace" "${macos_dir}"
+cp -v ${macos_dist_dir}/otter* "${macos_dir}"
 
 # Info.plist file
 cp -v "${macos_dist_dir}/Info.plist" "${contents_dir}"
