@@ -17,6 +17,9 @@ RACKMAC=otter@anacodeosx # match otterlace/release/scripts/MacOS/rsync_git_repos
 ZMAPDIR_LOCAL=/nfs/zmap/ZMap/BUILDS/$ZMAPDIR
 ZMAPDIR_REMOTE="~/Otter/Links/ZMap_BUILDS/$ZMAPDIR"
 
+# UNLACE FIXME: this is temporary, remove once we're only building otter.app
+BUILD_APP="--build_app build_otterlace.app"
+
 [ $(uname) = 'Linux' ] || bail \
     "This is a convenience wrapper, run it from a Linux server"
 
@@ -59,7 +62,7 @@ ssh $RACKMAC "hostname; cd $ZMAPDIR_REMOTE && DIST=\$( echo Dist/zmap-*.tar.gz )
 printf "\n\n\nStart the build"
 sleep 5 # long enough to read and abort, but insignificant next to a build
 echo
-ssh $RACKMAC "hostname; cd ~/Otter/Dist && \$ANACODE_TEAM_TOOLS/otterlace/release/scripts/MacOS/build_to_dmg.sh -v --otter ~/Otter/Git/ensembl-otter --zmap $ZMAPDIR_REMOTE" \
+ssh $RACKMAC "hostname; cd ~/Otter/Dist && \$ANACODE_TEAM_TOOLS/otterlace/release/scripts/MacOS/build_to_dmg.sh -v --otter ~/Otter/Git/ensembl-otter --zmap $ZMAPDIR_REMOTE $BUILD_APP" \
     || bail "Otterlace build failed"
 
 
