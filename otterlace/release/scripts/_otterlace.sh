@@ -47,7 +47,7 @@ config_get_maybe() {
     __key="${2:-$1}"
     __default="$3"
 
-    if _config_sane "config_get_maybe $__varname" "$__key"; then
+    if _config_sane "config_get_maybe $__varname" "$__key" "silent"; then
         __val="$( head -n1 -- "dist/conf/$__key" )" &&
         printf -v "$__varname" '%s' "$__val"
     else
@@ -73,6 +73,7 @@ config_set() {
 
 _config_sane() {
     [ -f "dist/conf/$2" ] || {
+        [ -n "$3" ] && return 1
         echo "dist/conf/$2 not present, cannot '$*'" >&2; return 1
     }
 }
