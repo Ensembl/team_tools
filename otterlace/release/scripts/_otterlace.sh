@@ -42,15 +42,16 @@ config_get() {
 }
 
 config_get_maybe() {
-    local __varname __key __val
+    local __varname __key __val __default
     __varname="$1"
     __key="${2:-$1}"
+    __default="$3"
 
-    if _config_sane "config_get_maybe $__varname" "$__key"; then
+    if _config_sane "config_get_maybe $__varname" "$__key" "silent"; then
         __val="$( head -n1 -- "dist/conf/$__key" )" &&
         printf -v "$__varname" '%s' "$__val"
     else
-        printf -v "$__varname" '%s' ""
+        printf -v "$__varname" '%s' "$__default"
     fi
 }
 
@@ -72,6 +73,7 @@ config_set() {
 
 _config_sane() {
     [ -f "dist/conf/$2" ] || {
+        [ -n "$3" ] && return 1
         echo "dist/conf/$2 not present, cannot '$*'" >&2; return 1
     }
 }
@@ -152,6 +154,9 @@ otter_ipath_get() {
     __key="${2:-$1}"
     [ -z "$__varname" ] && __varname='__out' # will send to STDOUT
 
+    # This can go once otterlace has disappeared beyond otterlace_old.
+    config_get_maybe otter_name "" "otterlace"
+
     config_get version_major
     config_get version_minor
     _oig_feature="$( _feature_get )"
@@ -184,7 +189,7 @@ otter_ipath_get() {
     printf -v _oig_bin             %s/bin         "$_oig_otter_home"
     printf -v _oig_web_lib        %s/lib/otter/%s "$nfswub" "$_oig_majfeat"
     printf -v _oig_web_cgi    %s/cgi-bin/otter/%s "$nfswub" "$_oig_majfeat"
-    printf -v _oig_wrapperfile     %s/otterlace   "$_oig_bin"
+    printf -v _oig_wrapperfile     %s/%s          "$_oig_bin" "${otter_name}"
 
     if [[ "$otterhome_suffixing" =~ 'arch' ]]; then
         # When building to non-/software NFS, it is useful to include
