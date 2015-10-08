@@ -205,6 +205,9 @@ setup_globals() {
         unset DISPLAY
     fi
 
+    # This can go once otterlace has disappeared beyond otterlace_old.
+    config_get_maybe otter_name "" "otterlace"
+
     config_get version_major
     config_get version_minor
 
@@ -447,7 +450,7 @@ otterlace_client_edit_dist_macos() {
     # MacOS/install_otterlace.sh, which knows where to put them.
 
     # MacOS-specific startup script, chains to standard otterlace script
-    otterlace_script_vars_update "${macos_dist_dir}/otterlace" &&
+    otterlace_script_vars_update "${macos_dist_dir}/${otter_name}" &&
 
     # Info.plist file contains version number
     "${plist_buddy}" -c "Set :CFBundleShortVersionString ${version}" "${info_plist}" &&
@@ -455,13 +458,12 @@ otterlace_client_edit_dist_macos() {
 
     # Copy out setting of OTTER_HOME and modify anasoft
     # in standard otter_env.sh script
-    # UNLACE FIX_ME: otterlace_env.sh
     sed -i.bak \
         -e '/^OTTER_HOME=/s/^/#/' \
         -e '/^anasoft=/s/$/"$OTTER_SWAC"/' \
-        "${install_dir}/bin/otterlace_env.sh" \
+        "${install_dir}/bin/${otter_name}_env.sh" \
         &&
-    rm "${install_dir}/bin/otterlace_env.sh.bak" &&
+    rm "${install_dir}/bin/${otter_name}_env.sh.bak" &&
 
     true
 }
@@ -502,6 +504,7 @@ otterlace_client_install() {
 
     echo ""
     echo "  client install"
+    echo "  otter name: ${otter_name}"
     echo "  intended host: ${otterlace_client_host}"
     echo "  host name: $( hostname )"
     echo "  os name: ${osname}"
@@ -513,17 +516,16 @@ otterlace_client_install() {
     zmap_prefix="${zmap_build}/${zmap_build_osname}_${arch}"
     [ -d "$zmap_prefix" ] || bail "error: client install for ${osname}_${arch} aborted: the ZMap directory ${zmap_prefix} is missing or invalid"
 
-    # UNLACE FIX_ME: otterlace_env.sh
     echo &&
     echo "removing old otterlace installation" &&
     with_new_directory "$otter_home" otterlace_client_install_client &&
-    otterlace_script_vars_update "${otter_home}/bin/otterlace_env.sh" &&
+    otterlace_script_vars_update "${otter_home}/bin/${otter_name}_env.sh" &&
     # UNLACE: fix when otter reaches old (otterlace_installed)
     sed -i.bak \
         -e '/^otterlace_installed=/s/=.*$/=true/' \
-        "${otter_home}/bin/otterlace" \
+        "${otter_home}/bin/${otter_name}" \
         &&
-    rm "${otter_home}/bin/otterlace.bak" &&
+    rm "${otter_home}/bin/${otter_name}.bak" &&
     (
         zmap="$(     "${otter_home}/bin/zmap"    --version 2>&1 )" || bail "ZMap fail: $zmap"
         seqtools="$( "${otter_home}/bin/blixemh" --version 2>&1 )" || bail "seqtools fail: $seqtools"
@@ -535,6 +537,7 @@ otterlace_client_install() {
             is_ln=" -> $zmap_prefix_real"
         fi
         write_build_log_entry --level client \
+            --otter_name "$otter_name" \
             --zmap_prefix "$zmap_prefix$is_ln" \
             --zmap     "$zmap"     \
             --seqtools "$seqtools"
