@@ -35,7 +35,7 @@ chgrp -v anacode $XFERDIR
 chmod -v 0775 $XFERDIR
 
 scp -p \
-    $RACKMAC:Otter/Dist/otterlace_mac_intel-$REL.dmg \
+    $RACKMAC:Otter/Dist/otter*_mac_intel-$REL.dmg \
     $XFERDIR/
 
 mv -v $XFERDIR $FTPDIR
