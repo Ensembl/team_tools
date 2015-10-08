@@ -294,7 +294,7 @@ clean_before_build() {
     local otter ng_changed
     shopt -u | grep -q nullglob && ng_changed=true && shopt -s nullglob
 
-    for otter in $build_app/Contents/Resources/otter/*; do
+    for otter in $build_app/Contents/Resources/otter/* $build_app/Contents/MacOS/*; do
         tell "Removing '$otter'"
         ${dry_run:+echo DRY_RUN:} rm -r "$otter"
     done
