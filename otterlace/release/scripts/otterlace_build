@@ -613,6 +613,10 @@ write_build_log_entry() {
 }
 
 
+# We don't want to pick up any installed otter libraries, but we do need anacode distro stuff (inc ZMQ)
+unset PERL5LIB
+. "$( dirname "$0" )/../../../bash_profile" || exit 1
+
 
 setup_self_globals
 get_opts_inputvars "$@"
