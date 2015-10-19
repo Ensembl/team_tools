@@ -626,7 +626,7 @@ setup_globals
 
 if [ -n "$otterlace_client_host" ]
 then
-    otterlace_client_install
+    otterlace_client_install && echo "otterlace_build: client install for '$otterlace_client_host' succeeded"
 else
-    otterlace_install_all
+    otterlace_install_all    && echo "otterlace_build: otterlace_install_all SUCCEEDED"
 fi
