@@ -51,6 +51,9 @@ goto_build_root () {
 extra_cflags="-arch x86_64 -mmacosx-version-min=10.6 -isysroot /Developer/SDKs/MacOSX10.6.sdk"
 export MACOSX_DEPLOYMENT_TARGET=10.6
 
+# Allow lots of room to mess with the library paths via install_name_tool
+extra_ldflags="-headerpad_max_install_names"
+
 # Specify which X libraries to use
 
 x_base="${install_base}"
@@ -74,7 +77,9 @@ _do_config_make () {
 
 	cd "${src_dir}"
 
-	CFLAGS="${extra_cflags}" ./configure --prefix="${prefix}" "${config_x_includes}" "${config_x_libraries}" "$@"
+	CFLAGS="${extra_cflags}" \
+        LDFLAGS="${extra_ldflags}" \
+              ./configure --prefix="${prefix}" "${config_x_includes}" "${config_x_libraries}" "$@"
 	make
 
     ) || exit $?
