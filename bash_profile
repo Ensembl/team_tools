@@ -1,3 +1,5 @@
+#!/bin/bash
+# THIS IS NOT DESIGNED TO BE RUN - it should be sourced to set up an existing or new shell.
 # -*- Shell-script -*-
 
 # anacode environment
