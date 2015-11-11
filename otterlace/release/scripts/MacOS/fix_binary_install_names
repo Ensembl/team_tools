@@ -76,7 +76,7 @@ sub get_app_paths_to_rename {
         my $new_path;
         if (my ($d, $f) = app_dir_and_file($old_path)) {
             my $rel_path = File::Spec->abs2rel($d, $dir);
-            my $new_path = '@loader_path';
+            $new_path = '@loader_path';
             unless ($rel_path eq '.') {
                 $new_path .= "/$rel_path";
             }
