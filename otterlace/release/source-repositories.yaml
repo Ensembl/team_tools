@@ -24,7 +24,7 @@ internal:
   _comment: |
     For larger sources (ensembl) we make builds from local repositories
     because it is faster and more efficient than hauling it from upstream Github.
-  ensembl: intcvs1:/repos/git/anacode/github-mirror-ro/Anacode/ensembl.git
+  ensembl: intcvs1:/repos/git/anacode/github-mirror-ro/Ensembl/ensembl.git
   ensembl-otter: intcvs1:/repos/git/anacode/ensembl-otter.git
   PerlModules: intcvs1:/repos/git/anacode/PerlModules.git
   server-config: intcvs1:/repos/git/anacode/server-config.git
@@ -35,7 +35,7 @@ internal:
 mac_local:
   _comment: 'host anacodeosx is firewalled and cannot reach intcvs1, so local copies are pushed onto it.  http://mediawiki.internal.sanger.ac.uk/index.php/Otter_Mac_in_a_rack#Git'
   PerlModules: /Users/otter/Otter/Git/Mirrors/anacode/PerlModules.git
-  ensembl: /Users/otter/Otter/Git/Mirrors/anacode/github-mirror-ro/Anacode/ensembl.git
+  ensembl: /Users/otter/Otter/Git/Mirrors/anacode/github-mirror-ro/Ensembl/ensembl.git
   ensembl-otter: /Users/otter/Otter/Git/Mirrors/anacode/ensembl-otter.git
   team_tools: /Users/otter/Otter/Git/Mirrors/anacode/team_tools.git
   zircon: /Users/otter/Otter/Git/Mirrors/anacode/zircon.git
