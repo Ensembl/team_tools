@@ -28,7 +28,7 @@ do_rsync PerlModules.git
 do_rsync ensembl-otter.git
 do_rsync team_tools.git
 do_rsync zircon.git
-do_rsync github-mirror-ro/Anacode/ensembl.git github-mirror-ro/Anacode
+do_rsync github-mirror-ro/Ensembl/ensembl.git github-mirror-ro/Ensembl
 
 exit $?
 
