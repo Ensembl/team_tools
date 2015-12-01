@@ -59,7 +59,7 @@ rsync -ai PerlModules.git otter@anacodeosx:~/Otter/Git/Mirrors/anacode
 rsync -ai zircon.git otter@anacodeosx:~/Otter/Git/Mirrors/anacode
 rsync -ai ensembl-otter.git otter@anacodeosx:~/Otter/Git/Mirrors/anacode
 rsync -ai team_tools.git otter@anacodeosx:~/Otter/Git/Mirrors/anacode
-rsync -ai github-mirror-ro/Anacode/ensembl.git otter@anacodeosx:~/Otter/Git/Mirrors/anacode/github-mirror-ro/Anacode
+rsync -ai github-mirror-ro/Ensembl/ensembl.git otter@anacodeosx:~/Otter/Git/Mirrors/anacode/github-mirror-ro/Ensembl
 
 Back on anacodeosx:
 cd ~/Otter/Git
