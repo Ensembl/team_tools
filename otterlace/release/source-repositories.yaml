@@ -17,9 +17,9 @@ github:
   ensembl-compara: https://github.com/Ensembl/ensembl-compara.git
   ensembl-funcgen: https://github.com/Ensembl/ensembl-funcgen.git
 github_push:
-  cron2rss: git@github.com:Anacode/cron2rss.git
+  cron2rss: git@github.com:Annosoft/cron2rss.git
   ensembl: git@github.com:Ensembl/ensembl.git
-  ensembl-otter: git@github.com:Anacode/ensembl-otter.git
+  ensembl-otter: git@github.com:Annosoft/ensembl-otter.git
 internal:
   _comment: |
     For larger sources (ensembl) we make builds from local repositories
