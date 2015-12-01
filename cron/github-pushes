@@ -46,7 +46,7 @@ all_repos() {
     MAKE_MASTER_RE='tags/humpub-release-(\d+)-dev$'
     FROM_REMOTE='origin'
     REPO="$HOME/gitwk--bg/ensembl-otter"
-    TO_REMOTE='git@github.com:Anacode/ensembl-otter.git'
+    TO_REMOTE='git@github.com:Annosoft/ensembl-otter.git'
     do_push
     # Blacklist rationale:
     #
@@ -73,7 +73,7 @@ all_repos() {
     # MAKE_MASTER_RE=
     # FROM_REMOTE='origin'
     # REPO="$HOME/_httpd/cgi-bin/cron2rss"
-    # TO_REMOTE='git@github.com:Anacode/cron2rss.git'
+    # TO_REMOTE='git@github.com:Annosoft/cron2rss.git'
     # do_push
 }
 

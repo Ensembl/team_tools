@@ -17,7 +17,7 @@ anacode_source_repo - return URL for repository
  https://github.com/Ensembl/ensembl.git
 
  $ anacode_source_repo -O github_push ensembl-otter
- git@github.com:Anacode/ensembl-otter.git
+ git@github.com:Annosoft/ensembl-otter.git
 
 =head1 DESCRIPTION
 
