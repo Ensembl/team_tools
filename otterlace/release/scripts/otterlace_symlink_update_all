@@ -7,38 +7,34 @@
 . "$( dirname "$0" )/_otterlace.sh" || exit 1
 
 DRYRUN=''
+mode='link'
+
 while [ $# -gt 0 ] && [ "${1:0:1}" = "-" ]; do
     sw=$1
     shift
     case $sw in
         -h | --help)
-            bail "Syntax: $0 [ -n | --dry-run ] <track>
+            bail "Syntax: $0 [ -n | --dry-run ] [ -d | --delete ] <track>
 
  This should be run from an ensembl-otter working copy
- which is up-to-date on the appropriate branch." ;;
+ which is up-to-date on the appropriate branch
+ (unless deleting)." ;;
         -n | --dry-run)
             echo "(dry run mode)" >&2
             dryrun='-n'
             DRYRUN='echo :' ;;
+        -d | --delete)
+            mode='delete' ;;
         *) bail "Unknown option $sw" ;;
     esac
 done
 
-[ "$#" = 1 ] || bail "Syntax: $0 [ -n | --dry-run ] <track>"
+[ "$#" = 1 ] || bail "Syntax: $0 [ -n | --dry-run ] [ -d | --delete ] <track>"
 track="$1"
 
 client_build_hosts="$( _otterlace_build_config.pl $track )" \
     && [ -n "$client_build_hosts" ] \
     || bail "Bad track? No client build hosts."
-
-for host in $client_build_hosts; do
-    remote_cmd="cd $PWD && otterlace_symlink_update $dryrun $track"
-    ssh_cmd="ssh -A $host $remote_cmd"
-    echo "== Host '$host':"
-    $ssh_cmd
-done
-
-full_version=$( full_version )
 
 case $track in
     test)
@@ -50,4 +46,48 @@ esac
 # Not quoted to allow ~ftp expansion
 ftp_base=~ftp/pub/anacode/otterlace
 
-[ -n "$ftp_track" ] && echo "== FTP:" && $DRYRUN ln -vnfs --  "release_$full_version" "$ftp_base/$ftp_track"
+do_link() {
+
+    for host in $client_build_hosts; do
+        remote_cmd="cd $PWD && otterlace_symlink_update $dryrun $track"
+        ssh_cmd="ssh -A $host $remote_cmd"
+        echo "== Host '$host':"
+        $ssh_cmd
+    done
+
+    full_version=$( full_version )
+
+    [ -n "$ftp_track" ] && echo "== FTP:" && $DRYRUN ln -vnfs --  "release_$full_version" "$ftp_base/$ftp_track"
+
+}
+
+do_delete() {
+
+    [ "$track" = "live" ] && bail "delete not supported for 'live' track"
+
+    otter_ipath_get holtdir
+
+    for host in $client_build_hosts; do
+        remote_cmd="cd $PWD && $DRYRUN rm $holtdir/otter_${track}"
+        ssh_cmd="ssh -A $host $remote_cmd"
+        echo "== Host '$host':"
+        $ssh_cmd
+    done
+
+    [ -n "$ftp_track" ] && echo "== FTP:" && $DRYRUN rm "$ftp_base/$ftp_track"
+
+}
+
+case $mode in
+    link)
+        do_link
+        ;;
+    delete)
+        do_delete
+        ;;
+    *)
+        bail "Unknown mode $mode"
+        ;;
+esac
+
+exit
