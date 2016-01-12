@@ -40,8 +40,11 @@ mkdir -v -p "${install_base}"
 
 mkdir -v -p "${shared_non_dist_path}/var/macports/distfiles"
 
+# Should probably get this list via non_dist macros:
+mkdir -v -p "${my_non_dist_path}/libexec"
 mkdir -v -p "${my_non_dist_path}/share"
 mkdir -v -p "${my_non_dist_path}/var"
+
 mkdir -v -p "${my_non_dist_path}/var/macports"
 
 make_links "${app_base}" "${new_app_versioned}"
