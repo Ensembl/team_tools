@@ -1,11 +1,17 @@
 # List of top-level directories in Contents/Resources which should not be distributed
 
+-libexec
 -share
 -var
 
 # List of exceptions which should be distributed
 # (mechanism only supports immediate child directories)
 
++libexec/gnubin
++libexec/macports
++libexec/perl5.12
++libexec/safe_finger
++libexec/tcpd
 +share/X11
 
 # EOF
