@@ -65,4 +65,10 @@ p5-test-mockobject
 p5-devel-cycle
 p5-padwalker
 
+# needed for libstdc++ support on MacOS 10.6.8 snow leopard:
+# (install via, eg.:
+#  DYLD_FALLBACK_LIBRARY_PATH=~/Otter/Dist/build_otterlace.app/Contents/Resources/lib ./with_parked_ResBin port install gcc49
+# )
+#gcc49
+
 # EOF
