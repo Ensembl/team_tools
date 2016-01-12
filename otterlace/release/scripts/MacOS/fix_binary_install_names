@@ -6,8 +6,10 @@ use strict;
 use warnings;
 use File::Spec;
 
+my $application_dir;
+
 {
-    my $application_dir = shift;
+    $application_dir = shift;
     unless ($application_dir and $application_dir =~ /\.app$/) {
         exec('perldoc', $0);
     }
@@ -26,9 +28,18 @@ sub change_install_names_to_relative_paths {
 
     open my $FILE_FIND, '-|', @find or die "Error starting find: '@find |'; $!";
 
+    my $install_name_tool = 'install_name_tool';
+    my $app_i_n_t = "${application_dir}/Contents/Resources/bin/${install_name_tool}";
+    if ( -x $app_i_n_t ) {
+        $install_name_tool = $app_i_n_t;
+    }
+    # print STDERR "i_n_t: ${install_name_tool}";
+
     while (<$FILE_FIND>) {
         chomp;
         my $path = $_;
+        next if is_dylib_stub($path);
+
         my ($dir, $file) = app_dir_and_file($path);
 
         my @rename;
@@ -48,7 +59,7 @@ sub change_install_names_to_relative_paths {
             push(@rename, '-change', $old_path, $new_path);
         }
         next unless @rename;
-        unshift @rename, 'install_name_tool';
+        unshift @rename, $install_name_tool;
         push @rename, $path;
         print STDERR "\n$path\n";
         my $mode = (stat $path)[2];
@@ -62,6 +73,21 @@ sub change_install_names_to_relative_paths {
           or die sprintf("Failed to change '%s' back to %#o; $!", $path, $mode);
     }
     close $FILE_FIND or die "Error running find: '@find |'; exit $?";
+}
+
+sub is_dylib_stub {
+    my ($path) = @_;
+    my @otool = ('otool', '-hv', $path);
+
+    my @lines;
+    open my $OTOOL, '-|', @otool or die "Error starting '@otool |'; $!";
+    while (<$OTOOL>) {
+        push @lines, $_;
+    }
+    close $OTOOL or die "Error closing '@otool |'; $!";
+
+    my $last_line = pop @lines;
+    return $last_line =~ /DYLIB_STUB/;
 }
 
 sub get_app_paths_to_rename {
