@@ -12,6 +12,8 @@
 +libexec/perl5.12
 +libexec/safe_finger
 +libexec/tcpd
+
++share/curl
 +share/X11
 
 # EOF
