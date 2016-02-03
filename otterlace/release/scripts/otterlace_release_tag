@@ -392,7 +392,7 @@ main() {
         true ) &&
 
     if [ -n "$with_dummy" ]; then
-        echo "# Would 'git pull -v' to your working copy here, but"
+        echo "# Would 'git pull -v --ff-only' to your working copy here, but"
         echo "# we are using dummy repos so here is a dry-run fetch instead"
         echo "git fetch --dry-run $ensembl_otter_git_repo, as if from origin:"
         git fetch --dry-run $ensembl_otter_git_repo 'refs/heads/*:refs/remotes/origin/*' 'refs/tags/*:refs/tags/*'
@@ -400,7 +400,7 @@ main() {
         # which are not on branches, and is verbose because we dry-run
         echo "Or    (cd $ensembl_otter_git_repo; gitk --all &)"
     else
-        ${dryrun:+echo DRYRUN:} git pull -v
+        ${dryrun:+echo DRYRUN:} git pull -v --ff-only
     fi &&
 
     rm -rf -- "$tmp_dir" &&
