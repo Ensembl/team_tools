@@ -3,8 +3,6 @@
 BACKUP_DIR=/nfs/anacode/anacode-trac
 LIVE_DIR=/repos/trac/environments/anacode
 
-# Expects git-yacontrib on PATH (for git-iec and git-qcommit)
-#
 # Might want to exclude the trac.db from Git if it balloons and also
 # doesn't delta nicely.  The .db.dump should be more diffable.
 #
@@ -35,14 +33,19 @@ send_to_git() {
     # Create more history
     cd $BACKUP_DIR
     git add -A .
-    git qcommit -m "$0 ran"
+    if git diff --cached --quiet --exit-code; then
+        :
+        # nothing to do
+    else
+        git commit -q -m "$0 ran"
+    fi
 }
 
 # Ran once, 2013-11-07 mca
 do_setup() {
     git init --shared=all $BACKUP_DIR
     cd $BACKUP_DIR
-    git iec
+    git iec                     # from git-yacontrib
 }
 
 
