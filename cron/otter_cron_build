@@ -2,8 +2,11 @@
 
 set -eu
 
+RECIPIENT="$MAILTO"
+
 OUT=/tmp/otter_cron_build.out.$$
 LOG=/tmp/otter_cron_build.log
+EMAIL=/tmp/otter_cron_build.email
 
 set +e
 "$@" >$OUT 2>&1
@@ -12,19 +15,24 @@ set -e
 
 if [ $RESULT -ne 0 ]
     then
-    echo "otter_cron_build failure or error output for the command:"
-    echo "$@"
-    echo
-    echo "RESULT CODE: $RESULT"
-    echo
-    echo "OUTPUT:"
-    cat "$OUT"
+    echo "otter_cron_build failure or error output for the command:"  > "$EMAIL"
+    echo "$@"                                                        >> "$EMAIL"
+    echo                                                             >> "$EMAIL"
+    echo "RESULT CODE: $RESULT"                                      >> "$EMAIL"
+    echo                                                             >> "$EMAIL"
+    echo "OUTPUT:"                                                   >> "$EMAIL"
+    cat "$OUT"                                                       >> "$EMAIL"
+    SUBJECT="otter_cron_build FAILED"
 else
     cp -p "$OUT" "$LOG"
-    echo "otter_cron_build success for the command:"
-    echo "$@"
-    echo
-    echo Output is at: "$LOG"
+    echo "otter_cron_build success for the command:"  > "$EMAIL"
+    echo "$@"                                        >> "$EMAIL"
+    echo                                             >> "$EMAIL"
+    echo Output is at: "$LOG"                        >> "$EMAIL"
+    SUBJECT="otter_cron_build succeeded"
 fi
+
+cat "$EMAIL" | mailx -s "$SUBJECT" "$RECIPIENT"
+rm -f "$EMAIL"
 
 rm -f "$OUT"
