@@ -189,6 +189,7 @@ otter_ipath_get() {
     printf -v _oig_bin             %s/bin         "$_oig_otter_home"
     printf -v _oig_web_lib        %s/lib/otter/%s "$nfswub" "$_oig_majfeat"
     printf -v _oig_web_cgi    %s/cgi-bin/otter/%s "$nfswub" "$_oig_majfeat"
+    printf -v _oig_web_psgi      %s/psgi/otter/%s "$nfswub" "$_oig_majfeat"
     printf -v _oig_wrapperfile     %s/%s          "$_oig_bin" "${otter_name}"
 
     if [[ "$otterhome_suffixing" =~ 'arch' ]]; then
@@ -230,6 +231,9 @@ otter_ipath_get() {
         web_cgi)
             # The /cgi-bin/otter/$major/ directory
             printf -v "$__varname" %s "$_oig_web_cgi" ;;
+        web_psgi)
+            # The /psgi/otter/$major/ directory
+            printf -v "$__varname" %s "$_oig_web_psgi" ;;
         feature)
             # The name of the feature branch, or empty string if none
             printf -v "$__varname" %s "$_oig_feature" ;;
