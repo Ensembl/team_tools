@@ -350,20 +350,36 @@ otterlace_server_install_cgi() {
     true
 }
 
+otterlace_server_install_psgi() {
+    local install_dir source_dir
+    install_dir="$1"
+    source_dir="${ensembl_otter_root}/scripts/psgi"
+    if [ -d "$source_dir" ]; then
+      cp -r "$source_dir"/* "$install_dir"
+    else
+        true
+    fi &&
+    true
+}
+
 otterlace_server_install() {
-    local web_lib web_cgi check_remove_existing_directories
+    local web_lib web_cgi web_psgi check_remove_existing_directories
     echo ""
     echo "installing server"
     otter_ipath_get web_lib
     otter_ipath_get web_cgi
+    otter_ipath_get web_psgi
     check_remove_existing_directories=false
     echo "installing server: perl modules" &&
     with_new_directory "$web_lib" otterlace_server_install_modules &&
     echo "installing server: CGI scripts" &&
     with_new_directory "$web_cgi" otterlace_server_install_cgi &&
+    echo "installing server: PSGI scripts" &&
+    with_new_directory "$web_psgi" otterlace_server_install_psgi &&
     write_build_log_entry --level server \
-        --lib "$web_lib" \
-        --cgi "$web_cgi" &&
+        --lib  "$web_lib" \
+        --cgi  "$web_cgi" \
+        --psgi "$web_psgi" &&
     true
 }
 
