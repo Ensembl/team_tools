@@ -23,6 +23,7 @@ ostream2zstream:
   test: BUILD.RELEASE
   live: BUILD.PRODUCTION
   old:  BUILD.PRODUCTION
+  retired: BUILD.PRODUCTION
 
 zhost_osname_override:
   precise-dev64: precise
