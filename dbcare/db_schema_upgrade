@@ -130,15 +130,15 @@ mkdir -p -- "$log_dir"
 chmod  g+ws "$log_dir"/..
 
 host_count=0
-# host_upgrade otterpipe1 3322 "$user" "$password" pipe_
-# host_upgrade otterpipe2 3323 "$user" "$password" pipe_
-# host_upgrade otterpipe2 3323 "$user" "$password" gencode_
+# host_upgrade mcs17 3322 "$user" "$password" pipe_
+# host_upgrade mcs17 3323 "$user" "$password" pipe_
+# host_upgrade mcs17 3323 "$user" "$password" gencode_
 # host_upgrade otterlive  3324 "$user" "$password" loutre_
-# host_upgrade otterpipe2 3323 "$user" "$password" chromoDB
-# host_upgrade otterpipe2 3323 "$user" "$password" jgrg_human_
-# host_upgrade otterpipe2 3323 "$user" "$password" jgrg_human_dev
+# host_upgrade mcs17 3323 "$user" "$password" chromoDB
+host_upgrade mcs17 3323 "$user" "$password" jgrg_human_
+# host_upgrade mcs17 3323 "$user" "$password" jgrg_human_dev
 # host_upgrade otterlive  3324 "$user" "$password" loutre_cat_dev
-# host_upgrade otterpipe1 3322 "$user" "$password" pipe_cat_dev
+# host_upgrade mcs17 3322 "$user" "$password" pipe_cat_dev
 
 chgrp -R anacode "$log_dir"
 chmod -R ug+rw   "$log_dir"
