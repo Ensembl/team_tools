@@ -36,7 +36,7 @@ sub main {
         # Taint clearance, and independence from $PWD
         my $script = File::Spec->rel2abs($0);
         die "Detaint fail on $script"
-          unless $script =~ m{^(/[-_a-zA-Z0-9/]+\.?[a-z]*)$};
+          unless $script =~ m{^(/[-_.a-zA-Z0-9/]+\.?[a-z]*)$};
 
         local $0 = $1;
         # skip_sometimes also uses $0 to write the stamp file
