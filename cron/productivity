@@ -1,0 +1,49 @@
+#!/software/perl-5.18.2/bin/perl
+
+### productivity_cron
+
+use strict;
+use warnings;
+use Mail::Sender;
+
+{
+    my $cript = '/software/anacode/bin/productivity_report';
+    my $report_body = qx{$cript};
+
+    my ($year, $month, $mday) = (localtime)[5,4,3];
+    $year  += 1900;
+    $month += 1;
+    my $date = sprintf "%4d-%02d-%02d", $year, $month, $mday;
+    my $msg = Mail::Sender->new({
+        smtp => 'mail.sanger.ac.uk',
+        from => 'zmap@sanger.ac.uk',
+        on_errors => 'die',
+        # TLS_required => 1,
+    });
+    $msg->OpenMultipart({
+        to => 'af2@sanger.ac.uk',
+        cc => 'mg13@sanger.ac.uk',
+        subject => 'Annotation productivity report',
+    });
+    $msg->Body({
+        msg => "Annotation productivity report generated on $date\n\n\n",
+    });
+    $msg->Part({
+        description => 'report file',
+        ctype => 'text/tab-separated-values',
+        disposition => qq{attachment; filename="productivity_report_$date.txt"},
+        msg => $report_body,
+    });
+    $msg->Close;
+}
+
+
+
+__END__
+
+=head1 NAME - productivity_cron
+
+=head1 AUTHOR
+
+James Gilbert B<email> jgrg@sanger.ac.uk
+
