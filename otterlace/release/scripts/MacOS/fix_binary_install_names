@@ -121,10 +121,6 @@ sub get_app_paths_to_rename {
             }
             $new_path .= "/$f";
         }
-        elsif ($f = bad_otter_bin($path, $old_path)) {
-            # This hard-codes knowledge of the container layout, but it'll do for now.
-            $new_path = '@loader_path/../../../lib/' . $f;
-        }
         else {
             next;
         }
@@ -143,17 +139,6 @@ sub app_dir_and_file {
     else {
         return;
     }
-}
-
-sub bad_otter_bin {
-    my ($obj_path, $res_path) = @_;
-
-    return unless $obj_path =~ m{/otter/otter_rel.+/bin/};
-
-    # eg: @loader_path/libgtk-x11-2.0.0.dylib
-    my ($f) = $res_path =~ m{\@loader_path/([^/]+)$};
-
-    return $f;
 }
 
 sub get_loader_paths_to_rename {
