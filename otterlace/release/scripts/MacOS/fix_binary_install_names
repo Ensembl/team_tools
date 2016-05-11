@@ -166,7 +166,12 @@ sub get_loader_paths_to_rename {
     while (<$OTOOL>) {
         my ($old_path) = split;
         my $new_path;
-        if (my ($f) = $old_path =~ m{^\@loader_path/(?:\.\./)+([^/]+)$}) {
+        my @pth_old = split m{/}, $old_path;
+        if (shift(@pth_old) eq '@loader_path') {
+            while (@pth_old and $pth_old[0] eq '..') {
+                shift @pth_old;
+            }
+            my $f = join('/', @pth_old);
             if ($f =~ m{/}) {
                 $new_path = "$application_dir/Contents/Resources/$f";
             }
