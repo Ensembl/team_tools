@@ -5,26 +5,39 @@
 use strict;
 use warnings;
 use File::Spec;
+use Getopt::Long qw{ GetOptions };
 
 my $application_dir;
 
 {
+    my $undo_flag = 0;
+    my $usage = sub { exec('perldoc', $0) };
+    GetOptions(
+        'undo!'     => \$undo_flag,
+        'h|help!'   => $usage,
+        ) or $usage->();
     $application_dir = shift;
     unless ($application_dir and $application_dir =~ /\.app$/) {
-        exec('perldoc', $0);
+        $usage->();
     }
     $application_dir =~ s{/$}{};
 
     # "find -type f" excludes symbolic links
-    my @find_libs = ('find', $application_dir, qw{ -type f -and ( -name *.dylib -or -name *.so -or -name *.bundle ) });
-    my @find_exe  = ('find', $application_dir, qw{ -type f -and -perm +111 -and -not -name *.a });
+    my $find_libs = [ 'find', $application_dir, qw{ -type f -and ( -name *.dylib -or -name *.so -or -name *.bundle ) } ];
+    my $find_exe  = [ 'find', $application_dir, qw{ -type f -and -perm +111 -and -not -name *.a                      } ];
 
-    change_install_names_to_relative_paths(@find_libs);
-    change_install_names_to_relative_paths(@find_exe);
+    foreach my $find ($find_libs, $find_exe) {
+        if ($undo_flag) {
+            change_install_names(\&get_loader_paths_to_rename, @$find);
+        }
+        else {
+            change_install_names(\&get_app_paths_to_rename, @$find);
+        }
+    }
 }
 
-sub change_install_names_to_relative_paths {
-    my (@find) = @_;
+sub change_install_names {
+    my ($paths_func, @find) = @_;
 
     open my $FILE_FIND, '-|', @find or die "Error starting find: '@find |'; $!";
 
@@ -40,15 +53,13 @@ sub change_install_names_to_relative_paths {
         my $path = $_;
         next if is_dylib_stub($path);
 
-        my ($dir, $file) = app_dir_and_file($path);
-
         my @rename;
         my $id_change_file = undef;
-        if (my ($lib_id_change) = get_app_paths_to_rename($path, $dir, '-D')) {
+        if (my ($lib_id_change) = $paths_func->($path, '-D')) {
             $id_change_file = $lib_id_change->[0];
             push(@rename, '-id', $lib_id_change->[1]);
         }
-        my @info = get_app_paths_to_rename($path, $dir, '-L');
+        my @info = $paths_func->($path, '-L');
         foreach my $change (@info) {
             my ($old_path, $new_path) = @$change;
             if ($id_change_file and $old_path eq $id_change_file) {
@@ -62,6 +73,7 @@ sub change_install_names_to_relative_paths {
         unshift @rename, $install_name_tool;
         push @rename, $path;
         print STDERR "\n$path\n";
+        next;
         my $mode = (stat $path)[2];
         # print STDERR "Command: @rename\n";
         # Run install_name_tool
@@ -91,7 +103,9 @@ sub is_dylib_stub {
 }
 
 sub get_app_paths_to_rename {
-    my ($path, $dir, $otool_flag) = @_;
+    my ($path, $otool_flag) = @_;
+
+    my ($dir, $file) = app_dir_and_file($path);
 
     my @otool = ('otool', $otool_flag, $path);
     open my $OTOOL, '-|', @otool or die "Error starting '@otool |'; $!";
@@ -143,17 +157,81 @@ sub bad_otter_bin {
     return $f;
 }
 
+sub get_loader_paths_to_rename {
+    my ($path, $otool_flag) = @_;
+
+    my @otool = ('otool', $otool_flag, $path);
+    open my $OTOOL, '-|', @otool or die "Error starting '@otool |'; $!";
+    my $first_line = <$OTOOL>;
+    my @info;
+    while (<$OTOOL>) {
+        my ($old_path) = split;
+        my $new_path;
+        if (my ($f) = $old_path =~ m{^\@loader_path/(?:\.\./)+([^/]+)$}) {
+            if ($f =~ m{/}) {
+                $new_path = "$application_dir/Contents/Resources/$f";
+            }
+            else {
+                # Already broken - add a lib/
+                # This happens when code is compiled against libraries
+                # containing @loader_path's
+                $new_path = "$application_dir/Contents/Resources/lib/$f";
+            }
+
+            # A few libraries which can't otherwise be found can be found by
+            # looking back up the tree of the path to the binary:
+            unless (-f $new_path || -l $new_path) {
+                my @pth = split m{/}, $path;
+                pop(@pth);
+                while (@pth) {
+                    my $test_path = join('/', @pth, $f);
+                    if (-f $test_path || -l $test_path) {
+                        $new_path = $test_path;
+                        last;
+                    }
+                    pop(@pth);
+                }
+            }
+        }
+        else {
+            next;
+        }
+        if (-f $new_path || -l $new_path) {
+            push @info, [$old_path, $new_path]
+        }
+        else {
+            warn "No such file: $new_path\n  changing: $old_path\n  inside: $path\n";
+        }
+    }
+    return @info;
+}
+
+
 __END__
 
 =head1 NAME - fix_binary_install_names
 
 =head1 USAGE
 
-  fix_binary_install_names <PATH_TO_DOT_APP_DIR>
+  fix_binary_install_names [-undo] <PATH_TO_DOT_APP_DIR>
 
 =head1 EXAMPLE
 
   fix_binary_install_names /Applications/otter.app
+
+=head1 PARAMETERS
+
+=over 4
+
+=item PATH_TO_DOT_APP_DIR
+
+The path to the .app directory of the app to be fixed.
+
+=item -undo
+
+Revert @loader_path paths to full application paths.
+
+=back
 
 =head1 AUTHOR
 
