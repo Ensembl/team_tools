@@ -73,7 +73,6 @@ sub change_install_names {
         unshift @rename, $install_name_tool;
         push @rename, $path;
         print STDERR "\n$path\n";
-        next;
         my $mode = (stat $path)[2];
         # print STDERR "Command: @rename\n";
         # Run install_name_tool
@@ -218,6 +217,21 @@ __END__
 =head1 EXAMPLE
 
   fix_binary_install_names /Applications/otter.app
+
+=head1 DESCRIPTION
+
+In El Captian, the operating system no longer pays attention to
+DYLD_LIBRARY_FALLBACK_PATH, an environment variable we used to set in the otter
+script on Mac OS X so that the the dynamic loader could find libraries where
+the absolute path stored in binaries where otter.app was built don't exist on
+the user's machine. A better mechanism is to replace the absolute paths with
+paths beginning C<@loader_path>, which the dynamic loader uses as relative
+paths from the binary.
+
+The problem with this is that any software compiled against libraries
+containing the C<@loader_path> relative paths (eg: via subsequent use of
+MacPorts) just copies the paths, and these will usually be wrong. To overcome
+this they can be reset using the C<-undo> flag described.
 
 =head1 PARAMETERS
 
