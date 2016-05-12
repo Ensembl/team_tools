@@ -337,12 +337,6 @@ done_in_build_app() {
     popd
 }
 
-fix_binary_install_names () {
-    chat "Fixing binary install names"
-    ${dry_run:+echo DRY_RUN:} "${macos_scripts}/fix_binary_install_names" "$build_app"
-}
-
-
 rename_build_app() {
     chat "rename_build_app"
     "${macos_scripts}/rename_app.sh" "$build_app" "$target_app"
@@ -397,7 +391,6 @@ main() {
     install_annotools
     install_otterlace
     done_in_build_app
-    fix_binary_install_names
 
     rename_build_app
     build_sparse_image
