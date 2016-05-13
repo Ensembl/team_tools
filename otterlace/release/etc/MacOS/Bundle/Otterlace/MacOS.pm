@@ -12,6 +12,9 @@ MooseX::Log::Log4perl
 ZMQ::LibZMQ3
 JSON
 JSON::XS
+Data::Rmap
+Hash::Merge::Simple
+LWP::Protocol::connect
 
 =cut
 
