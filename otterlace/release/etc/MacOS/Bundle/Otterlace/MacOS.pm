@@ -6,7 +6,7 @@ Ace
 File::Spec::Link
 Bio::Root::Version - actually bioperl, need this to get actual version :-(
 Bio::DB::BigWig    - actual Bio-BigFile
-Bio::DB::Sam
+Bio::DB::HTS
 Proc::ProcessTable
 MooseX::Log::Log4perl
 ZMQ::LibZMQ3
