@@ -8,13 +8,11 @@
 zhost2ohost:
   cbi4a: cbi4a precise-dev64
   cbi4h: cbi4h precise-dev64
-  deskpro20407: lucid-dev32
-  lucid-dev64: lucid-dev64
+  lucid-dev64: ~
   precise-dev64: precise-dev64 trusty-dev64
   mac106229i: ~
   mac18480i: ~
-  tviewsrv: lucid-dev32
-  deskpro021045: lucid-dev32
+  tviewsrv: ~
   t119-win-build: ~
 
 zmap_build_links_path: ~zmap
