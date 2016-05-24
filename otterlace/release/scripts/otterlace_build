@@ -536,9 +536,10 @@ otterlace_client_install() {
     echo "removing old otterlace installation" &&
     with_new_directory "$otter_home" otterlace_client_install_client &&
     otterlace_script_vars_update "${otter_home}/bin/${otter_name}_env.sh" &&
-    # UNLACE: fix when otter reaches old (otterlace_installed)
+    # UNLACE: fix when otter v104 reaches old (remove otterlace_installed line)
     sed -i.bak \
         -e '/^otterlace_installed=/s/=.*$/=true/' \
+        -e '/^otter_installed=/s/=.*$/=true/' \
         "${otter_home}/bin/${otter_name}" \
         &&
     rm "${otter_home}/bin/${otter_name}.bak" &&
