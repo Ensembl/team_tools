@@ -9,11 +9,7 @@ use List::MoreUtils qw{ uniq };
 use Readonly;
 
 Readonly my $DOT_OTTER       => '.otter';
-Readonly my $OTTERLOG_SEARCH => qr{^otterlace\..*\.log$};
-
-Readonly my $SESSION_STEM    => '/var/tmp/lace_';
-Readonly my $SESSION_SEARCH  => qr{($SESSION_STEM\d+\.\w+\.\d+\.\d+)}o;
-Readonly my $SESSION_DONE    => '.done';
+Readonly my $OTTERLOG_SEARCH => qr{^otter\..*\.log$};
 
 
 sub new {
