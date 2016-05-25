@@ -12,12 +12,15 @@ use Readonly;
 
 use TeamTools::Otter::Sessions;
 
-Readonly my @MODES => qw( list ls gfflog sqlite );
+Readonly my @MODES => qw( list ls gfflog localdblog sqlite tags );
 
 Readonly my %MODE_SETTINGS => (
-    ls     => { command => 'ls',      args => [ qw( -lt ) ] },
-    gfflog => { command => 'less',    args => [ qw( -MS ) ], file => 'gff_log.txt'  },
-    sqlite => { command => 'sqlite3', args => [           ], file => 'otter.sqlite' },
+    ls         => { command => 'ls',      args => [ qw( -lt ) ] },
+    gfflog     => { command => 'less',    args => [ qw( -MS ) ], file => 'gff_log.txt'     },
+    localdblog => { command => 'less',    args => [ qw( -MS ) ], file => 'localdb_log.txt' },
+    sqlite     => { command => 'sqlite3', args => [                      ], file => 'otter.sqlite'    },
+    tags       => { command => 'sqlite3', args => [ qw( -separator : ) ], file => 'otter.sqlite',
+                                          extra => q(select * from otter_tag_value where tag != "region_xml") },
     );
 
 sub main {
@@ -45,6 +48,7 @@ sub main {
     $path = File::Spec->catfile($path, $settings->{file}) if $settings->{file};
 
     my @cmd = ($settings->{command}, @$args, $path);
+    push @cmd, $settings->{extra} if $settings->{extra};
     warn sprintf("Run:  %s\n", join ' ', map {/ / ? qq{'$_'} : $_} @cmd);
     exec @cmd;
 }
@@ -117,7 +121,7 @@ sub help {
     warn "$reason\n" if $reason;
     warn <<"__EO_SYN__";
 Syntax: $0 \
-\t[ --list | --ls | --gfflog | --sqlite ] [ --all ] \
+\t[ --list | --ls | --gfflog | --localdblog | --sqlite | --tags ] [ --all ] \
 \t[ --search <file> [ [ --index ] <n> ] | [ --session ] <dir> | <nth> ] \
 \t[ -- <args for next op> ]
 
