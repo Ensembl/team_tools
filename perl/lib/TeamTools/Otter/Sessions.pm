@@ -7,9 +7,9 @@ use Carp;
 use List::MoreUtils qw{ uniq };
 use Readonly;
 
-Readonly my $SESSION_STEM    => '/var/tmp/lace_';
-Readonly my $SESSION_GLOB    => "${SESSION_STEM}*";
-Readonly my $SESSION_SEARCH  => qr{($SESSION_STEM\d+\.\w+\.\d+\.\d+)}o;
+Readonly my $SESSION_STEM    => '/var/tmp/otter_';
+Readonly my $SESSION_GLOB    => "${SESSION_STEM}*/v*";
+Readonly my $SESSION_SEARCH  => qr{($SESSION_STEM\w+/v\d+\.\d+\.\d+)}o;
 Readonly my $SESSION_DONE    => '.done';
 Readonly my $SESSION_INDEX   => qr{\.(\d+)(?:\.done)?$};
 Readonly my $SESSION_DB      => 'otter.sqlite';
