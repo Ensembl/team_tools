@@ -30,7 +30,7 @@ sub main {
     my @out =
       (header(-expires => 'now', -type => 'text/html'),
        qq{<html>
-<head><title>Otterlace versions list</title>
+<head><title>Otter versions list</title>
 <style type="text/css">
  table.vsns    { border-collapse: collapse; border: thin black solid }
  table.vsns th { border: thin black solid; padding: 1ex }
@@ -46,7 +46,7 @@ sub main {
  div.eek       { color: darkred }
 </style>
 </head><body>
- <h1> Otterlace versions </h1>
+ <h1> Otter versions </h1>
  <p>
   Served from <a href="/">developer local Apache</a>.
   Please bookmark via <a href="http://mediawiki.internal.sanger.ac.uk/wiki/index.php/Otterlace#Current_versions">the wiki page</a>.
@@ -159,9 +159,9 @@ sub find_vsns {
 
         my $bindir = "/software/anacode/bin";
         foreach my $leaf (read_dir($bindir)) {
-            next unless $leaf =~ /otterlace/;
-            next if $leaf =~ /^_otterlace/; # ignore private implementation script
-            next if $leaf =~ /^otterlace_rel(\d+)/ && $1 <= 57; # ignore old version-specific non-symlink wrapper scripts
+            next unless $leaf =~ /otter/;
+            next if $leaf =~ /^_otter/; # ignore private implementation script
+            next if $leaf =~ /^otter_rel(\d+)/ && $1 <= 57; # ignore old version-specific non-symlink wrapper scripts
 
             my $fn = "$bindir/$leaf";
             my $hfn = escapeHTML($fn);
@@ -172,18 +172,20 @@ sub find_vsns {
                 if (!-e $ln_path) {
                     # dangling symlink
                     push @strange, qq{Symlink <tt>$hfn</tt> -&gt; <tt>$hln</tt> is dangling};
-                } elsif ($ln eq '_otterlace_perdistro') {
+                } elsif ($ln eq '_otter_perdistro') {
                     # ignore the magical "which distro are we running" wrapper,
                     # it passes on to /software/anacode/otter/otter_*-$distro
                     # which we understand already
-                } elsif ($leaf =~ m{^(.*)_otterlace$}) {
-                    my $expect = "otterlace_$1";
+                } elsif ($ln =~ m{^exec_in_}) {
+                    # ignore various maintenance scripts
+                } elsif ($leaf =~ m{^(.*)_otter$}) {
+                    my $expect = "otter_$1";
                     my $hexp = escapeHTML($expect);
                     push @strange, eek(qq{Track-prefix symlink <tt>$hfn</tt> should point<br /> to <tt>$hexp</tt>, but instead points<br /> to <tt>$hln</tt>})
                       unless $ln eq $expect;
-                } elsif ($leaf =~ m{^otterlace(|_\w+)$}) {
+                } elsif ($leaf =~ m{^otter(|_\w+)$}) {
                     my $track = $1 ? substr($1, 1) : 'live';
-                    my $expect = "../otter/otter_$track/bin/otterlace";
+                    my $expect = "../otter/otter_$track/bin/otter";
                     my $hexp = escapeHTML($expect);
                     push @strange, eek(qq{Track-suffix symlink <tt>$hfn</tt> should point<br /> to <tt>$hexp</tt>, but instead points<br /> to <tt>$hln</tt>})
                       unless $ln eq $expect;
@@ -191,7 +193,7 @@ sub find_vsns {
                     push @strange, qq{Symlink <tt>$hfn</tt> is weird};
                 }
             } else {
-                push @strange, qq{Non-symlink <tt>$hfn</tt>, should be pointer to an otterlace version?};
+                push @strange, qq{Non-symlink <tt>$hfn</tt>, should be pointer to an otter version?};
             }
         }
     }
@@ -280,8 +282,8 @@ sub showdesig {
     my ($desig) = @_;
     my $hdesig = escapeHTML($desig);
     return ($desig eq 'live'
-            ? '<tt>otterlace</tt> (live)'
-            : qq{<tt>otterlace_$hdesig</tt>});
+            ? '<tt>otter</tt> (live)'
+            : qq{<tt>otter_$hdesig</tt>});
 }
 
 sub showarch {
