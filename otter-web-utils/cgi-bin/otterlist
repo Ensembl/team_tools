@@ -113,8 +113,8 @@ sub set_newest {
 }
 
 sub find_vsns {
-    foreach my $arch (qw( linux-i386 linux-x86_64 )) {
-        my $holtdir = "/software/noarch/$arch/anacode/otter";
+    foreach my $arch (qw( linux-x86_64 )) {
+        my $holtdir = "/software/anacode/otter";
         set_newest($holtdir);
         foreach my $leaf (read_dir($holtdir)) {
             next if $leaf =~ /^sync_stamp\./; # from check-software-replication-one-loop of team_tools
@@ -157,7 +157,7 @@ sub find_vsns {
             }
         }
 
-        my $bindir = "/software/noarch/$arch/anacode/bin";
+        my $bindir = "/software/anacode/bin";
         foreach my $leaf (read_dir($bindir)) {
             next unless $leaf =~ /otterlace/;
             next if $leaf =~ /^_otterlace/; # ignore private implementation script
