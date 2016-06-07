@@ -248,8 +248,7 @@ sub main {
     ### Fix rsync flags, maybe
     #
     # This depends on the ordering of rsync --server flags being:
-    #   -logDtpre.iLs
-    # at least from the 'r' onwards.
+    #   -<blahblah>.iLs
     #
     if ($opt{rsyncfix} and ($cmd =~ /^rsync$/)) {
         foreach (@arg) {
