@@ -136,7 +136,7 @@ sub send_files {
     my $fail = run_showing
       (rsync =>
        ($QUIET ? () : ('-iv')),
-       qw( -a --delete -e smithssh ),
+       qw( -a --delete ), '-e', 'smithssh --rsyncfix',
        maybe_dry(qw( -c -n --no-t )),
        "$srcdir$part/", "$host:$dest$part/");
     die "send_files failed: $fail" unless defined wantarray;

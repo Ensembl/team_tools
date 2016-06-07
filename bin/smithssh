@@ -129,6 +129,11 @@ get the right key, you probably don't need it.
 
 The directory is inferred from the expected remote user.
 
+=item --rsyncfix
+
+Munge the rsync options to replace the missing -f sub-flag for
+rsync 3.1.0. (Nasty and potentially fragile!)
+
 =back
 
 
@@ -240,6 +245,23 @@ sub main {
     # Remote script using this key decodes the parameters
     @arg = quote64_args(@arg) if $key =~ m{/restart-server$};
 
+    ### Fix rsync flags, maybe
+    #
+    # This depends on the ordering of rsync --server flags being:
+    #   -logDtpre.iLs
+    # at least from the 'r' onwards.
+    #
+    if ($opt{rsyncfix} and ($cmd =~ /^rsync$/)) {
+        foreach (@arg) {
+            if ((my $prefix) = (/(\w+)\.iLs$/)) {
+                next unless $prefix =~ /r/; # is recursive
+                (my $fixed = $_) .= 'f';
+                warn "[w] replacing rsync options '$_' with '$fixed'\n";
+                $_ = $fixed;
+            }
+        }
+    }
+
     ### Go / no-go
     #
     if (@error) {
@@ -278,7 +300,7 @@ sub do_getopt {
     # Avoid stealing options from the remote command
     Getopt::Long::Configure(qw( bundling require_order ));
     GetOptions(\%opt, 'help|h', 'keyname|k=s', 'keyfile|K=s',
-               'utilities|u', 'ident|i', 'path|p=s',
+               'utilities|u', 'ident|i', 'path|p=s', 'rsyncfix',
                'dryrun|dry-run|n')
       or die "Bad options\n";
     die "Cannot resolve key - specified by keyname and keyfile\n"
