@@ -17,8 +17,8 @@ fetch_all_logs() {
             dest=$LOGSDIR/$host
             echo "=== $host -> $dest/"
             echo + \
-            rsync $DRY_RUN -ai -e smithssh --chmod=g+rw,o-rwx $host:/www/tmp/www-$HTYPE/logs/ $dest
-            rsync $DRY_RUN -ai -e smithssh --chmod=g+rw,o-rwx $host:/www/tmp/www-$HTYPE/logs/ $dest \
+            rsync $DRY_RUN -ai -e 'smithssh --rsyncfix' --chmod=g+rw,o-rwx $host:/www/tmp/www-$HTYPE/logs/ $dest
+            rsync $DRY_RUN -ai -e 'smithssh --rsyncfix' --chmod=g+rw,o-rwx $host:/www/tmp/www-$HTYPE/logs/ $dest \
                 && echo "    done" || echo " >>> RSYNC FAILED exit code $? <<<" >&2
             # our deliberate trailing / on logs/ is stripped remotely,
             # so we have unwanted extra path on NFS
