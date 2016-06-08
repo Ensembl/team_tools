@@ -48,21 +48,22 @@ sub main {
        [ "vm-mii-otlp:3324", user_password("ottroot") ],
 
        # otterpipe1
-       [ "mcs17:3322", user_password("ottro"),
+       [ "otp1-db:3322", user_password("ottro"),
 	 [ \&be_readonly, "pipe_human" ] ],
-       [ "mcs17:3322", user_password("ottadmin") ],
-       [ "mcs17:3322", user_password("ottroot") ],
+       [ "otp1-db:3322", user_password("ottadmin") ],
+       [ "otp1-db:3322", user_password("ottroot") ],
 
        # otterpipe2
-       [ "mcs17:3323", user_password("ottro"),
+       [ "otp2-db:3323", user_password("ottro"),
 	 [ \&be_readonly, "pipe_pig" ] ],
-       [ "mcs17:3323", user_password("ottadmin") ],
-       [ "mcs17:3323", user_password("ottroot"),
+       [ "otp2-db:3323", user_password("ottadmin") ],
+       [ "otp2-db:3323", user_password("ottroot"),
 #	 [ \&be_readonly, "mca_loutremouse_schema" ], # test would fail because writable
        ],
       );
-    my %slave = ('vm-mii-otlp' => 'mcs18',
-		 'mcs17'       => 'mcs18',
+    my %slave = ('vm-mii-otlp' => 'mcs14',      # need a CNAME
+		 'otp1-db'     => 'otp1-db-ro',
+		 'otp2-db'     => 'otp2-db-ro',
 		 );
 
     foreach my $wantrow (@want) {
