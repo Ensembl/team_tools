@@ -13,6 +13,7 @@ zhost2ohost:
   mac106229i: ~
   mac18480i: ~
   tviewsrv: ~
+  tviewsrv-eval: trusty-dev64
   t119-win-build: ~
 
 zmap_build_links_path: ~zmap
@@ -25,5 +26,5 @@ ostream2zstream:
 
 zhost_osname_override:
   precise-dev64: precise
-  trusty-dev64:  precise
-  otter-vm-trusty: precise
+  trusty-dev64:  trusty
+  otter-vm-trusty: trusty
