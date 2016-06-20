@@ -6,12 +6,25 @@
 #     repositories.
 #
 #     running ssh-agent containing github pushing key
+#       typically started like this:
+#         eval $( ssh-agent )
+#         ssh-add
 #
 #     existing clones of the pushees, as listed in REPO variables in
 #     all_repos
 #
 #     those existing clones must have 'origin' as intcvs1, and these
 #     branches will be updated
+#
+#     If a bug in openssh causes warnings like:
+#       DISPLAY "(null)" invalid; disabling X11 forwarding
+#     try the following in ~/.ssh/config
+#
+#       Host intcvs1   # or 'Host git' - depending on config of origin in FROM_REMOTE
+#           ForwardX11 no
+#
+#       Host github.com
+#           ForwardX11 no
 #
 # This script is young and probably fragile, sorry.
 #
