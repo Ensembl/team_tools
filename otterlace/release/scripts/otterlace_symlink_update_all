@@ -57,7 +57,9 @@ do_link() {
 
     full_version=$( full_version )
 
-    [ -n "$ftp_track" ] && echo "== FTP:" && $DRYRUN ln -vnfs --  "release_$full_version" "$ftp_base/$ftp_track"
+    if [ -n "$ftp_track" ]; then
+      echo "== FTP:" && $DRYRUN ln -vnfs --  "release_$full_version" "$ftp_base/$ftp_track"
+    fi
 
 }
 
@@ -74,7 +76,9 @@ do_delete() {
         $ssh_cmd
     done
 
-    [ -n "$ftp_track" ] && echo "== FTP:" && $DRYRUN rm "$ftp_base/$ftp_track"
+    if [ -n "$ftp_track" ]; then
+      echo "== FTP:" && $DRYRUN rm "$ftp_base/$ftp_track"
+    fi
 
 }
 
