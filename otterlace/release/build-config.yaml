@@ -13,7 +13,7 @@ zhost2ohost:
   mac106229i: ~
   mac18480i: ~
   tviewsrv: ~
-  tviewsrv-eval: trusty-dev64
+  annosoft: trusty-dev64
   t119-win-build: ~
 
 zmap_build_links_path: ~zmap
