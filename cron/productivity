@@ -22,7 +22,6 @@ use Mail::Sender;
     });
     $msg->OpenMultipart({
         to => 'af2@sanger.ac.uk',
-        cc => 'mg13@sanger.ac.uk',
         subject => 'Annotation productivity report',
     });
     $msg->Body({
