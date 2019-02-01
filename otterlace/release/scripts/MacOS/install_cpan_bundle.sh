@@ -8,7 +8,7 @@ perl_sanity_check || exit 3
 # Work out which perl lib directory to use
 #
 eval $( "$install_base/bin/perl" -V:version ) # sets $version
-perl_ver=$version
+perl_ver=$(echo $version | sed 's/\([0-9]*\.[0-9]*\)\.[0-9]*/\1/')
 unset version
 echo "Perl version is ${perl_ver}"
 perl5_lib="${install_base}/lib/perl5"
