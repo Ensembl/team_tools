@@ -48,8 +48,8 @@ goto_build_root () {
 
 # These ensure we build for 10.6, x86_64.
 
-extra_cflags="-arch x86_64 -mmacosx-version-min=10.6 -isysroot /Developer/SDKs/MacOSX10.6.sdk"
-export MACOSX_DEPLOYMENT_TARGET=10.6
+extra_cflags="-arch x86_64 -mmacosx-version-min=10.14 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk"
+export MACOSX_DEPLOYMENT_TARGET=10.14
 
 # Allow lots of room to mess with the library paths via install_name_tool
 extra_ldflags="-headerpad_max_install_names"
