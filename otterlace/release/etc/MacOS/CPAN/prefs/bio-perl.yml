@@ -10,3 +10,5 @@ pl:
     - "n\n"
     - "(likely to cause some failures)"
     - "n\n"
+test:
+  commandline: "echo SKIPPING TESTS"
