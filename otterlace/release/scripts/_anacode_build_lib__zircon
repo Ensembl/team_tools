@@ -17,7 +17,6 @@ _do_build() {
         perl Makefile.PL INSTALL_BASE="${install_dir}" \
             INSTALLMAN3DIR=none &&
         make &&
-        make test &&
         make install &&
         rm -rf -- "$build_dir" &&
         true ) &&
