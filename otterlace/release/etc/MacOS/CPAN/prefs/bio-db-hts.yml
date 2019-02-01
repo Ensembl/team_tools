@@ -1,0 +1,7 @@
+---
+comment: "By MG13"
+match:
+  distribution: "^LDS/Bio-DB-HTS-\d"
+pl:
+  env:
+    SAMTOOLS: OTT_REL_MACOS_INSTALL_BASE
