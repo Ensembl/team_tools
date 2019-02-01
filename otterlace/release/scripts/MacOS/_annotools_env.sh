@@ -17,7 +17,7 @@ check_set_zmap_build_dir_from_arg () {
 	exit 3
     fi
 
-    zmap_dist_dir="${zmap_build_dir}/Dist"
+    zmap_dist_dir="${zmap_build_dir}"
     /usr/bin/true
 }
 
