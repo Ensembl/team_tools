@@ -40,6 +40,16 @@ fi
   --with-no-root-privileges
 
 make
+if [ "$(id -g)" = "$(id -gn)" ]; then
+  sed -i .old 's/gname/gid/' ${work_dir}/${macports_name}/doc/base.mtree
+  sed -i .old 's/gname/gid/' ${work_dir}/${macports_name}/doc/prefix.mtree
+else
+  id -gn | grep " " &> /dev/null
+  if [ $? -eq 0 ]; then
+    sed -i .old "s/gname=[[:graph:] ]* \([[:alpha:]]*=\)/gid=$(id -g) \1/" ${work_dir}/${macports_name}/doc/base.mtree
+    sed -i .old "s/gname=[[:graph:] ]* \([[:alpha:]]*=\)/gid=$(id -g) \1/" ${work_dir}/${macports_name}/doc/prefix.mtree
+  fi
+fi
 make install
 
 echo "Patching MacPorts config"
