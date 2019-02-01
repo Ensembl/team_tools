@@ -28,7 +28,7 @@ done < "${ports_list}"
 pushd "${install_base}/lib"
 
 # YUK: hard-coded 5.12
-libperl="$( find perl5 -name libperl.dylib -path '*5.12*' )"
+libperl="$( find perl5 -name libperl.dylib -path '*5.26*' )"
 [ -r "$libperl" ] || bail "Finding libperl.dylib failed: got '$libperl'"
 
 ln -vsf "$libperl"
