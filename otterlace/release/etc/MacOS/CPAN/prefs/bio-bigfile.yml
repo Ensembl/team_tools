@@ -4,5 +4,5 @@ match:
   distribution: "^LDS/Bio-BigFile-\d"
 pl:
   env:
-    KENT_SRC: OTT_REL_MACOS_INSTALL_BASE/lib/jksrc
-    MACHTYPE: macports
+    KENT_SRC: OTT_REL_MACOS_INSTALL_BASE/lib/kent/src
+    MACHTYPE: x86_64
