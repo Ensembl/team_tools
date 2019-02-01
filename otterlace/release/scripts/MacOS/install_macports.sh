@@ -52,36 +52,7 @@ else
 fi
 make install
 
-echo "Patching MacPorts config"
-
-cd "${install_base}"
-patch -p0 < "${macports_patch}"
-
-macports_sources_conf="${install_base}/etc/macports/sources.conf"
-local_ports_src="${etc_macos}/Ports"
-local_ports_dst="${install_base}/etc/local_ports"
-
-sed -i ".pre-sed" \
-    -e "s|OTT_REL_MACOS_LOCAL_PORTS|${local_ports_dst}|" \
-   "${macports_sources_conf}"
-
-echo "Installing local ports files"
-
-mkdir -v -p "${local_ports_dst}"
-cp -v -p -R ${local_ports_src}/* "${local_ports_dst}"
-
-port_update_dst="${install_base}/sbin/port_update.sh"
-cp -v -p "${etc_macos}/port_update.sh.template" "${port_update_dst}"
-chmod +x "${port_update_dst}"
-
-echo "Updating ports lists"
-${port_update_dst}
-
-echo
-echo "Ports lists have been updated."
-echo
-echo "To update again later, run:"
-echo "  ${port_update_dst}"
+${install_base}/bin/port selfupdate
 
 exit $?
 

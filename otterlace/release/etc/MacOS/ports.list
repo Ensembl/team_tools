@@ -50,7 +50,6 @@ zmq
 #
 exonerate
 hmmer
-jksrc-lib
 htslib
 
 # development
