@@ -45,6 +45,8 @@ xorg-libXmu
 curl
 xprop
 zmq
+percona
+sqlite3
 
 # bioinformatics
 #
