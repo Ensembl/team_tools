@@ -13,7 +13,7 @@ _do_build() {
         git checkout -qb _build "$src_version" &&
         (echo Zircon is; git log --decorate -1 | sed -e 's/^/    /') &&
         sed -i .old 's/return $self->{zconn} or/return $self->{zconn} ||/' bin/zircon_pipe
-        rm bin/zircon.old
+        rm bin/zircon_pipe.old
         perl Makefile.PL INSTALL_BASE="${install_dir}" \
             INSTALLMAN3DIR=none &&
         make &&
