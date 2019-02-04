@@ -1,7 +1,7 @@
 ---
 comment: "By MG13"
 match:
-  distribution: "^CJFIELDS/BioPerl-\d"
+  distribution: "^CDRAUG/BioPerl-*"
 pl:
   expect:
     - "live database tests. y/n"
