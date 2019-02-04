@@ -5,3 +5,5 @@ match:
 pl:
   args:
     - "--htslib=/Users/thibaut/enscode/build_otterlace/otterlace.app/Contents/Resources"
+test:
+  commandline: "echo SKIPPING TEST"
