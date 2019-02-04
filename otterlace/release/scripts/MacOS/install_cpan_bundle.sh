@@ -21,6 +21,7 @@ config_bak="${config_dst}.arm_bak"
 
 cpan_home="${install_base}/var/cpan"
 
+# Could use -j when calling cpan instead of doint this
 pers_config="${HOME}/.cpan/CPAN/MyConfig.pm"
 if [ -e "${pers_config}" ]; then
     echo "You have a CPAN config at: ${pers_config}"
