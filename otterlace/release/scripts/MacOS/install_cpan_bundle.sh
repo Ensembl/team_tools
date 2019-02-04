@@ -65,4 +65,4 @@ cp -v "${bundle_src}" "${bundle_dir}"
 #
 "${install_base}/bin/cpan" -i Bundle::Otterlace::MacOS
 
-exit 0
+exit $?
