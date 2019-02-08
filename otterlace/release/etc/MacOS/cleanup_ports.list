@@ -13,3 +13,15 @@ source-highlight
 boost
 itstool
 gawk
+gcc5
+cctools
+gcc_select
+gmp
+isl18
+ld64
+ld64-xcode
+libmpc
+llvm-7.0
+llvm_select
+mpfr
+xar
