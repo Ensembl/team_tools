@@ -5,8 +5,46 @@ set -e # bail out on error
 BUILD_DIR="$PWD"
 APP_NAME="otterlace"
 CODEBASE="$HOME/enscode"
+OTTER_DIR="$CODEBASE/ensembl-otter"
 TEAMTOOLS_DIR="$CODEBASE/team_tools"
 MACOSSCRIPTS_DIR="$TEAMTOOLS_DIR/otterlace/release/scripts/MacOS"
+USAGE=0
+
+while getopts ":a:b:c:o:t:x:y:" o; do
+    case $o in
+        a ) APP_NAME=$OPTARG;;
+        b ) BUILD_DIR=$OPTARG;;
+        c ) CODEBASE=$OPTARG;;
+        o ) OTTER_DIR=$OPTARG;;
+        t ) TEAMTOOLS_DIR=$OPTARG;;
+        x ) export MACOSX_XCODE_PATH=$OPTARG;;
+        y ) export MACOSX_DEPLOYMENT_TARGET=$OPTARG;;
+        * ) USAGE=1;;
+    esac
+done
+
+if [ $USAGE -eq 1 ];then
+  cat <<EOF
+
+    The script will initialise the creation of an ${APP_NAME} application to connect to a Loutre database.
+    It will create three directory in ${BUILD_DIR}:
+     - _macports_src
+     - _non_dist
+     - ${APP_NAME}.app
+    It will use scripts in ${TEAMTOOLS_DIR} and ${OTTER_DIR}
+    It will expect to find the archive for ZMap and Seqtools in ${CODEBASE}
+    Available options are:
+       -a Name of the application, current value is ${APP_NAME}
+       -b Working directory, default is ${BUILD_DIR}
+       -c Directory containing the archives for ZMap and Seqtools, current is ${CODEBASE}
+       -o ensembl-otter directory, current is ${OTTER_DIR}
+       -t team_tools directory, current is ${TEAMTOOLS_DIR}
+       -x Path to the OS X SDK, use only if the SDK is not in a default location
+       -y Minimum deployment target, the default is the current OS X version
+
+EOF
+  exit 42
+fi
 
 if [ -d "${APP_NAME}.app" ]; then
   echo "setup_app_skeleton.sh has already been run"
@@ -85,17 +123,27 @@ if [ $? -ne 0 ];then
   exit 1
 fi
 
+$MACOSSCRIPTS_DIR/cleanup_unused.sh
+if [ $? -ne 0 ];then
+  echo "Failed on cleanup_unused.sh"
+  exit 1
+fi
+
+. "${MACOSSCRIPTS_DIR}/_macos_in_app.sh" || exit 7
+. "${MACOSSCRIPTS_DIR}/_annotools_env.sh" || exit 8
+OTTER_VERSION=`basename $(find ./ -type d -name "otter_rel*" | sed 's/otter_rel//')`
+
 cd $BUILD_DIR
-$MACOSSCRIPTS_DIR/build_sparse_image.sh --detach -r otterlace_mac_intel-10.14-109 -M "${APP_NAME}.app"
+$MACOSSCRIPTS_DIR/build_sparse_image.sh --detach -r "${APP_NAME}_mac_intel-${MACOSX_DEPLOYMENT_TARGET}-${OTTER_VERSION}" -M "${APP_NAME}.app"
 if [ $? -ne 0 ];then
   echo "Failed on build_sparse_image.sh"
   exit 1
 fi
 
-$MACOSSCRIPTS_DIR/compress_image.sh otterlace_mac_intel-10.14-109.sparseimage
+$MACOSSCRIPTS_DIR/compress_image.sh "${APP_NAME}_mac_intel-${MACOSX_DEPLOYMENT_TARGET}-${OTTER_VERSION}.sparseimage"
 if [ $? -ne 0 ];then
   echo "Failed on compress_image.sh"
   exit 1
 fi
 
-rm otterlace_mac_intel-10.14-109.sparseimage
+rm "${APP_NAME}_mac_intel-${MACOSX_DEPLOYMENT_TARGET}-${OTTER_VERSION}.sparseimage"
