@@ -1,0 +1,6 @@
+---
+comment: "By thibaut"
+match:
+  distribution: "^MIROD/XML-DOM-XPath-*"
+test:
+  commandline: "echo SKIPPING TESTS"
