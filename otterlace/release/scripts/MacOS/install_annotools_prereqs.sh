@@ -23,7 +23,7 @@ fi
 
 # ACEDB
 
-acedb_tarball="${zmap_dist_dir}/ACEDB-*.src.tar.gz"
+acedb_tarball="${zmap_dist_dir}/ACEDB-*.tar.gz"
 unpack_matching_tarball "${acedb_tarball}" "ACEDB-"
 acedb_src="${unpacked_tarball}"
 
