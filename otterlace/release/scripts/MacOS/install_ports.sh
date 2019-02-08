@@ -20,19 +20,5 @@ while read entry; do
 
 done < "${ports_list}"
 
-# FIXME: strip local paths from ${install_base}/etc/fonts/fonts.conf
-
-# Install into lib a link to libperl.dylib, so that it can be found via
-# the DYLD_FALLBACK_LIBRARY_PATH mechanism when we relocate.
-
-pushd "${install_base}/lib"
-
-# YUK: hard-coded 5.12
-libperl="$( find perl5 -name libperl.dylib -path '*5.26*' )"
-[ -r "$libperl" ] || bail "Finding libperl.dylib failed: got '$libperl'"
-
-ln -vsf "$libperl"
-
-popd
 
 exit 0
