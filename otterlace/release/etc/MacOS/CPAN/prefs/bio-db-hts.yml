@@ -4,6 +4,6 @@ match:
   distribution: "^AVULLO/Bio-DB-HTS-\d"
 pl:
   args:
-    - "--htslib=/Users/thibaut/enscode/build_otterlace/otterlace.app/Contents/Resources"
+    - "--htslib=OTT_REL_MACOS_INSTALL_BASE/lib"
 test:
   commandline: "echo SKIPPING TEST"
