@@ -66,4 +66,13 @@ cp -v "${bundle_src}" "${bundle_dir}"
 #
 "${install_base}/bin/cpan" -i Bundle::Otterlace::MacOS
 
+# Check that BioPerl, HTS and BigWig are OK
+for M in Bio::Root::Version Bio::DB::HTS Bio::DB::BigFile; do
+  $install_base/bin/perl -e "use ${M}"
+  if [ $? -ne 0 ]; then
+    echo "${M} is not installed"
+    exit 1
+  fi
+done
+
 exit $?
