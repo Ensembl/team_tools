@@ -72,4 +72,7 @@ p5-padwalker
 # )
 #gcc49
 
+# Needed for cross_match, might use a newer gcc. It fails with clang
+gcc5
+
 # EOF

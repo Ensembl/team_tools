@@ -9,12 +9,16 @@ OTTER_DIR="$CODEBASE/ensembl-otter"
 TEAMTOOLS_DIR="$CODEBASE/team_tools"
 MACOSSCRIPTS_DIR="$TEAMTOOLS_DIR/otterlace/release/scripts/MacOS"
 USAGE=0
+# cros_match has a license which means we cannot package it to anyone
+# Only people working in Ensembl can have it
+CROSS_MATCH=0;
 
-while getopts ":a:b:c:o:t:x:y:" o; do
+while getopts ":a:b:c:mo:t:x:y:" o; do
     case $o in
         a ) APP_NAME=$OPTARG;;
         b ) BUILD_DIR=$OPTARG;;
         c ) CODEBASE=$OPTARG;;
+        m ) CROSS_MATCH=1;;
         o ) OTTER_DIR=$OPTARG;;
         t ) TEAMTOOLS_DIR=$OPTARG;;
         x ) export MACOSX_XCODE_PATH=$OPTARG;;
@@ -37,6 +41,7 @@ if [ $USAGE -eq 1 ];then
        -a Name of the application, current value is ${APP_NAME}
        -b Working directory, default is ${BUILD_DIR}
        -c Directory containing the archives for ZMap and Seqtools, current is ${CODEBASE}
+       -m Flag to compile cross_match, the phrap archive should be in ${CODEBASE}
        -o ensembl-otter directory, current is ${OTTER_DIR}
        -t team_tools directory, current is ${TEAMTOOLS_DIR}
        -x Path to the OS X SDK, use only if the SDK is not in a default location
@@ -80,6 +85,14 @@ else
   $MACOSSCRIPTS_DIR/install_kent.sh
   if [ $? -ne 0 ];then
     echo "Failed on install_kent.sh"
+    exit 1
+  fi
+fi
+
+if [ $CROSS_MATCH -eq 1 ]; then
+  $MACOSSCRIPTS_DIR/install_crossmatch.sh $CODEBASE
+  if [ $? -ne 0 ];then
+    echo "Failed on install_crossmatch.sh"
     exit 1
   fi
 fi
