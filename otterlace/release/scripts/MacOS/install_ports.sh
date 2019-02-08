@@ -20,5 +20,7 @@ while read entry; do
 
 done < "${ports_list}"
 
+# This is to allow mysql_config to be in the PATH
+"${port_cmd}" select mysql $(${port_cmd} -q select --list mysql | grep -v none | awk '{print $1}')
 
 exit 0
