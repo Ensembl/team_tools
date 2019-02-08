@@ -114,6 +114,7 @@ echo "Mounted sparseimage at '${mount_point}'"
 
 echo "Copying ${app_name} -> ${mount_point}"
 cp -pR "${app_name}" "${mount_point}"
+rm ${mount_point}/${app_name}/${resources_path}/var
 
 echo "Fixing binary install names in ${mount_point}/${app_name}"
 "${macos_scripts}/fix_binary_install_names" "${mount_point}/${app_name}"
@@ -122,6 +123,8 @@ if [ -n "$do_non_dist" ]; then
     img_non_dist="${mount_point}/${non_dist_dir}"
     mkdir -v -p "${img_non_dist}"
     copy_non_dist "${non_dist_dir}" "${img_non_dist}" "${exclude_build}"
+else
+    rm ${mount_point}/${app_name}/${resources_path}/_non_dist
 fi
 
 if [ -n "$read_me" ]; then
