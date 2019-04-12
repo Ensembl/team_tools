@@ -17,7 +17,7 @@ mkdir ${phrap_dir}
 tar -C ${PWD}/${phrap_dir} -zxvf ${phrap_tarball}
 
 cd ${phrap_dir}
-make CC=${install_base}/bin/gcc
+make CFLAGS="-O2 -Wno-return-type"
 
 cp \
 PAM250 \

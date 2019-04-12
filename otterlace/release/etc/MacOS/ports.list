@@ -66,17 +66,4 @@ p5-test-mockobject
 p5-devel-cycle
 p5-padwalker
 
-# needed for libstdc++ support on MacOS 10.6.8 snow leopard:
-# (install via, eg.:
-#  DYLD_FALLBACK_LIBRARY_PATH=~/Otter/Dist/build_otterlace.app/Contents/Resources/lib ./with_parked_ResBin port install gcc49
-# )
-#gcc49
-
-# Needed for cross_match, might use a newer gcc. It fails with clang
-# We need to install cctools first as it will need libunwind-headers
-# which are causing a problem when we need to compile libgcc8.
-# Before installing gcc, we will remove libunwind-headers
-cctools
-gcc8
-
 # EOF
