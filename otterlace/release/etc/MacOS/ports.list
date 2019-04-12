@@ -73,6 +73,10 @@ p5-padwalker
 #gcc49
 
 # Needed for cross_match, might use a newer gcc. It fails with clang
-gcc5
+# We need to install cctools first as it will need libunwind-headers
+# which are causing a problem when we need to compile libgcc8.
+# Before installing gcc, we will remove libunwind-headers
+cctools
+gcc8
 
 # EOF
