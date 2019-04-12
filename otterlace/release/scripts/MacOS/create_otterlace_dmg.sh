@@ -15,8 +15,9 @@ CROSS_MATCH=0
 DO_ARCHIVE=""
 DO_ACE=0
 STATUS=0
+STOP_BEFORE_CPAN=0
 
-while getopts ":a:Ab:c:mo:r:t:x:y:" o; do
+while getopts ":a:Ab:c:mo:r:sS:t:x:y:" o; do
     case $o in
         a ) APP_NAME=$OPTARG;;
         A ) DO_ACE=1;;
@@ -25,6 +26,7 @@ while getopts ":a:Ab:c:mo:r:t:x:y:" o; do
         m ) CROSS_MATCH=1;;
         o ) OTTER_DIR=$OPTARG;;
         r ) DO_ARCHIVE=$OPTARG;;
+        s ) STOP_BEFORE_CPAN=1;;
         S ) STATUS=$OPTARG;;
         t ) TEAMTOOLS_DIR=$OPTARG;;
         x ) export MACOSX_XCODE_PATH=$OPTARG;;
@@ -51,6 +53,11 @@ if [ $USAGE -eq 1 ];then
        -m Flag to compile cross_match, the phrap archive should be in ${CODEBASE}
        -o ensembl-otter directory, current is ${OTTER_DIR}
        -r create an archive of the three directory in ${BUILD_DIR}, the directory/(filename) needs to be specified, default is 'build_${APP_NAME}.tar.gz'
+       -s Stop the script before doing the cpan install
+       -S Specify at which step you want to start. Default is all
+            1 Cpan modules
+            2 Zmap, otter,...
+            3 Create the dmg
        -t team_tools directory, current is ${TEAMTOOLS_DIR}
        -x Path to the OS X SDK, use only if the SDK is not in a default location
        -y Minimum deployment target, the default is the current OS X version
@@ -127,6 +134,10 @@ if [ $STATUS -lt 1 ]; then
     cd "${APP_NAME}.app"
   fi
   STATUS=1
+  if [ $STOP_BEFORE_CPAN -eq 1 ];then
+    echo "You want to stop now"
+    exit 0
+  fi
 fi
 
 if [ $STATUS -lt 2 ];then
