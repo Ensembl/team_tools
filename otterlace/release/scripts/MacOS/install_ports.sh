@@ -14,8 +14,6 @@ while read entry; do
 
     [[ $entry =~ ^# ]]             && continue # skip comment lines
     [[ $entry =~ ^[[:space:]]*$ ]] && continue # skip blank lines
-    # libunwind-headers breaks libgcc8 but is installed as we compile software
-    [[ $entry =~ ^gcc ]] && "${port_cmd}" uninstall libunwind-headers
 
     # $entry is NOT quoted as it needs to expand to individual tokens
     "${port_cmd}" install $entry
@@ -24,6 +22,5 @@ done < "${ports_list}"
 
 # This is to allow mysql_config to be in the PATH
 "${port_cmd}" select mysql $(${port_cmd} -q select --list mysql | grep -v none | awk '{print $1}')
-"${port_cmd}" select gcc $(${port_cmd} -q select --list gcc | grep -v none | awk '{print $1}')
 
 exit 0
