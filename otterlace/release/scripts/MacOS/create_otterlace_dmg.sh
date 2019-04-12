@@ -11,15 +11,21 @@ MACOSSCRIPTS_DIR="$TEAMTOOLS_DIR/otterlace/release/scripts/MacOS"
 USAGE=0
 # cros_match has a license which means we cannot package it to anyone
 # Only people working in Ensembl can have it
-CROSS_MATCH=0;
+CROSS_MATCH=0
+DO_ARCHIVE=""
+DO_ACE=0
+STATUS=0
 
-while getopts ":a:b:c:mo:t:x:y:" o; do
+while getopts ":a:Ab:c:mo:r:t:x:y:" o; do
     case $o in
         a ) APP_NAME=$OPTARG;;
+        A ) DO_ACE=1;;
         b ) BUILD_DIR=$OPTARG;;
         c ) CODEBASE=$OPTARG;;
         m ) CROSS_MATCH=1;;
         o ) OTTER_DIR=$OPTARG;;
+        r ) DO_ARCHIVE=$OPTARG;;
+        S ) STATUS=$OPTARG;;
         t ) TEAMTOOLS_DIR=$OPTARG;;
         x ) export MACOSX_XCODE_PATH=$OPTARG;;
         y ) export MACOSX_DEPLOYMENT_TARGET=$OPTARG;;
@@ -39,10 +45,12 @@ if [ $USAGE -eq 1 ];then
     It will expect to find the archive for ZMap and Seqtools in ${CODEBASE}
     Available options are:
        -a Name of the application, current value is ${APP_NAME}
+       -A Use AceDB, this should not be used anymore
        -b Working directory, default is ${BUILD_DIR}
        -c Directory containing the archives for ZMap and Seqtools, current is ${CODEBASE}
        -m Flag to compile cross_match, the phrap archive should be in ${CODEBASE}
        -o ensembl-otter directory, current is ${OTTER_DIR}
+       -r create an archive of the three directory in ${BUILD_DIR}, the directory/(filename) needs to be specified, default is 'build_${APP_NAME}.tar.gz'
        -t team_tools directory, current is ${TEAMTOOLS_DIR}
        -x Path to the OS X SDK, use only if the SDK is not in a default location
        -y Minimum deployment target, the default is the current OS X version
@@ -51,112 +59,152 @@ EOF
   exit 42
 fi
 
-if [ -d "${APP_NAME}.app" ]; then
-  echo "setup_app_skeleton.sh has already been run"
-else
-  $MACOSSCRIPTS_DIR/setup_app_skeleton.sh "${APP_NAME}.app"
+if [ $STATUS -lt 1 ]; then
+  if [ -n "$DO_ARCHIVE" ]; then
+    if [ -d "$DO_ARCHIVE" ]; then
+      if [ -w "$DO_ARCHIVE" ]; then
+        DO_ARCHIVE="$DO_ARCHIVE/build_${APP_NAME}.tar.gz"
+      else
+        echo "Cannot write to $DO_ARCHIVE"
+        exit 1
+      fi
+    fi
+    if [ -e "$DO_ARCHIVE" ];then
+      echo "File '$DO_ARCHIVE' already exists"
+      exit 2
+    fi
+  fi
+
+  if [ -d "${APP_NAME}.app" ]; then
+    echo "setup_app_skeleton.sh has already been run"
+  else
+    $MACOSSCRIPTS_DIR/setup_app_skeleton.sh "${APP_NAME}.app"
+    if [ $? -ne 0 ];then
+      echo "Failed on setup_app_skeleton.sh"
+      exit 1
+    fi
+  fi
+
+  cd "${BUILD_DIR}/${APP_NAME}.app"
+
+  if [ -e "Contents/Resources/bin/port" ]; then
+    echo "MacPort has already been installed"
+  else
+    $MACOSSCRIPTS_DIR/install_macports.sh
+    if [ $? -ne 0 ];then
+      echo "Failed on install_macports.sh"
+      exit 1
+    fi
+  fi
+
+  $MACOSSCRIPTS_DIR/install_ports.sh
   if [ $? -ne 0 ];then
-    echo "Failed on setup_app_skeleton.sh"
+    echo "Failed on install_ports.sh"
     exit 1
   fi
+
+  if [ -e "Contents/Resources/lib/kent/src/lib/x86_64/jkweb.a" ]; then
+    echo "Kent libraries have been compiled"
+  else
+    $MACOSSCRIPTS_DIR/install_kent.sh
+    if [ $? -ne 0 ];then
+      echo "Failed on install_kent.sh"
+      exit 1
+    fi
+  fi
+
+  if [ $CROSS_MATCH -eq 1 ]; then
+    $MACOSSCRIPTS_DIR/install_crossmatch.sh $CODEBASE
+    if [ $? -ne 0 ];then
+      echo "Failed on install_crossmatch.sh"
+      exit 1
+    fi
+  fi
+
+  if [ -n "$DO_ARCHIVE" ]; then
+    cd ${BUILD_DIR}
+    tar -czvf "${DO_ARCHIVE}" ${APP_NAME}.app _macports_src _non_dist
+    cd "${APP_NAME}.app"
+  fi
+  STATUS=1
 fi
 
-cd "${APP_NAME}.app"
+if [ $STATUS -lt 2 ];then
+  cd "${BUILD_DIR}/${APP_NAME}.app"
 
-if [ -e "Contents/Resources/bin/port" ]; then
-  echo "MacPort has already been installed"
-else
-  $MACOSSCRIPTS_DIR/install_macports.sh
+  $MACOSSCRIPTS_DIR/install_cpan_bundle.sh
   if [ $? -ne 0 ];then
-    echo "Failed on install_macports.sh"
+    echo "Failed on install_cpan_bundle.sh"
     exit 1
   fi
-fi
 
-$MACOSSCRIPTS_DIR/install_ports.sh
-if [ $? -ne 0 ];then
-  echo "Failed on install_ports.sh"
-  exit 1
-fi
-
-if [ -e "Contents/Resources/lib/kent/src/lib/x86_64/jkweb.a" ]; then
-  echo "Kent libraries have been compiled"
-else
-  $MACOSSCRIPTS_DIR/install_kent.sh
+  $MACOSSCRIPTS_DIR/cleanup_ports.sh
   if [ $? -ne 0 ];then
-    echo "Failed on install_kent.sh"
+    echo "Failed on cleanup_ports.sh"
     exit 1
   fi
+  STATUS=2
 fi
 
-if [ $CROSS_MATCH -eq 1 ]; then
-  $MACOSSCRIPTS_DIR/install_crossmatch.sh $CODEBASE
+if [ $STATUS -lt 3 ];then
+  cd "${BUILD_DIR}/${APP_NAME}.app"
+
+  $MACOSSCRIPTS_DIR/import_dist_extras.sh
   if [ $? -ne 0 ];then
-    echo "Failed on install_crossmatch.sh"
+    echo "Failed on import_dist_extras.sh"
     exit 1
   fi
-fi
-
-$MACOSSCRIPTS_DIR/install_cpan_bundle.sh
-if [ $? -ne 0 ];then
-  echo "Failed on install_cpan_bundle.sh"
-  exit 1
-fi
-
-$MACOSSCRIPTS_DIR/cleanup_ports.sh
-if [ $? -ne 0 ];then
-  echo "Failed on cleanup_ports.sh"
-  exit 1
-fi
-
-$MACOSSCRIPTS_DIR/import_dist_extras.sh
-if [ $? -ne 0 ];then
-  echo "Failed on import_dist_extras.sh"
-  exit 1
-fi
 
 # This should not be needed anymore as to my knowledge AceDB is not used in Havana
 # If it is needed, the archive can be found at ftp://ftp.sanger.ac.uk/pub/acedb/
 # but it will need some work
-#$MACOSSCRIPTS_DIR/install_annotools_prereqs.sh $CODEBASE
-#if [ $? -ne 0 ];then
-#  echo "Failed on install_annotools_prereqs.sh"
-#  exit 1
-#fi
+  if [ $DO_ACE -eq 1 ]; then
+    $MACOSSCRIPTS_DIR/install_annotools_prereqs.sh $CODEBASE
+    if [ $? -ne 0 ];then
+      echo "Failed on install_annotools_prereqs.sh"
+      exit 1
+    fi
+  fi
 
-$MACOSSCRIPTS_DIR/install_annotools.sh $CODEBASE
-if [ $? -ne 0 ];then
-  echo "Failed on install_annotools.sh"
-  exit 1
+  $MACOSSCRIPTS_DIR/install_annotools.sh $CODEBASE
+  if [ $? -ne 0 ];then
+    echo "Failed on install_annotools.sh"
+    exit 1
+  fi
+
+  $MACOSSCRIPTS_DIR/install_otterlace.sh $CODEBASE/ensembl-otter
+  if [ $? -ne 0 ];then
+    echo "Failed on install_otterlace.sh"
+    exit 1
+  fi
+
+  $MACOSSCRIPTS_DIR/cleanup_unused.sh
+  if [ $? -ne 0 ];then
+    echo "Failed on cleanup_unused.sh"
+    exit 1
+  fi
+  STATUS=3
 fi
 
-$MACOSSCRIPTS_DIR/install_otterlace.sh $CODEBASE/ensembl-otter
-if [ $? -ne 0 ];then
-  echo "Failed on install_otterlace.sh"
-  exit 1
+if [ $STATUS -lt 4 ];then
+  cd "${BUILD_DIR}/${APP_NAME}.app"
+
+  . "${MACOSSCRIPTS_DIR}/_macos_in_app.sh" || exit 7
+  . "${MACOSSCRIPTS_DIR}/_annotools_env.sh" || exit 8
+  OTTER_VERSION=`basename $(find ./ -type d -name "otter_rel*" | sed 's/otter_rel//')`
+
+  cd "${BUILD_DIR}"
+  $MACOSSCRIPTS_DIR/build_sparse_image.sh --detach -r "${APP_NAME}_mac_intel-${MACOSX_DEPLOYMENT_TARGET}-${OTTER_VERSION}" -M "${APP_NAME}.app"
+  if [ $? -ne 0 ];then
+    echo "Failed on build_sparse_image.sh"
+    exit 1
+  fi
+
+  $MACOSSCRIPTS_DIR/compress_image.sh "${APP_NAME}_mac_intel-${MACOSX_DEPLOYMENT_TARGET}-${OTTER_VERSION}.sparseimage"
+  if [ $? -ne 0 ];then
+    echo "Failed on compress_image.sh"
+    exit 1
+  fi
+
+  rm "${APP_NAME}_mac_intel-${MACOSX_DEPLOYMENT_TARGET}-${OTTER_VERSION}.sparseimage"
 fi
-
-$MACOSSCRIPTS_DIR/cleanup_unused.sh
-if [ $? -ne 0 ];then
-  echo "Failed on cleanup_unused.sh"
-  exit 1
-fi
-
-. "${MACOSSCRIPTS_DIR}/_macos_in_app.sh" || exit 7
-. "${MACOSSCRIPTS_DIR}/_annotools_env.sh" || exit 8
-OTTER_VERSION=`basename $(find ./ -type d -name "otter_rel*" | sed 's/otter_rel//')`
-
-cd $BUILD_DIR
-$MACOSSCRIPTS_DIR/build_sparse_image.sh --detach -r "${APP_NAME}_mac_intel-${MACOSX_DEPLOYMENT_TARGET}-${OTTER_VERSION}" -M "${APP_NAME}.app"
-if [ $? -ne 0 ];then
-  echo "Failed on build_sparse_image.sh"
-  exit 1
-fi
-
-$MACOSSCRIPTS_DIR/compress_image.sh "${APP_NAME}_mac_intel-${MACOSX_DEPLOYMENT_TARGET}-${OTTER_VERSION}.sparseimage"
-if [ $? -ne 0 ];then
-  echo "Failed on compress_image.sh"
-  exit 1
-fi
-
-rm "${APP_NAME}_mac_intel-${MACOSX_DEPLOYMENT_TARGET}-${OTTER_VERSION}.sparseimage"
