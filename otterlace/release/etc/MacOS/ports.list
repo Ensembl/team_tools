@@ -2,7 +2,7 @@
 
 # perl, at specific release
 #
-perl5 +perl5_12
+perl5
 
 # required for cpan distroprefs processing
 p5-expect
@@ -47,6 +47,10 @@ xprop
 zmq
 percona
 sqlite3
+
+# Needed by BioPerl, not sure where but installing
+# with CPAN fails on one test
+p5-xml-dom-xpath
 
 # bioinformatics
 #

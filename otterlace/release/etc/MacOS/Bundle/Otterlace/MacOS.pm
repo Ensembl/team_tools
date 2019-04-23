@@ -17,6 +17,7 @@ Data::Rmap
 Hash::Merge::Simple
 LWP::Protocol::connect
 Crypt::JWT
+Text::sprintfn
 
 =cut
 
