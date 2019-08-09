@@ -17,7 +17,7 @@ check_set_zmap_build_dir_from_arg () {
 	exit 3
     fi
 
-    zmap_dist_dir="${zmap_build_dir}/Dist"
+    zmap_dist_dir="${zmap_build_dir}"
     /usr/bin/true
 }
 
@@ -48,8 +48,20 @@ goto_build_root () {
 
 # These ensure we build for 10.6, x86_64.
 
-extra_cflags="-arch x86_64 -mmacosx-version-min=10.6 -isysroot /Developer/SDKs/MacOSX10.6.sdk"
-export MACOSX_DEPLOYMENT_TARGET=10.6
+if [ -z "${MACOSX_DEPLOYMENT_TARGET}" ]; then
+  export MACOSX_DEPLOYMENT_TARGET=$(defaults read loginwindow SystemVersionStampAsString | cut -d '.' -f1-2)
+fi
+
+if [ -z "${MACOSX_XCODE_PATH}" ];then
+  sdk_name=$(xcodebuild -showsdks | grep 'macos' | awk '{print $3,$4}')
+  MACOSX_XCODE_PATH=$(xcodebuild -version $sdk_name Path)
+fi
+
+if [ ! -e "${MACOSX_XCODE_PATH}" ]; then
+  echo "Could not find the Xcode path for the system libraries in : ${MACOSX_XCODE_PATH}"
+  exit 3
+fi
+extra_cflags="-arch x86_64 -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} -isysroot ${MACOSX_XCODE_PATH}"
 
 # Allow lots of room to mess with the library paths via install_name_tool
 extra_ldflags="-headerpad_max_install_names"

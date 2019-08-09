@@ -2,7 +2,7 @@
 
 # perl, at specific release
 #
-perl5 +perl5_12
+perl5
 
 # required for cpan distroprefs processing
 p5-expect
@@ -45,12 +45,17 @@ xorg-libXmu
 curl
 xprop
 zmq
+percona
+sqlite3
+
+# Needed by BioPerl, not sure where but installing
+# with CPAN fails on one test
+p5-xml-dom-xpath
 
 # bioinformatics
 #
 exonerate
 hmmer
-jksrc-lib
 htslib
 
 # development
@@ -64,11 +69,5 @@ p5-test-mockobject
 #
 p5-devel-cycle
 p5-padwalker
-
-# needed for libstdc++ support on MacOS 10.6.8 snow leopard:
-# (install via, eg.:
-#  DYLD_FALLBACK_LIBRARY_PATH=~/Otter/Dist/build_otterlace.app/Contents/Resources/lib ./with_parked_ResBin port install gcc49
-# )
-#gcc49
 
 # EOF

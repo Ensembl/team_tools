@@ -1,7 +1,7 @@
 ---
 comment: "By MG13"
 match:
-  distribution: "^CJFIELDS/BioPerl-\d"
+  distribution: "^CDRAUG/BioPerl-*"
 pl:
   expect:
     - "live database tests. y/n"
@@ -10,3 +10,5 @@ pl:
     - "n\n"
     - "(likely to cause some failures)"
     - "n\n"
+test:
+  commandline: "echo SKIPPING TESTS"

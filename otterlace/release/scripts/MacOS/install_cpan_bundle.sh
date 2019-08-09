@@ -8,7 +8,7 @@ perl_sanity_check || exit 3
 # Work out which perl lib directory to use
 #
 eval $( "$install_base/bin/perl" -V:version ) # sets $version
-perl_ver=$version
+perl_ver=$(echo $version | sed 's/\([0-9]*\.[0-9]*\)\.[0-9]*/\1/')
 unset version
 echo "Perl version is ${perl_ver}"
 perl5_lib="${install_base}/lib/perl5"
@@ -21,6 +21,7 @@ config_bak="${config_dst}.arm_bak"
 
 cpan_home="${install_base}/var/cpan"
 
+# Could use -j when calling cpan instead of doint this
 pers_config="${HOME}/.cpan/CPAN/MyConfig.pm"
 if [ -e "${pers_config}" ]; then
     echo "You have a CPAN config at: ${pers_config}"
@@ -65,4 +66,13 @@ cp -v "${bundle_src}" "${bundle_dir}"
 #
 "${install_base}/bin/cpan" -i Bundle::Otterlace::MacOS
 
-exit 0
+# Check that BioPerl, HTS and BigWig are OK
+for M in Bio::Root::Version Bio::DB::HTS Bio::DB::BigFile; do
+  $install_base/bin/perl -e "use ${M}"
+  if [ $? -ne 0 ]; then
+    echo "${M} is not installed"
+    exit 1
+  fi
+done
+
+exit $?

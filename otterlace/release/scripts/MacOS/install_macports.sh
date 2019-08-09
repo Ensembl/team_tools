@@ -10,7 +10,7 @@ if [ ! -d "${resources_path}" ]; then
 fi
 
 macports_url_base="https://distfiles.macports.org/MacPorts"
-macports_ver="2.3.3"
+macports_ver="2.5.4"
 
 macports_name="MacPorts-${macports_ver}"
 macports_tarball="${macports_name}.tar.bz2"
@@ -40,38 +40,19 @@ fi
   --with-no-root-privileges
 
 make
+if [ "$(id -g)" = "$(id -gn)" ]; then
+  sed -i .old 's/gname/gid/' ${work_dir}/${macports_name}/doc/base.mtree
+  sed -i .old 's/gname/gid/' ${work_dir}/${macports_name}/doc/prefix.mtree
+else
+  id -gn | grep " " &> /dev/null
+  if [ $? -eq 0 ]; then
+    sed -i .old "s/gname=[[:graph:] ]* \([[:alpha:]]*=\)/gid=$(id -g) \1/" ${work_dir}/${macports_name}/doc/base.mtree
+    sed -i .old "s/gname=[[:graph:] ]* \([[:alpha:]]*=\)/gid=$(id -g) \1/" ${work_dir}/${macports_name}/doc/prefix.mtree
+  fi
+fi
 make install
 
-echo "Patching MacPorts config"
-
-cd "${install_base}"
-patch -p0 < "${macports_patch}"
-
-macports_sources_conf="${install_base}/etc/macports/sources.conf"
-local_ports_src="${etc_macos}/Ports"
-local_ports_dst="${install_base}/etc/local_ports"
-
-sed -i ".pre-sed" \
-    -e "s|OTT_REL_MACOS_LOCAL_PORTS|${local_ports_dst}|" \
-   "${macports_sources_conf}"
-
-echo "Installing local ports files"
-
-mkdir -v -p "${local_ports_dst}"
-cp -v -p -R ${local_ports_src}/* "${local_ports_dst}"
-
-port_update_dst="${install_base}/sbin/port_update.sh"
-cp -v -p "${etc_macos}/port_update.sh.template" "${port_update_dst}"
-chmod +x "${port_update_dst}"
-
-echo "Updating ports lists"
-${port_update_dst}
-
-echo
-echo "Ports lists have been updated."
-echo
-echo "To update again later, run:"
-echo "  ${port_update_dst}"
+${install_base}/bin/port selfupdate
 
 exit $?
 

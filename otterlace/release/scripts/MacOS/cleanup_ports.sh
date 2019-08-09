@@ -19,7 +19,7 @@ while read entry; do
     [[ $entry =~ ^# ]]             && continue # skip comment lines
     [[ $entry =~ ^[[:space:]]*$ ]] && continue # skip blank lines
 
-    "${port_cmd}" uninstall "$entry" || true # ok to fail if already removed
+    "${port_cmd}" uninstall --follow-dependents "$entry" || true # ok to fail if already removed
 
 done < "${ports_list}"
 

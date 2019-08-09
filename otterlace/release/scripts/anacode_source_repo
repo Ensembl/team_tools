@@ -13,7 +13,7 @@ anacode_source_repo - return URL for repository
 =head1 SYNOPSIS
 
  $ anacode_source_repo ensembl-otter ensembl
- intcvs1:/repos/git/anacode/ensembl-otter.git
+ https://github.com/Ensembl/ensembl-otter.git
  https://github.com/Ensembl/ensembl.git
 
  $ anacode_source_repo -O github_push ensembl-otter

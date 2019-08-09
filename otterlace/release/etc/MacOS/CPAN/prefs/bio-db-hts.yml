@@ -1,0 +1,9 @@
+---
+comment: "By MG13"
+match:
+  distribution: "^AVULLO/Bio-DB-HTS-\d"
+pl:
+  args:
+    - "--htslib=OTT_REL_MACOS_INSTALL_BASE/lib"
+test:
+  commandline: "echo SKIPPING TEST"

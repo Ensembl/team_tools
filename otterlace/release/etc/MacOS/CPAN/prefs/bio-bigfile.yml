@@ -4,5 +4,10 @@ match:
   distribution: "^LDS/Bio-BigFile-\d"
 pl:
   env:
-    KENT_SRC: OTT_REL_MACOS_INSTALL_BASE/lib/jksrc
-    MACHTYPE: macports
+    KENT_SRC: OTT_REL_MACOS_INSTALL_BASE/lib/kent/src
+    MACHTYPE: x86_64
+  args:
+    - "--extra_linker_flags=-lhts"
+    - "--extra_linker_flags=-lz"
+    - "--extra_linker_flags=-lssl"
+    - "--extra_linker_flags=${KENT_SRC}/lib/${MACHTYPE}/jkweb.a"

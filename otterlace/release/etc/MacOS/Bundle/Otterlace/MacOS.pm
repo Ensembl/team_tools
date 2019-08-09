@@ -2,6 +2,7 @@ package Bundle::Otterlace::MacOS 1.00;
 
 =head1 CONTENTS
 
+Config::IniFiles
 Ace
 File::Spec::Link
 Bio::Root::Version - actually bioperl, need this to get actual version :-(
@@ -15,6 +16,8 @@ JSON::XS
 Data::Rmap
 Hash::Merge::Simple
 LWP::Protocol::connect
+Crypt::JWT
+Text::sprintfn
 
 =cut
 
